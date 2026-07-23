@@ -1,0 +1,32 @@
+from pathlib import Path
+
+from pydantic_settings import BaseSettings, SettingsConfigDict
+
+BASE_DIR = Path(__file__).resolve().parent.parent.parent
+
+
+class Settings(BaseSettings):
+    APP_NAME: str = "HomiQ"
+    APP_VERSION: str = "1.0.0"
+    APP_ENV: str = "development"
+    APP_DEBUG: bool = True
+
+    DATABASE_URL: str
+
+    SECRET_KEY: str
+    ALGORITHM: str
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = 10080
+    REFRESH_TOKEN_EXPIRE_DAYS: int = 7
+
+    CORS_ORIGINS: str = "http://localhost:5173"
+
+    UPLOAD_DIR: str = "uploads/profiles"
+
+    model_config = SettingsConfigDict(
+        env_file=str(BASE_DIR / ".env"),
+        case_sensitive=False,
+        extra="ignore"
+    )
+
+
+settings = Settings()
