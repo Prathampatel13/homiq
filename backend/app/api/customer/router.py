@@ -1,3 +1,5 @@
+from typing import Any
+
 from fastapi import APIRouter, Depends, UploadFile, File, status
 from sqlalchemy.orm import Session
 
@@ -11,8 +13,10 @@ from app.schemas.customer import (
     CustomerProfileUpdate,
     ProfileImageResponse,
 )
-from app.security.deps import get_current_user
+from app.schemas.dashboard import CustomerDashboardResponse
+from app.security.deps import get_current_customer
 from app.services.customer import CustomerService
+from app.services.customer_dashboard import CustomerDashboardService
 
 router = APIRouter(prefix="/customer", tags=["Customer Profile"])
 
@@ -27,7 +31,7 @@ router = APIRouter(prefix="/customer", tags=["Customer Profile"])
     description="Returns the authenticated customer's profile information including all saved addresses.",
 )
 def get_profile(
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_current_customer),
     db: Session = Depends(get_db),
 ):
     """Fetch the authenticated customer's profile with addresses."""
@@ -43,7 +47,7 @@ def get_profile(
 )
 def update_profile(
     payload: CustomerProfileUpdate,
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_current_customer),
     db: Session = Depends(get_db),
 ):
     """Update the customer's profile. Omitting a field leaves it unchanged."""
@@ -59,7 +63,7 @@ def update_profile(
 )
 async def upload_profile_image(
     file: UploadFile = File(..., description="Profile image file"),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_current_customer),
     db: Session = Depends(get_db),
 ):
     """Upload a new profile image for the authenticated customer."""
@@ -77,7 +81,7 @@ async def upload_profile_image(
     description="Returns all saved addresses for the authenticated customer, with default address first.",
 )
 def list_addresses(
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_current_customer),
     db: Session = Depends(get_db),
 ):
     """Get all addresses for the authenticated customer."""
@@ -94,7 +98,7 @@ def list_addresses(
 )
 def create_address(
     payload: CustomerAddressCreate,
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_current_customer),
     db: Session = Depends(get_db),
 ):
     """Add a new address to the customer's profile."""
@@ -110,7 +114,7 @@ def create_address(
 )
 def get_address(
     address_id: int,
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_current_customer),
     db: Session = Depends(get_db),
 ):
     """Get a single address by ID."""
@@ -127,7 +131,7 @@ def get_address(
 def update_address(
     address_id: int,
     payload: CustomerAddressUpdate,
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_current_customer),
     db: Session = Depends(get_db),
 ):
     """Update an existing address by ID."""
@@ -143,7 +147,7 @@ def update_address(
 )
 def delete_address(
     address_id: int,
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_current_customer),
     db: Session = Depends(get_db),
 ):
     """Delete an address by ID."""
@@ -159,10 +163,28 @@ def delete_address(
 )
 def set_default_address(
     address_id: int,
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_current_customer),
     db: Session = Depends(get_db),
 ):
     """Set an address as the default address for the customer."""
     service = CustomerService(db)
     return service.set_default_address(current_user, address_id)
+
+
+# ── Dashboard ──────────────────────────────────────────────────────────
+
+
+@router.get(
+    "/dashboard",
+    response_model=CustomerDashboardResponse,
+    summary="Customer dashboard",
+    description="Returns personalized dashboard data for the authenticated customer including booking stats, spending, and upcoming bookings.",
+)
+def get_customer_dashboard(
+    current_user: User = Depends(get_current_customer),
+    db: Session = Depends(get_db),
+) -> Any:
+    """Get the customer dashboard with booking statistics and recent activity."""
+    service = CustomerDashboardService(db)
+    return service.get_dashboard(current_user)
 

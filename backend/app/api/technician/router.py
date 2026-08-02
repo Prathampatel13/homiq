@@ -1,8 +1,11 @@
+from typing import Any
+
 from fastapi import APIRouter, Depends, File, UploadFile, status
 from sqlalchemy.orm import Session
 
 from app.database.session import get_db
 from app.models.auth import User
+from app.schemas.dashboard import TechnicianDashboardResponse
 from app.security.deps import get_current_user
 from app.schemas.technician import (
     GovernmentIdImageResponse,
@@ -12,6 +15,7 @@ from app.schemas.technician import (
     TechnicianUpdate,
 )
 from app.services.technician import TechnicianService
+from app.services.technician_dashboard import TechnicianDashboardService
 
 router = APIRouter(prefix="/technician", tags=["Technician"])
 
@@ -92,3 +96,21 @@ def list_technicians(
         availability=availability,
         online=is_online,
     )
+
+
+# ── Dashboard ──────────────────────────────────────────────────────────
+
+
+@router.get(
+    "/dashboard",
+    response_model=TechnicianDashboardResponse,
+    summary="Technician dashboard",
+    description="Returns the authenticated technician's dashboard with job statistics, earnings, ratings, today's jobs, and next pending job.",
+)
+def get_technician_dashboard(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> Any:
+    """Get the technician dashboard with job stats and today's schedule."""
+    service = TechnicianDashboardService(db)
+    return service.get_dashboard(current_user)

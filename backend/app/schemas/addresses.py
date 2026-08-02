@@ -1,7 +1,16 @@
+"""Address schemas.
+
+This module is the canonical source for customer-address Pydantic models.
+``app.schemas.customer`` re-exports these models so existing import paths
+(``from app.schemas.customer import CustomerAddressCreate`` etc.) keep working.
+"""
+
+from __future__ import annotations
+
 from datetime import datetime
 from typing import Optional
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 
 class CustomerAddressCreate(BaseModel):
@@ -88,4 +97,5 @@ class CustomerAddressResponse(BaseModel):
     created_at: datetime
     updated_at: datetime
 
-    model_config = {"from_attributes": True}
+    model_config = ConfigDict(from_attributes=True)
+

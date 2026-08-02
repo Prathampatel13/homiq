@@ -74,8 +74,11 @@ class CustomerCRUD:
     def create_address(
         self, customer_id: int, data: dict[str, Any]
     ) -> CustomerAddress:
-        # If this is the first address or marked as default, unset other defaults
-        if data.get("is_default"):
+        # Automatically make the first saved address the default one.
+        existing_addresses = self.get_addresses(customer_id)
+        if not existing_addresses:
+            data["is_default"] = True
+        elif data.get("is_default"):
             self._unset_default_addresses(customer_id)
 
         address = CustomerAddress(customer_id=customer_id, **data)

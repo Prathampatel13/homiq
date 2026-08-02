@@ -1,0 +1,2 @@
+# Booking endpoints package
+

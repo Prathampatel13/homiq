@@ -1,34 +1,22 @@
-# Customer Profile Module - Implementation Steps ✅
+# HomiQ Backend Fix Plan — Phase 1 (Auth, Customer, Address, Booking)
 
-- [x] Step 1: Update `app/core/config.py` - Add UPLOAD_DIR setting + BASE_DIR
-- [x] Step 2: Update `app/models/users.py` - Enhance Customer model + add CustomerAddress model
-- [x] Step 3: Create `app/schemas/customer.py` - Pydantic schemas
-- [x] Step 4: Create `app/crud/customer.py` - CRUD layer
-- [x] Step 5: Create `app/services/customer.py` - Service layer with image upload
-- [x] Step 6: Create `app/api/customer/__init__.py` - Empty init
-- [x] Step 7: Create `app/api/customer/router.py` - All customer endpoints
-- [x] Step 8: Update `app/main.py` - Include customer router + static mount
-- [x] Step 9: Create Alembic migration for new tables/columns
+## Steps
 
-## Files Created (5)
-- `app/schemas/customer.py`
-- `app/crud/customer.py`
-- `app/services/customer.py`
-- `app/api/customer/__init__.py`
-- `app/api/customer/router.py`
-- `app/security/deps.py` (JWT dependency shared for future modules)
-- `alembic/versions/72afc9621d89_initial_schema.py` (Fresh initial migration — Alembic fully reset)
-
-## Files Modified (3)
-- `app/core/config.py` - Added UPLOAD_DIR, BASE_DIR
-- `app/models/users.py` - Enhanced Customer + added CustomerAddress
-- `app/main.py` - Included customer router + static mount
-
-## Alembic Reset (Completed)
-- [x] Removed `Base.metadata.create_all(bind=engine)` from `main.py`
-- [x] Dropped `alembic_version` table and all app tables from PostgreSQL
-- [x] Generated fresh initial migration covering all models
-- [x] Applied migration successfully (`72afc9621d89` is now head)
-
-> **Important**: Always use `alembic upgrade head` for schema changes. Do not rely on `Base.metadata.create_all()`.
+- [x] Analyze codebase (models, schemas, CRUD, services, routers, integrations, migrations)
+- [x] Add missing `__init__.py` files to all packages
+- [x] Fix `app/security/passwords.py` — replace passlib+bcrypt 4.x incompatibility with direct bcrypt
+- [x] Fix `app/integrations/__init__.py` — lazy imports to avoid uninstalled `cloudinary` breaking `app.main`
+- [x] Merge duplicate Address schemas — canonical in `schemas/addresses.py`, re-export from `schemas/customer.py`
+- [x] Remove dead `app/services/address.py` (CustomerService is canonical; imported nonexistent `app.crud.address`)
+- [x] Consolidate Address CRUD into `app/crud/customer.py` (deleted dead `app/crud/address.py`)
+- [x] Fix `CustomerAddress.bookings` relationship — add `passive_deletes=True` so DB `ON DELETE CASCADE` is used instead of ORM NULL-ing a NOT NULL column
+- [x] Add delete-address guard in `CustomerService.delete_address` — reject deleting addresses linked to bookings (avoids silent booking-history loss)
+- [x] Auto-create Customer/Technician profile during registration (fixes User↔Customer mapping)
+- [x] Add role-aware top-level `GET /dashboard`
+- [x] Fix `POST /payments/create-order` to fall back to `estimated_price` (no longer rejects `final_price`-less bookings)
+- [x] Fix dashboard `payment_status` enum comparisons (string vs SAEnum member)
+- [x] Enforce customer role on `/customer/*` endpoints via `get_current_customer`
+- [x] Verify syntax + imports + routes — ALL CHECKS PASSED (101 files, `app.main` imports, all routes register)
+- [x] Smoke tests green — customer (15/15), admin policy, phase 2 (booking/payment/dashboard/invoice)
+- [x] Generate final report (modified/removed/merged files, remaining issues, test sequence)
 

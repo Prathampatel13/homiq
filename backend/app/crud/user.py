@@ -58,6 +58,19 @@ class UserCRUD:
         )
 
         self.db.add(user)
+        self.db.flush()  # ensure user.id is populated
+
+        # Auto-create the role-specific profile record so that
+        # /customer/profile, /technician/profile etc. work immediately.
+        from app.models.users import Customer, Technician
+
+        if role_name.lower() == "customer":
+            customer = Customer(user_id=user.id, phone=phone)
+            self.db.add(customer)
+        elif role_name.lower() == "technician":
+            technician = Technician(user_id=user.id)
+            self.db.add(technician)
+
         self.db.commit()
         self.db.refresh(user)
 

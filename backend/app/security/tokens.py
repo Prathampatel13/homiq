@@ -1,5 +1,6 @@
 from datetime import datetime, timedelta, timezone
 from typing import Any
+from uuid import uuid4
 
 from jose import jwt
 
@@ -45,6 +46,7 @@ def create_refresh_token(
     payload = {
         "sub": str(subject),
         "type": "refresh",
+        "jti": uuid4().hex,
         "exp": expire,
     }
 

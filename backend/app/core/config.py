@@ -22,6 +22,30 @@ class Settings(BaseSettings):
 
     UPLOAD_DIR: str = "uploads/profiles"
 
+    # ── Razorpay ──────────────────────────────────────────────────────
+    RAZORPAY_KEY_ID: str = ""
+    RAZORPAY_KEY_SECRET: str = ""
+
+    # ── Cloudinary ────────────────────────────────────────────────────
+    CLOUDINARY_CLOUD_NAME: str = ""
+    CLOUDINARY_API_KEY: str = ""
+    CLOUDINARY_API_SECRET: str = ""
+
+    # ── Google Maps ──────────────────────────────────────────────────
+    GOOGLE_MAPS_API_KEY: str = ""
+
+    # ── Email / SMTP ─────────────────────────────────────────────────
+    SMTP_HOST: str = ""
+    SMTP_PORT: int = 587
+    SMTP_USER: str = ""
+    SMTP_PASSWORD: str = ""
+    SMTP_FROM_EMAIL: str = ""
+
+    # ── SMS ──────────────────────────────────────────────────────────
+    SMS_API_KEY: str = ""
+    SMS_API_SECRET: str = ""
+    SMS_FROM: str = ""
+
     model_config = SettingsConfigDict(
         env_file=str(BASE_DIR / ".env"),
         case_sensitive=False,

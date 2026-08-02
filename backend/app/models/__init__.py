@@ -9,3 +9,5 @@ from app.models.payments import *
 from app.models.qr import *
 from app.models.reviews import *
 from app.models.tracking import *
+from app.models.coupons import *
+from app.models.invoices import *
