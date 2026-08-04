@@ -1,7 +1,78 @@
-from datetime import datetime
+from datetime import date, datetime, time
 from typing import Optional
 
 from pydantic import BaseModel, Field, field_validator
+
+
+# ── Availability / Online status ───────────────────────────────────────
+
+
+class TechnicianAvailabilityUpdate(BaseModel):
+    availability: Optional[bool] = Field(None, description="Whether the technician is available for new jobs")
+    is_online: Optional[bool] = Field(None, description="Whether the technician is currently online")
+
+
+class TechnicianAvailabilityResponse(BaseModel):
+    availability: bool
+    is_online: bool
+
+
+# ── Technician Jobs ────────────────────────────────────────────────────
+
+
+class TechnicianJobCustomer(BaseModel):
+    id: int
+    full_name: str
+    phone: Optional[str] = None
+
+
+class TechnicianJobService(BaseModel):
+    id: int
+    name: str
+
+
+class TechnicianJobAddress(BaseModel):
+    house_no: Optional[str] = None
+    building: Optional[str] = None
+    area: Optional[str] = None
+    city: Optional[str] = None
+    state: Optional[str] = None
+    pincode: Optional[str] = None
+    latitude: Optional[float] = None
+    longitude: Optional[float] = None
+
+
+class TechnicianJobResponse(BaseModel):
+    id: int
+    booking_number: str
+    status: str
+    payment_status: str
+    booking_date: date
+    preferred_time: Optional[time] = None
+    estimated_price: Optional[float] = None
+    final_price: Optional[float] = None
+    customer_note: Optional[str] = None
+    admin_note: Optional[str] = None
+    created_at: datetime
+    customer: Optional[TechnicianJobCustomer] = None
+    service: Optional[TechnicianJobService] = None
+    address: Optional[TechnicianJobAddress] = None
+
+
+class TechnicianJobListResponse(BaseModel):
+    items: list[TechnicianJobResponse]
+    total: int
+
+
+# ── Earnings ───────────────────────────────────────────────────────────
+
+
+class TechnicianEarningsResponse(BaseModel):
+    total_earnings: float = 0.0
+    pending_earnings: float = 0.0
+    completed_jobs: int = 0
+    paid_jobs: int = 0
+    pending_jobs: int = 0
 
 
 class TechnicianCreate(BaseModel):

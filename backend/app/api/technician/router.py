@@ -6,11 +6,15 @@ from sqlalchemy.orm import Session
 from app.database.session import get_db
 from app.models.auth import User
 from app.schemas.dashboard import TechnicianDashboardResponse
-from app.security.deps import get_current_user
+from app.security.deps import get_current_technician, get_current_user
 from app.schemas.technician import (
     GovernmentIdImageResponse,
     ProfileImageResponse,
+    TechnicianAvailabilityResponse,
+    TechnicianAvailabilityUpdate,
     TechnicianCreate,
+    TechnicianEarningsResponse,
+    TechnicianJobListResponse,
     TechnicianResponse,
     TechnicianUpdate,
 )
@@ -27,7 +31,7 @@ router = APIRouter(prefix="/technician", tags=["Technician"])
     description="Returns the authenticated technician's profile and metadata.",
 )
 def get_profile(
-    current_user=Depends(get_current_user), db: Session = Depends(get_db)
+    current_user=Depends(get_current_technician), db: Session = Depends(get_db)
 ):
     service = TechnicianService(db)
     return service.get_profile(current_user)
@@ -41,7 +45,7 @@ def get_profile(
 )
 def update_profile(
     payload: TechnicianUpdate,
-    current_user=Depends(get_current_user),
+    current_user=Depends(get_current_technician),
     db: Session = Depends(get_db),
 ):
     service = TechnicianService(db)
@@ -56,7 +60,7 @@ def update_profile(
 )
 async def upload_profile_image(
     file: UploadFile = File(...),
-    current_user=Depends(get_current_user),
+    current_user=Depends(get_current_technician),
     db: Session = Depends(get_db),
 ):
     service = TechnicianService(db)
@@ -71,7 +75,7 @@ async def upload_profile_image(
 )
 async def upload_government_id(
     file: UploadFile = File(...),
-    current_user=Depends(get_current_user),
+    current_user=Depends(get_current_technician),
     db: Session = Depends(get_db),
 ):
     service = TechnicianService(db)
@@ -98,6 +102,66 @@ def list_technicians(
     )
 
 
+# ── Jobs ──────────────────────────────────────────────────────────────
+
+
+@router.get(
+    "/jobs",
+    response_model=TechnicianJobListResponse,
+    summary="List my jobs",
+    description="Returns the jobs (bookings) assigned to the authenticated technician, optionally filtered by status.",
+)
+def get_my_jobs(
+    status: str | None = None,
+    offset: int = 0,
+    limit: int = 100,
+    current_user: User = Depends(get_current_technician),
+    db: Session = Depends(get_db),
+) -> Any:
+    """List jobs assigned to the authenticated technician."""
+    service = TechnicianService(db)
+    return service.get_my_jobs(
+        current_user, status=status, offset=offset, limit=limit
+    )
+
+
+# ── Earnings ──────────────────────────────────────────────────────────
+
+
+@router.get(
+    "/earnings",
+    response_model=TechnicianEarningsResponse,
+    summary="My earnings",
+    description="Returns the authenticated technician's earnings summary including total, pending, and completed/paid job counts.",
+)
+def get_my_earnings(
+    current_user: User = Depends(get_current_technician),
+    db: Session = Depends(get_db),
+) -> Any:
+    """Get the authenticated technician's earnings summary."""
+    service = TechnicianService(db)
+    return service.get_my_earnings(current_user)
+
+
+# ── Availability ──────────────────────────────────────────────────────
+
+
+@router.put(
+    "/availability",
+    response_model=TechnicianAvailabilityResponse,
+    summary="Update availability",
+    description="Update the technician's availability and/or online status.",
+)
+def update_availability(
+    payload: TechnicianAvailabilityUpdate,
+    current_user: User = Depends(get_current_technician),
+    db: Session = Depends(get_db),
+) -> Any:
+    """Update the technician's availability and online status."""
+    service = TechnicianService(db)
+    return service.update_availability(current_user, payload)
+
+
 # ── Dashboard ──────────────────────────────────────────────────────────
 
 
@@ -108,7 +172,7 @@ def list_technicians(
     description="Returns the authenticated technician's dashboard with job statistics, earnings, ratings, today's jobs, and next pending job.",
 )
 def get_technician_dashboard(
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_current_technician),
     db: Session = Depends(get_db),
 ) -> Any:
     """Get the technician dashboard with job stats and today's schedule."""

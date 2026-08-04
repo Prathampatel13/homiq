@@ -1,10 +1,11 @@
 from typing import Any, Optional
 
-from sqlalchemy import select, update
-from sqlalchemy.orm import Session
+from sqlalchemy import func, select, update
+from sqlalchemy.orm import Session, joinedload
 
 from app.models.auth import User
-from app.models.users import Technician
+from app.models.users import Customer, Technician
+from app.models.bookings import Booking
 
 
 class TechnicianCRUD:
@@ -70,3 +71,42 @@ class TechnicianCRUD:
         if user:
             user.full_name = full_name
             self.db.commit()
+
+    # ── Technician Jobs ────────────────────────────────────────────────
+
+    def get_technician_jobs(
+        self,
+        technician_id: int,
+        status: Optional[str] = None,
+        offset: int = 0,
+        limit: int = 100,
+    ) -> list[Booking]:
+        """Return bookings assigned to a technician, optionally filtered by status."""
+        stmt = (
+            select(Booking)
+            .options(
+                joinedload(Booking.customer).joinedload(Customer.user),
+                joinedload(Booking.service),
+                joinedload(Booking.address),
+            )
+            .where(Booking.technician_id == technician_id)
+            .order_by(Booking.created_at.desc())
+            .offset(offset)
+            .limit(limit)
+        )
+        if status:
+            stmt = stmt.where(Booking.status == status)
+        return list(self.db.execute(stmt).scalars().all())
+
+    def count_technician_jobs(
+        self,
+        technician_id: int,
+        status: Optional[str] = None,
+    ) -> int:
+        """Count bookings assigned to a technician, optionally filtered by status."""
+        stmt = select(func.count(Booking.id)).where(
+            Booking.technician_id == technician_id
+        )
+        if status:
+            stmt = stmt.where(Booking.status == status)
+        return self.db.scalar(stmt) or 0

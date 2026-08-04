@@ -1,22 +1,37 @@
-# HomiQ Backend Fix Plan — Phase 1 (Auth, Customer, Address, Booking)
+# HomiQ Backend — Module Implementation Plan
 
-## Steps
+## Module 1: Company Module
 
-- [x] Analyze codebase (models, schemas, CRUD, services, routers, integrations, migrations)
-- [x] Add missing `__init__.py` files to all packages
-- [x] Fix `app/security/passwords.py` — replace passlib+bcrypt 4.x incompatibility with direct bcrypt
-- [x] Fix `app/integrations/__init__.py` — lazy imports to avoid uninstalled `cloudinary` breaking `app.main`
-- [x] Merge duplicate Address schemas — canonical in `schemas/addresses.py`, re-export from `schemas/customer.py`
-- [x] Remove dead `app/services/address.py` (CustomerService is canonical; imported nonexistent `app.crud.address`)
-- [x] Consolidate Address CRUD into `app/crud/customer.py` (deleted dead `app/crud/address.py`)
-- [x] Fix `CustomerAddress.bookings` relationship — add `passive_deletes=True` so DB `ON DELETE CASCADE` is used instead of ORM NULL-ing a NOT NULL column
-- [x] Add delete-address guard in `CustomerService.delete_address` — reject deleting addresses linked to bookings (avoids silent booking-history loss)
-- [x] Auto-create Customer/Technician profile during registration (fixes User↔Customer mapping)
-- [x] Add role-aware top-level `GET /dashboard`
-- [x] Fix `POST /payments/create-order` to fall back to `estimated_price` (no longer rejects `final_price`-less bookings)
-- [x] Fix dashboard `payment_status` enum comparisons (string vs SAEnum member)
-- [x] Enforce customer role on `/customer/*` endpoints via `get_current_customer`
-- [x] Verify syntax + imports + routes — ALL CHECKS PASSED (101 files, `app.main` imports, all routes register)
-- [x] Smoke tests green — customer (15/15), admin policy, phase 2 (booking/payment/dashboard/invoice)
-- [x] Generate final report (modified/removed/merged files, remaining issues, test sequence)
+- [x] Analyze codebase (models, schemas, CRUD, services, routers, deps, migrations) — Company
+- [x] Create `app/crud/company.py` — CompanyCRUD
+- [x] Create `app/schemas/company.py` — Company schemas
+- [x] Create `app/services/company.py` — CompanyService
+- [x] Create `app/api/company/router.py` — company endpoints
+- [x] Add `get_current_company` dependency in `app/security/deps.py`
+- [x] Auto-create Company profile on registration in `app/crud/user.py`
+- [x] Register company router in `app/main.py`
+- [x] Export `CompanyService` in `app/services/__init__.py`
+- [x] Verify syntax (AST parse passed for all modified/created files)
+- [x] Generate API documentation + testing guide
 
+## Module 2: Technician Remaining Module
+
+### Plan Steps
+- [x] Add `get_technician_jobs` CRUD method in `app/crud/technician.py`
+- [x] Add technician job/earnings/availability schemas in `app/schemas/technician.py`
+- [x] Add service methods (get_my_jobs, earnings, availability) in `app/services/technician.py`
+- [x] Add endpoints in `app/api/technician/router.py` (jobs, earnings, availability)
+- [x] Enforce technician role on technician-scoped endpoints
+- [x] Verify syntax (AST parse)
+- [x] Verify full app import + route registration (all technician routes present)
+- [x] End-to-end technician smoke test passed (8/8)
+- [x] Create `technician_smoke_test.py`
+- [x] Update TODO.md — mark Module 2 complete
+
+## Module 3: Jobs Module
+## Module 4: Notifications Module
+## Module 5: QR Verification Module
+## Module 6: Coupon Module
+## Module 7: Invoice Module
+## Module 8: Reports & Analytics
+## Module 9: Final End-to-End Testing

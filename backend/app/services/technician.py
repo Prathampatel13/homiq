@@ -5,15 +5,26 @@ from typing import Any
 from uuid import uuid4
 
 from fastapi import HTTPException, UploadFile, status
+from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from app.core.config import BASE_DIR, settings
 from app.crud.technician import TechnicianCRUD
 from app.models.auth import User
+from app.models.bookings import Booking, BookingStatus, PaymentStatus as BookingPayStatus
+from app.models.payments import Payment, PaymentStatus as PayStatus
 from app.schemas.technician import (
     GovernmentIdImageResponse,
     ProfileImageResponse,
+    TechnicianAvailabilityResponse,
+    TechnicianAvailabilityUpdate,
     TechnicianCreate,
+    TechnicianEarningsResponse,
+    TechnicianJobAddress,
+    TechnicianJobCustomer,
+    TechnicianJobListResponse,
+    TechnicianJobResponse,
+    TechnicianJobService,
     TechnicianResponse,
     TechnicianUpdate,
 )
@@ -82,6 +93,157 @@ class TechnicianService:
             online=online,
         )
         return [self._build_response(t.user, t) for t in technicians]
+
+    # ── Availability / Online status ──────────────────────────────────
+
+    def update_availability(
+        self, current_user: User, payload: TechnicianAvailabilityUpdate
+    ) -> TechnicianAvailabilityResponse:
+        """Update the technician's availability and/or online status."""
+        technician = self._get_technician_or_404(current_user.id)
+        update_data = payload.model_dump(exclude_unset=True, exclude_none=True)
+        if update_data:
+            self.crud.update(technician.id, update_data)
+            self.db.refresh(technician)
+        return TechnicianAvailabilityResponse(
+            availability=technician.availability,
+            is_online=technician.is_online,
+        )
+
+    # ── Jobs ──────────────────────────────────────────────────────────
+
+    def get_my_jobs(
+        self,
+        current_user: User,
+        status: str | None = None,
+        offset: int = 0,
+        limit: int = 100,
+    ) -> TechnicianJobListResponse:
+        """Return jobs (bookings) assigned to the authenticated technician."""
+        technician = self._get_technician_or_404(current_user.id)
+        bookings = self.crud.get_technician_jobs(
+            technician_id=technician.id,
+            status=status,
+            offset=offset,
+            limit=limit,
+        )
+        total = self.crud.count_technician_jobs(
+            technician_id=technician.id,
+            status=status,
+        )
+        return TechnicianJobListResponse(
+            items=[self._build_job_response(b) for b in bookings],
+            total=int(total),
+        )
+
+    # ── Earnings ──────────────────────────────────────────────────────
+
+    def get_my_earnings(self, current_user: User) -> TechnicianEarningsResponse:
+        """Return the technician's earnings summary."""
+        technician = self._get_technician_or_404(current_user.id)
+        technician_id = technician.id
+
+        total_earnings = float(
+            self.db.scalar(
+                select(func.coalesce(func.sum(Payment.amount), 0))
+                .join(Booking, Payment.booking_id == Booking.id)
+                .where(
+                    Booking.technician_id == technician_id,
+                    Payment.status == PayStatus.PAID,
+                )
+            ) or 0.0
+        )
+
+        pending_earnings = float(
+            self.db.scalar(
+                select(func.coalesce(func.sum(Booking.final_price), 0))
+                .where(
+                    Booking.technician_id == technician_id,
+                    Booking.status == BookingStatus.COMPLETED,
+                    Booking.payment_status == BookingPayStatus.PENDING,
+                )
+            ) or 0.0
+        )
+
+        completed_jobs = self.db.scalar(
+            select(func.count(Booking.id)).where(
+                Booking.technician_id == technician_id,
+                Booking.status == BookingStatus.COMPLETED,
+            )
+        ) or 0
+
+        paid_jobs = self.db.scalar(
+            select(func.count(Booking.id))
+            .join(Payment, Payment.booking_id == Booking.id)
+            .where(
+                Booking.technician_id == technician_id,
+                Payment.status == PayStatus.PAID,
+            )
+        ) or 0
+
+        pending_jobs = self.db.scalar(
+            select(func.count(Booking.id)).where(
+                Booking.technician_id == technician_id,
+                Booking.status.in_([BookingStatus.ASSIGNED, BookingStatus.ACCEPTED]),
+            )
+        ) or 0
+
+        return TechnicianEarningsResponse(
+            total_earnings=round(total_earnings, 2),
+            pending_earnings=round(pending_earnings, 2),
+            completed_jobs=int(completed_jobs),
+            paid_jobs=int(paid_jobs),
+            pending_jobs=int(pending_jobs),
+        )
+
+    # ── Response builders ─────────────────────────────────────────────
+
+    def _build_job_response(self, booking: Any) -> TechnicianJobResponse:
+        customer = booking.customer
+        service = booking.service
+        address = booking.address
+
+        customer_data = None
+        if customer and customer.user:
+            customer_data = TechnicianJobCustomer(
+                id=customer.id,
+                full_name=customer.user.full_name,
+                phone=customer.user.phone,
+            )
+
+        service_data = None
+        if service:
+            service_data = TechnicianJobService(id=service.id, name=service.name)
+
+        address_data = None
+        if address:
+            address_data = TechnicianJobAddress(
+                house_no=address.house_no,
+                building=address.building,
+                area=address.area,
+                city=address.city,
+                state=address.state,
+                pincode=address.pincode,
+                latitude=address.latitude,
+                longitude=address.longitude,
+            )
+
+        return TechnicianJobResponse(
+            id=booking.id,
+            booking_number=booking.booking_number,
+            status=booking.status.value if hasattr(booking.status, 'value') else str(booking.status),
+            payment_status=booking.payment_status.value if hasattr(booking.payment_status, 'value') else str(booking.payment_status),
+            booking_date=booking.booking_date,
+            preferred_time=booking.preferred_time,
+            estimated_price=booking.estimated_price,
+            final_price=booking.final_price,
+            customer_note=booking.customer_note,
+            admin_note=booking.admin_note,
+            created_at=booking.created_at,
+            customer=customer_data,
+            service=service_data,
+            address=address_data,
+        )
 
     async def _store_image(self, file: UploadFile, user_id: int, prefix: str) -> str:
         if file.content_type not in ALLOWED_IMAGE_TYPES:
