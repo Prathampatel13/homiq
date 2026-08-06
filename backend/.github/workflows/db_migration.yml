@@ -1,0 +1,66 @@
+name: Database Migration Runner
+
+on:
+  workflow_dispatch:
+    inputs:
+      action:
+        description: 'Alembic Action'
+        required: true
+        default: 'upgrade'
+        type: choice
+        options:
+          - upgrade
+          - downgrade
+          - current
+          - heads
+          - history
+      revision:
+        description: 'Target Revision (e.g. head, -1, 8899aabbcc11)'
+        required: true
+        default: 'head'
+        type: string
+      environment:
+        description: 'Target Environment'
+        required: true
+        default: 'staging'
+        type: choice
+        options:
+          - staging
+          - production
+
+jobs:
+  migrate:
+    name: Run Alembic Migration
+    runs-on: ubuntu-latest
+    environment: ${{ github.event.inputs.environment }}
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install Migration Tooling
+        run: |
+          pip install alembic psycopg2-binary sqlalchemy
+
+      - name: Execute Alembic Command
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: |
+          ACTION="${{ github.event.inputs.action }}"
+          REVISION="${{ github.event.inputs.revision }}"
+          echo "Running Alembic $ACTION $REVISION on ${{ github.event.inputs.environment }}..."
+
+          if [ "$ACTION" = "current" ]; then
+            alembic current
+          elif [ "$ACTION" = "heads" ]; then
+            alembic heads
+          elif [ "$ACTION" = "history" ]; then
+            alembic history
+          else
+            alembic $ACTION $REVISION
+          fi

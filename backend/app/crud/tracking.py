@@ -97,3 +97,23 @@ class TrackingCRUD:
         self.db.commit()
         return count
 
+    def get_all_active_technician_latest_events(self) -> list[TrackingEvent]:
+        """Fetch the latest event for each active technician."""
+        # Subquery to get max created_at per technician_id
+        subq = (
+            select(
+                TrackingEvent.technician_id,
+                func.max(TrackingEvent.created_at).label("max_created"),
+            )
+            .where(TrackingEvent.technician_id.isnot(None))
+            .group_by(TrackingEvent.technician_id)
+            .subquery()
+        )
+        stmt = select(TrackingEvent).join(
+            subq,
+            (TrackingEvent.technician_id == subq.c.technician_id)
+            & (TrackingEvent.created_at == subq.c.max_created),
+        )
+        return list(self.db.execute(stmt).scalars().all())
+
+

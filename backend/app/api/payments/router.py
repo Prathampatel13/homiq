@@ -9,9 +9,9 @@ All endpoints are JWT-protected and require a valid Bearer token.
 
 from __future__ import annotations
 
-from typing import Any
+from typing import Any, Optional
 
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Depends, Header, status
 from sqlalchemy.orm import Session
 
 from app.database.session import get_db
@@ -19,9 +19,13 @@ from app.models.auth import User
 from app.security.deps import get_current_user, get_current_admin
 from app.schemas.payments import (
     PaymentCreateOrder,
+    PaymentHistoryResponse,
+    PaymentInvoiceResponse,
     PaymentListResponse,
+    PaymentRefundRequest,
     PaymentResponse,
     PaymentVerify,
+    PaymentWebhookPayload,
 )
 from app.services.payment import PaymentService
 
@@ -47,21 +51,7 @@ def create_order(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ) -> Any:
-    """Create a Razorpay order for a booking.
-
-    Args:
-        payload: Booking ID for which to create the order.
-        current_user: Authenticated user (JWT-protected, must be a customer).
-        db: Database session.
-
-    Returns:
-        dict: Razorpay order details including order_id, amount, currency, key_id.
-
-    Raises:
-        401: If not authenticated.
-        404: If the customer profile or booking is not found.
-        400: If the booking has no final price or a payment already exists.
-    """
+    """Create a Razorpay order for a booking."""
     return PaymentService(db).create_order(current_user, payload)
 
 
@@ -84,22 +74,46 @@ def verify_payment(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ) -> Any:
-    """Verify a Razorpay payment signature.
-
-    Args:
-        payload: Razorpay order_id, payment_id, and signature.
-        current_user: Authenticated user (JWT-protected).
-        db: Database session.
-
-    Returns:
-        PaymentResponse: The updated payment record.
-
-    Raises:
-        401: If not authenticated.
-        404: If the payment order is not found.
-        400: If the signature is invalid or payment already processed.
-    """
+    """Verify a Razorpay payment signature."""
     return PaymentService(db).verify_payment(payload)
+
+
+# ─── WEBHOOK HANDLER ─────────────────────────────────────────────────────
+
+
+@router.post(
+    "/webhook",
+    summary="Razorpay Webhook Handler",
+    description="Processes asynchronous Razorpay webhook events with signature verification.",
+)
+def razorpay_webhook(
+    payload: dict[str, Any],
+    x_razorpay_signature: Optional[str] = Header(None, alias="X-Razorpay-Signature"),
+    db: Session = Depends(get_db),
+) -> Any:
+    """Process Razorpay webhook notifications."""
+    event_name = payload.get("event", "unknown")
+    event_payload = payload.get("payload", {})
+    return PaymentService(db).handle_webhook(event_name, event_payload, x_razorpay_signature)
+
+
+# ─── PAYMENT HISTORY ────────────────────────────────────────────────────
+
+
+@router.get(
+    "/history",
+    response_model=PaymentHistoryResponse,
+    summary="Payment transaction history",
+    description="Returns detailed transaction history for the authenticated customer or all history for admin.",
+)
+def payment_history(
+    offset: int = 0,
+    limit: int = 100,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> Any:
+    """Get payment transaction history."""
+    return PaymentService(db).get_payment_history(current_user, offset=offset, limit=limit)
 
 
 # ─── LIST PAYMENTS ──────────────────────────────────────────────────────
@@ -121,21 +135,59 @@ def list_payments(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ) -> Any:
-    """List payments with pagination, scoped to the current user's role.
-
-    Args:
-        offset: Number of records to skip (default 0).
-        limit: Maximum number of records to return (default 100).
-        current_user: Authenticated user (JWT-protected).
-        db: Database session.
-
-    Returns:
-        PaymentListResponse: A list of payments and the total count.
-
-    Raises:
-        401: If not authenticated.
-    """
+    """List payments with pagination, scoped to the current user's role."""
     return PaymentService(db).list_payments(current_user, offset=offset, limit=limit)
+
+
+# ─── REFUND ENDPOINTS ───────────────────────────────────────────────────
+
+
+@router.post(
+    "/refund",
+    response_model=PaymentResponse,
+    summary="Refund payment (Admin only)",
+    description="Processes a refund for a payment via payload body.",
+)
+def refund_payment_payload(
+    payload: PaymentRefundRequest,
+    current_user: User = Depends(get_current_admin),
+    db: Session = Depends(get_db),
+) -> Any:
+    """Refund a payment via request body payload (admin only)."""
+    return PaymentService(db).refund_payment_payload(current_user, payload)
+
+
+@router.post(
+    "/{payment_id}/refund",
+    response_model=PaymentResponse,
+    summary="Refund a payment by ID (Admin only)",
+    description="**Admin-only.** Processes a refund through Razorpay.",
+)
+def refund_payment(
+    payment_id: int,
+    current_user: User = Depends(get_current_admin),
+    db: Session = Depends(get_db),
+) -> Any:
+    """Refund a payment by ID (admin only)."""
+    return PaymentService(db).refund_payment(current_user, payment_id)
+
+
+# ─── GET INVOICE ────────────────────────────────────────────────────────
+
+
+@router.get(
+    "/invoice/{payment_id}",
+    response_model=PaymentInvoiceResponse,
+    summary="Get payment invoice",
+    description="Returns detailed invoice data for a paid payment.",
+)
+def get_payment_invoice(
+    payment_id: int,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> Any:
+    """Get payment invoice by payment ID."""
+    return PaymentService(db).get_payment_invoice(current_user, payment_id)
 
 
 # ─── GET BY ID ──────────────────────────────────────────────────────────
@@ -145,69 +197,14 @@ def list_payments(
     "/{payment_id}",
     response_model=PaymentResponse,
     summary="Get payment by ID",
-    description=(
-        "Returns the full details of a single payment by its ID. "
-        "Access is restricted to the payment owner (customer) or an admin."
-    ),
-    response_description="The requested payment details.",
+    description="Returns the full details of a single payment by its ID.",
 )
 def get_payment(
     payment_id: int,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ) -> Any:
-    """Retrieve a single payment by its ID.
-
-    Args:
-        payment_id: The unique payment ID.
-        current_user: Authenticated user (JWT-protected).
-        db: Database session.
-
-    Returns:
-        PaymentResponse: The payment details.
-
-    Raises:
-        401: If not authenticated.
-        403: If not authorized to view this payment.
-        404: If the payment is not found.
-    """
+    """Retrieve a single payment by its ID."""
     return PaymentService(db).get_payment(current_user, payment_id)
 
-
-# ─── REFUND (Admin only) ────────────────────────────────────────────────
-
-
-@router.post(
-    "/{payment_id}/refund",
-    response_model=PaymentResponse,
-    summary="Refund a payment (Admin only)",
-    description=(
-        "**Admin-only.** Processes a refund through Razorpay and updates "
-        "the payment status to 'refunded'. The associated booking's "
-        "payment_status is also updated."
-    ),
-    response_description="The updated payment record with status 'refunded'.",
-)
-def refund_payment(
-    payment_id: int,
-    current_user: User = Depends(get_current_admin),
-    db: Session = Depends(get_db),
-) -> Any:
-    """Refund a payment (admin only).
-
-    Args:
-        payment_id: The unique payment ID.
-        current_user: Authenticated user (JWT-protected, must be admin).
-        db: Database session.
-
-    Returns:
-        PaymentResponse: The updated payment with status 'refunded'.
-
-    Raises:
-        401: If not authenticated.
-        403: If not an admin.
-        404: If the payment is not found.
-        400: If the payment is not in 'paid' status.
-    """
-    return PaymentService(db).refund_payment(current_user, payment_id)
 

@@ -9,10 +9,12 @@ Implements all booking business rules:
 - Estimated price defaults to Service.base_price
 - Admin-only technician assignment (Pending -> Assigned)
 - Technician / admin status updates with state-machine validation
-- Valid transitions: Assigned -> Accepted -> In Progress -> Completed
+- Valid lifecycle transitions (see _ALLOWED_TRANSITIONS)
 - Any active status -> Cancelled
 - Customers cannot assign technicians or change booking status
 - Role-scoped listing (admin sees all, customers see own, technicians see assigned)
+- Centralised transition validation returns 409 for invalid transitions
+- Every status change is recorded in the booking audit trail
 """
 
 from __future__ import annotations
@@ -28,14 +30,20 @@ from app.crud.booking import BookingCRUD
 from app.crud.customer import CustomerCRUD
 from app.crud.services import ServicesCRUD
 from app.crud.technician import TechnicianCRUD
-from app.models.bookings import Booking, BookingStatus
+from app.models.bookings import Booking, BookingStatus, BookingStatusLog
 from app.models.auth import User
 from app.schemas.bookings import (
-    BookingCreate,
-    BookingResponse,
-    BookingListResponse,
-    BookingUpdate,
+    AssignedTechnicianResponse,
     BookingAssignTechnician,
+    BookingCancelRequest,
+    BookingCreate,
+    BookingHistoryEntry,
+    BookingHistoryResponse,
+    BookingListResponse,
+    BookingRejectRequest,
+    BookingRescheduleRequest,
+    BookingResponse,
+    BookingUpdate,
 )
 
 
@@ -67,20 +75,36 @@ class BookingService:
             )
 
         return customer.id
-    
+
     def _generate_booking_number(self, booking_date: date) -> str:
         """
         Generate a unique booking number in the format HMQ-YYYYMMDD-XXXXXX.
 
         The sequence is reset daily based on the number of existing bookings
-        on the given date.  Under extremely high concurrency a retry / unique
-        constraint fallback could be added in a future iteration.
+        on the given date.  Because rescheduling changes ``booking_date``
+        without changing the booking number, the daily sequence can
+        occasionally collide with an existing number.  To keep the number
+        format stable and unique, the sequence is incremented until a
+        non-colliding number is found.
         """
+        base = booking_date.strftime("%Y%m%d")
         count = self.db.scalar(
             select(func.count(Booking.id)).where(Booking.booking_date == booking_date)
         ) or 0
         seq = int(count) + 1
-        return f"HMQ-{booking_date.strftime('%Y%m%d')}-{seq:06d}"
+        ticket = ""
+        while True:
+            candidate = f"HMQ-{base}-{seq:06d}"
+            exists = self.db.scalar(
+                select(func.count(Booking.id)).where(
+                    Booking.booking_number == candidate
+                )
+            ) or 0
+            if exists == 0:
+                ticket = candidate
+                break
+            seq += 1
+        return ticket
 
     # ── CREATE ─────────────────────────────────────────────────────────
 
@@ -470,7 +494,12 @@ class BookingService:
             )
 
         # Transition status to assigned
-        updated = self.crud.update_status(booking_id, BookingStatus.ASSIGNED)
+        updated = self._transition(
+            updated,
+            BookingStatus.ASSIGNED,
+            current_user,
+            reason=f"Assigned to technician #{payload.technician_id}",
+        )
         return BookingResponse.model_validate(updated)
 
     # ─── UPDATE STATUS ─────────────────────────────────────────────────
@@ -486,14 +515,9 @@ class BookingService:
         Update a booking's status with state-machine validation.
 
         Only the assigned technician or an admin may update the status.
-        The allowed transitions are:
-
-        - ``pending`` → (no direct transitions; use admin assign)
-        - ``assigned`` → ``accepted`` | ``cancelled``
-        - ``accepted`` → ``in_progress`` | ``cancelled``
-        - ``in_progress`` → ``completed`` | ``cancelled``
-        - ``completed`` → (terminal)
-        - ``cancelled`` → (terminal)
+        The allowed transitions are defined in ``_ALLOWED_TRANSITIONS``.
+        Invalid transitions raise ``409 CONFLICT``, and every change is
+        recorded in the booking's audit trail.
 
         **Admin override:** Administrators may perform *any* transition
         (including forcing a terminal status back to a previous state),
@@ -511,7 +535,7 @@ class BookingService:
         Raises:
             404: If the booking is not found.
             403: If the user is not authorised.
-            400: If the status transition is invalid.
+            409: If the status transition is invalid.
         """
         booking = self.crud.get_booking(booking_id)
         if not booking:
@@ -537,39 +561,587 @@ class BookingService:
                 self.db.refresh(booking)
             return BookingResponse.model_validate(booking)
 
-        # Allowed state transitions (non-admin)
-        # Pending can only transition to Assigned via admin assign_technician
-        allowed_transitions = {
-            BookingStatus.PENDING: set(),
-            BookingStatus.ASSIGNED: {
-                BookingStatus.ACCEPTED,
-                BookingStatus.CANCELLED,
-            },
-            BookingStatus.ACCEPTED: {
-                BookingStatus.IN_PROGRESS,
-                BookingStatus.CANCELLED,
-            },
-            BookingStatus.IN_PROGRESS: {
-                BookingStatus.COMPLETED,
-                BookingStatus.CANCELLED,
-            },
-            BookingStatus.COMPLETED: set(),
-            BookingStatus.CANCELLED: set(),
-        }
+        # Persist the admin note alongside the status change
+        if admin_note is not None:
+            self.crud.update_booking(booking_id, {"admin_note": admin_note})
 
-        # Admins may bypass the transition matrix for manual corrections
+        # Perform the transition (validates via _ALLOWED_TRANSITIONS and
+        # records an audit log entry).
+        updated = self._transition(booking, new_status, current_user, reason=admin_note)
+        return BookingResponse.model_validate(updated)
+
+    # ─── CENTRALISED TRANSITION MAP ────────────────────────────────────
+
+    # Allowed lifecycle transitions for non-admin users.
+    # Pending -> Assigned is performed exclusively by the admin assign flow.
+    _ALLOWED_TRANSITIONS: dict[BookingStatus, set[BookingStatus]] = {
+        BookingStatus.PENDING: set(),
+        BookingStatus.ASSIGNED: {
+            BookingStatus.ACCEPTED,
+            BookingStatus.REJECTED,
+            BookingStatus.CANCELLED,
+        },
+        BookingStatus.ACCEPTED: {
+            BookingStatus.ON_THE_WAY,
+            BookingStatus.CANCELLED,
+        },
+        BookingStatus.ON_THE_WAY: {
+            BookingStatus.ARRIVED,
+            BookingStatus.REJECTED,
+            BookingStatus.CANCELLED,
+        },
+        BookingStatus.ARRIVED: {
+            BookingStatus.WAITING_QR,
+            BookingStatus.IN_PROGRESS,
+            BookingStatus.REJECTED,
+            BookingStatus.CANCELLED,
+        },
+        BookingStatus.WAITING_QR: {
+            BookingStatus.QR_VERIFIED,
+            BookingStatus.CANCELLED,
+        },
+        BookingStatus.QR_VERIFIED: {
+            BookingStatus.IN_PROGRESS,
+            BookingStatus.CANCELLED,
+        },
+        BookingStatus.IN_PROGRESS: {
+            BookingStatus.COMPLETED,
+            BookingStatus.CANCELLED,
+        },
+        BookingStatus.COMPLETED: {
+            BookingStatus.WAITING_PAYMENT,
+        },
+        BookingStatus.WAITING_PAYMENT: {
+            BookingStatus.PAID,
+        },
+        BookingStatus.PAID: {
+            BookingStatus.REVIEW_PENDING,
+        },
+        BookingStatus.REVIEW_PENDING: {
+            BookingStatus.CLOSED,
+        },
+        BookingStatus.CLOSED: set(),
+        BookingStatus.CANCELLED: set(),
+        BookingStatus.EXPIRED: set(),
+        BookingStatus.REJECTED: set(),
+    }
+
+    # Statuses that are terminal (no further transitions for non-admins).
+    _TERMINAL_STATUSES: set[BookingStatus] = {
+        BookingStatus.CLOSED,
+        BookingStatus.CANCELLED,
+        BookingStatus.EXPIRED,
+        BookingStatus.REJECTED,
+    }
+
+    # Customer-cancel allowed source statuses.
+    _CUSTOMER_CANCELABLE: set[BookingStatus] = {
+        BookingStatus.PENDING,
+        BookingStatus.ASSIGNED,
+        BookingStatus.ACCEPTED,
+        BookingStatus.ON_THE_WAY,
+    }
+
+    # Customer-reschedule allowed source statuses.
+    _RESCHEDULABLE: set[BookingStatus] = {
+        BookingStatus.PENDING,
+        BookingStatus.ASSIGNED,
+        BookingStatus.ACCEPTED,
+    }
+
+    # ─── TRANSITION + AUDIT HELPER ────────────────────────────────────
+
+    def _validate_transition(
+        self,
+        booking: Booking,
+        new_status: BookingStatus,
+        current_user: User,
+    ) -> None:
+        """Validate a status transition against the lifecycle map.
+
+        Admins may bypass the map for manual corrections.  Non-admins must
+        follow the allowed transitions.  Invalid transitions raise 409.
+        """
+        if new_status == booking.status:
+            return
+
         if not current_user.is_superuser:
-            allowed_next = allowed_transitions.get(booking.status, set())
+            allowed_next = self._ALLOWED_TRANSITIONS.get(booking.status, set())
             if new_status not in allowed_next:
                 raise HTTPException(
-                    status_code=status.HTTP_400_BAD_REQUEST,
+                    status_code=status.HTTP_409_CONFLICT,
                     detail=(
                         f"Invalid status transition: "
                         f"'{booking.status.value}' -> '{new_status.value}'"
                     ),
                 )
 
-        # Persist the admin note alongside the status change
+    def _transition(
+        self,
+        booking: Booking,
+        new_status: BookingStatus,
+        current_user: User,
+        reason: Optional[str] = None,
+    ) -> Booking:
+        """Perform a status transition and record an audit log entry.
+
+        The booking object is mutated in place and committed.  A
+        ``BookingStatusLog`` entry is created for every change.
+        """
+        old_status = booking.status
+
+        if old_status == new_status:
+            return booking
+
+        self._validate_transition(booking, new_status, current_user)
+
+        booking.status = new_status
+        self.db.commit()
+        self.db.refresh(booking)
+
+        self.crud.create_status_log(
+            booking_id=booking.id,
+            old_status=old_status,
+            new_status=new_status,
+            changed_by_user_id=current_user.id,
+            reason=reason,
+        )
+
+        return booking
+
+    # ─── HELPER: load + authorise ─────────────────────────────────────
+
+    def _get_booking_for(self, current_user: User, booking_id: int) -> Booking:
+        """Load a booking and verify basic read access (owner/tech/admin)."""
+        booking = self.crud.get_booking(booking_id)
+        if not booking:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Booking not found",
+            )
+
+        is_owner = booking.customer and booking.customer.user_id == current_user.id
+        is_technician = (
+            booking.technician and booking.technician.user_id == current_user.id
+        )
+        if not (is_owner or is_technician or current_user.is_superuser):
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Not authorized to access this booking",
+            )
+        return booking
+
+    def _get_technician_id(self, current_user: User) -> int:
+        """Resolve the Technician record id for the current user."""
+        technician = self.technician_crud.get_by_user_id(current_user.id)
+        if not technician:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Technician profile not found.",
+            )
+        return technician.id
+
+    # ─── CUSTOMER: CANCEL ─────────────────────────────────────────────
+
+    def cancel_booking(
+        self,
+        current_user: User,
+        booking_id: int,
+        payload: BookingCancelRequest,
+    ) -> BookingResponse:
+        """Cancel a booking.
+
+        The booking owner (customer) or an admin may cancel.  Customers may
+        only cancel from the ``PENDING / ASSIGNED / ACCEPTED / ON_THE_WAY``
+        statuses.
+        """
+        booking = self._get_booking_for(current_user, booking_id)
+
+        is_owner = booking.customer and booking.customer.user_id == current_user.id
+        if not (is_owner or current_user.is_superuser):
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Not authorized to cancel this booking",
+            )
+
+        if not current_user.is_superuser and booking.status not in self._CUSTOMER_CANCELABLE:
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail=(
+                    f"Booking cannot be cancelled from status "
+                    f"'{booking.status.value}'"
+                ),
+            )
+
+        updated = self._transition(
+            booking,
+            BookingStatus.CANCELLED,
+            current_user,
+            reason=payload.reason,
+        )
+        return BookingResponse.model_validate(updated)
+
+    # ─── CUSTOMER: RESCHEDULE ─────────────────────────────────────────
+
+    def reschedule_booking(
+        self,
+        current_user: User,
+        booking_id: int,
+        payload: BookingRescheduleRequest,
+    ) -> BookingResponse:
+        """Reschedule a booking.
+
+        The booking owner (customer) or an admin may reschedule.  Customers
+        may only reschedule from ``PENDING / ASSIGNED / ACCEPTED``.
+        """
+        booking = self._get_booking_for(current_user, booking_id)
+
+        is_owner = booking.customer and booking.customer.user_id == current_user.id
+        if not (is_owner or current_user.is_superuser):
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Not authorized to reschedule this booking",
+            )
+
+        if not current_user.is_superuser and booking.status not in self._RESCHEDULABLE:
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail=(
+                    f"Booking cannot be rescheduled from status "
+                    f"'{booking.status.value}'"
+                ),
+            )
+
+        updated = self.crud.update_booking(
+            booking_id,
+            {
+                "booking_date": payload.booking_date,
+                "preferred_time": payload.preferred_time,
+            },
+        )
+        if not updated:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Failed to reschedule booking",
+            )
+        return BookingResponse.model_validate(updated)
+
+    # ─── CUSTOMER: HISTORY ────────────────────────────────────────────
+
+    def get_booking_history(
+        self,
+        current_user: User,
+        booking_id: int,
+        offset: int = 0,
+        limit: int = 100,
+    ) -> BookingHistoryResponse:
+        """Return the status-change history (audit trail) for a booking."""
+        booking = self._get_booking_for(current_user, booking_id)
+
+        logs = self.crud.list_status_logs(booking_id, offset=offset, limit=limit)
+        total = self.crud.count_status_logs(booking_id)
+
+        return BookingHistoryResponse(
+            items=[BookingHistoryEntry.model_validate(log) for log in logs],
+            total=int(total),
+        )
+
+    # ─── CUSTOMER: TRACK ─────────────────────────────────────────────
+
+    def track_booking(self, current_user: User, booking_id: int) -> BookingResponse:
+        """Alias for viewing a booking (used by the track endpoint)."""
+        return self.get_booking(current_user, booking_id)
+
+    # ─── CUSTOMER: ASSIGNED TECHNICIAN ───────────────────────────────
+
+    def get_assigned_technician(
+        self,
+        current_user: User,
+        booking_id: int,
+    ) -> AssignedTechnicianResponse:
+        """Return the technician assigned to a booking."""
+        booking = self._get_booking_for(current_user, booking_id)
+
+        technician = booking.technician
+        if not technician:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="No technician assigned to this booking",
+            )
+
+        return AssignedTechnicianResponse(
+            id=technician.id,
+            user_id=technician.user_id,
+            full_name=technician.user.full_name,
+            phone=technician.user.phone,
+            specialization=technician.specialization,
+            rating=technician.rating,
+            reviews_count=technician.reviews_count,
+            profile_image=technician.profile_image,
+        )
+
+    # ─── TECHNICIAN: ACCEPT / REJECT ─────────────────────────────────
+
+    def accept_booking(
+        self,
+        current_user: User,
+        booking_id: int,
+        payload: BookingRejectRequest,
+    ) -> BookingResponse:
+        """Accept an assigned booking (technician or admin)."""
+        booking = self._get_booking_for(current_user, booking_id)
+        self._ensure_technician_role(current_user, booking)
+        self._ensure_transition_change(booking, BookingStatus.ACCEPTED)
+
+        updated = self._transition(
+            booking,
+            BookingStatus.ACCEPTED,
+            current_user,
+            reason=payload.reason,
+        )
+        return BookingResponse.model_validate(updated)
+
+    def reject_booking(
+        self,
+        current_user: User,
+        booking_id: int,
+        payload: BookingRejectRequest,
+    ) -> BookingResponse:
+        """Reject an assigned booking (technician or admin)."""
+        booking = self._get_booking_for(current_user, booking_id)
+        self._ensure_technician_role(current_user, booking)
+        self._ensure_transition_change(booking, BookingStatus.REJECTED)
+
+        updated = self._transition(
+            booking,
+            BookingStatus.REJECTED,
+            current_user,
+            reason=payload.reason,
+        )
+        return BookingResponse.model_validate(updated)
+
+    # ─── TECHNICIAN: TRIP LIFECYCLE ──────────────────────────────────
+
+    def start_trip(
+        self,
+        current_user: User,
+        booking_id: int,
+        payload: BookingRejectRequest,
+    ) -> BookingResponse:
+        """Mark the technician as on the way (technician or admin)."""
+        booking = self._get_booking_for(current_user, booking_id)
+        self._ensure_technician_role(current_user, booking)
+        self._ensure_transition_change(booking, BookingStatus.ON_THE_WAY)
+
+        updated = self._transition(
+            booking,
+            BookingStatus.ON_THE_WAY,
+            current_user,
+            reason=payload.reason,
+        )
+        return BookingResponse.model_validate(updated)
+
+    def mark_arrived(
+        self,
+        current_user: User,
+        booking_id: int,
+        payload: BookingRejectRequest,
+    ) -> BookingResponse:
+        """Mark the technician as arrived (technician or admin)."""
+        booking = self._get_booking_for(current_user, booking_id)
+        self._ensure_technician_role(current_user, booking)
+        self._ensure_transition_change(booking, BookingStatus.ARRIVED)
+
+        updated = self._transition(
+            booking,
+            BookingStatus.ARRIVED,
+            current_user,
+            reason=payload.reason,
+        )
+        return BookingResponse.model_validate(updated)
+
+    def start_service(
+        self,
+        current_user: User,
+        booking_id: int,
+        payload: BookingRejectRequest,
+    ) -> BookingResponse:
+        """Start the service for a booking (technician or admin)."""
+        booking = self._get_booking_for(current_user, booking_id)
+        self._ensure_technician_role(current_user, booking)
+        self._ensure_transition_change(booking, BookingStatus.IN_PROGRESS)
+
+        updated = self._transition(
+            booking,
+            BookingStatus.IN_PROGRESS,
+            current_user,
+            reason=payload.reason,
+        )
+        return BookingResponse.model_validate(updated)
+
+    def complete_service(
+        self,
+        current_user: User,
+        booking_id: int,
+        payload: BookingRejectRequest,
+    ) -> BookingResponse:
+        """Complete the service for a booking (technician or admin)."""
+        booking = self._get_booking_for(current_user, booking_id)
+        self._ensure_technician_role(current_user, booking)
+        self._ensure_transition_change(booking, BookingStatus.COMPLETED)
+
+        updated = self._transition(
+            booking,
+            BookingStatus.COMPLETED,
+            current_user,
+            reason=payload.reason,
+        )
+        return BookingResponse.model_validate(updated)
+
+    # ─── TECHNICIAN: HELPERS ─────────────────────────────────────────
+
+    def _ensure_technician_role(self, current_user: User, booking: Booking) -> None:
+        """Ensure the current user is the assigned technician or an admin."""
+        if current_user.is_superuser:
+            return
+        is_technician = (
+            booking.technician and booking.technician.user_id == current_user.id
+        )
+        if not is_technician:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Not authorized to perform this action on this booking",
+            )
+
+    def _ensure_transition_change(
+        self, booking: Booking, new_status: BookingStatus
+    ) -> None:
+        """Reject a no-op (duplicate) action with 409."""
+        if booking.status == new_status:
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail=(
+                    f"Booking is already in status '{new_status.value}'; "
+                    f"this action has already been performed"
+                ),
+            )
+
+    # ─── ADMIN: REASSIGN ─────────────────────────────────────────────
+
+    def reassign_technician(
+        self,
+        current_user: User,
+        booking_id: int,
+        payload: BookingAssignTechnician,
+    ) -> BookingResponse:
+        """Reassign a booking to a different technician (admin only)."""
+        if not current_user.is_superuser:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Admin credentials required to reassign technician",
+            )
+
+        booking = self.crud.get_booking(booking_id)
+        if not booking:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Booking not found",
+            )
+
+        if booking.status in self._TERMINAL_STATUSES:
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail=(
+                    f"Cannot reassign a booking in terminal status "
+                    f"'{booking.status.value}'"
+                ),
+            )
+
+        technician = self.technician_crud.get_by_technician_id(payload.technician_id)
+        if not technician:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Technician not found",
+            )
+
+        updated = self.crud.reassign_technician(booking_id, payload.technician_id)
+        if not updated:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Failed to reassign technician",
+            )
+
+        # Return the booking to ASSIGNED so the new technician can accept.
+        updated = self._transition(
+            updated,
+            BookingStatus.ASSIGNED,
+            current_user,
+            reason=f"Reassigned to technician #{payload.technician_id}",
+        )
+        return BookingResponse.model_validate(updated)
+
+    # ─── ADMIN: FORCE CANCEL ─────────────────────────────────────────
+
+    def force_cancel_booking(
+        self,
+        current_user: User,
+        booking_id: int,
+        payload: BookingCancelRequest,
+    ) -> BookingResponse:
+        """Force-cancel a booking regardless of its status (admin only)."""
+        if not current_user.is_superuser:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Admin credentials required to force cancel booking",
+            )
+
+        booking = self.crud.get_booking(booking_id)
+        if not booking:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Booking not found",
+            )
+
+        if booking.status == BookingStatus.CANCELLED:
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail="Booking is already cancelled",
+            )
+
+        updated = self._transition(
+            booking,
+            BookingStatus.CANCELLED,
+            current_user,
+            reason=payload.reason or "Forced cancellation by admin",
+        )
+        return BookingResponse.model_validate(updated)
+
+    # ─── ADMIN: OVERRIDE STATUS ──────────────────────────────────────
+
+    def override_status(
+        self,
+        current_user: User,
+        booking_id: int,
+        new_status: BookingStatus,
+        admin_note: Optional[str] = None,
+    ) -> BookingResponse:
+        """Admin-only status override that bypasses the transition map."""
+        if not current_user.is_superuser:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Admin credentials required to override booking status",
+            )
+
+        booking = self.crud.get_booking(booking_id)
+        if not booking:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Booking not found",
+            )
+
+        if new_status == booking.status:
+            return BookingResponse.model_validate(booking)
+
         update_data: dict[str, Any] = {"status": new_status}
         if admin_note is not None:
             update_data["admin_note"] = admin_note
@@ -578,6 +1150,14 @@ class BookingService:
         if not updated:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Failed to update status",
+                detail="Failed to override status",
             )
+
+        self.crud.create_status_log(
+            booking_id=booking.id,
+            old_status=booking.status,
+            new_status=new_status,
+            changed_by_user_id=current_user.id,
+            reason=admin_note or "Admin status override",
+        )
         return BookingResponse.model_validate(updated)

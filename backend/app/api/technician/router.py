@@ -10,11 +10,13 @@ from app.security.deps import get_current_technician, get_current_user
 from app.schemas.technician import (
     GovernmentIdImageResponse,
     ProfileImageResponse,
+    TechnicianActionRequest,
     TechnicianAvailabilityResponse,
     TechnicianAvailabilityUpdate,
     TechnicianCreate,
     TechnicianEarningsResponse,
     TechnicianJobListResponse,
+    TechnicianJobResponse,
     TechnicianResponse,
     TechnicianUpdate,
 )
@@ -82,6 +84,34 @@ async def upload_government_id(
     return await service.upload_government_id(current_user, file)
 
 
+@router.patch(
+    "/online",
+    response_model=TechnicianAvailabilityResponse,
+    summary="Set technician online",
+    description="Marks the technician as online and available for bookings.",
+)
+def set_online(
+    current_user: User = Depends(get_current_technician),
+    db: Session = Depends(get_db),
+) -> Any:
+    service = TechnicianService(db)
+    return service.set_online(current_user)
+
+
+@router.patch(
+    "/offline",
+    response_model=TechnicianAvailabilityResponse,
+    summary="Set technician offline",
+    description="Marks the technician as offline and unavailable.",
+)
+def set_offline(
+    current_user: User = Depends(get_current_technician),
+    db: Session = Depends(get_db),
+) -> Any:
+    service = TechnicianService(db)
+    return service.set_offline(current_user)
+
+
 @router.get(
     "/",
     response_model=list[TechnicianResponse],
@@ -102,7 +132,7 @@ def list_technicians(
     )
 
 
-# ── Jobs ──────────────────────────────────────────────────────────────
+# ── Jobs & Bookings ───────────────────────────────────────────────────
 
 
 @router.get(
@@ -123,6 +153,165 @@ def get_my_jobs(
     return service.get_my_jobs(
         current_user, status=status, offset=offset, limit=limit
     )
+
+
+@router.get(
+    "/bookings",
+    response_model=TechnicianJobListResponse,
+    summary="Get technician bookings",
+    description="Returns bookings assigned to the authenticated technician, optionally filtered by status.",
+)
+def get_technician_bookings(
+    status: str | None = None,
+    offset: int = 0,
+    limit: int = 100,
+    current_user: User = Depends(get_current_technician),
+    db: Session = Depends(get_db),
+) -> Any:
+    """Get bookings assigned to the authenticated technician."""
+    service = TechnicianService(db)
+    return service.get_my_jobs(
+        current_user, status=status, offset=offset, limit=limit
+    )
+
+
+@router.get(
+    "/bookings/active",
+    response_model=TechnicianJobListResponse,
+    summary="Get active technician bookings",
+    description="Returns active (in-flight) bookings assigned to the technician.",
+)
+def get_active_bookings(
+    offset: int = 0,
+    limit: int = 100,
+    current_user: User = Depends(get_current_technician),
+    db: Session = Depends(get_db),
+) -> Any:
+    """Get active in-flight bookings assigned to technician."""
+    service = TechnicianService(db)
+    return service.get_active_bookings(current_user, offset=offset, limit=limit)
+
+
+@router.get(
+    "/history",
+    response_model=TechnicianJobListResponse,
+    summary="Get technician booking history",
+    description="Returns past/completed booking history for the technician.",
+)
+def get_booking_history(
+    offset: int = 0,
+    limit: int = 100,
+    current_user: User = Depends(get_current_technician),
+    db: Session = Depends(get_db),
+) -> Any:
+    """Get completed/past booking history for technician."""
+    service = TechnicianService(db)
+    return service.get_booking_history(current_user, offset=offset, limit=limit)
+
+
+# ── Booking Action Workflow ───────────────────────────────────────────
+
+
+@router.patch(
+    "/bookings/{id}/accept",
+    response_model=TechnicianJobResponse,
+    summary="Accept booking",
+    description="Accept an assigned booking.",
+)
+def accept_booking(
+    id: int,
+    payload: TechnicianActionRequest = TechnicianActionRequest(),
+    current_user: User = Depends(get_current_technician),
+    db: Session = Depends(get_db),
+) -> Any:
+    """Accept an assigned booking."""
+    service = TechnicianService(db)
+    return service.accept_booking(current_user, id, reason=payload.reason)
+
+
+@router.patch(
+    "/bookings/{id}/reject",
+    response_model=TechnicianJobResponse,
+    summary="Reject booking",
+    description="Reject an assigned booking.",
+)
+def reject_booking(
+    id: int,
+    payload: TechnicianActionRequest = TechnicianActionRequest(),
+    current_user: User = Depends(get_current_technician),
+    db: Session = Depends(get_db),
+) -> Any:
+    """Reject an assigned booking."""
+    service = TechnicianService(db)
+    return service.reject_booking(current_user, id, reason=payload.reason)
+
+
+@router.patch(
+    "/bookings/{id}/start-trip",
+    response_model=TechnicianJobResponse,
+    summary="Start trip",
+    description="Start navigation to job location (marks status as on_the_way).",
+)
+def start_trip(
+    id: int,
+    payload: TechnicianActionRequest = TechnicianActionRequest(),
+    current_user: User = Depends(get_current_technician),
+    db: Session = Depends(get_db),
+) -> Any:
+    """Start trip to customer location."""
+    service = TechnicianService(db)
+    return service.start_trip(current_user, id, reason=payload.reason)
+
+
+@router.patch(
+    "/bookings/{id}/arrived",
+    response_model=TechnicianJobResponse,
+    summary="Mark arrived",
+    description="Mark arrival at customer location (marks status as arrived).",
+)
+def mark_arrived(
+    id: int,
+    payload: TechnicianActionRequest = TechnicianActionRequest(),
+    current_user: User = Depends(get_current_technician),
+    db: Session = Depends(get_db),
+) -> Any:
+    """Mark arrival at job location."""
+    service = TechnicianService(db)
+    return service.mark_arrived(current_user, id, reason=payload.reason)
+
+
+@router.patch(
+    "/bookings/{id}/start-service",
+    response_model=TechnicianJobResponse,
+    summary="Start service",
+    description="Start working on the service (marks status as in_progress).",
+)
+def start_service(
+    id: int,
+    payload: TechnicianActionRequest = TechnicianActionRequest(),
+    current_user: User = Depends(get_current_technician),
+    db: Session = Depends(get_db),
+) -> Any:
+    """Start performing service."""
+    service = TechnicianService(db)
+    return service.start_service(current_user, id, reason=payload.reason)
+
+
+@router.patch(
+    "/bookings/{id}/complete",
+    response_model=TechnicianJobResponse,
+    summary="Complete service",
+    description="Complete the service (marks status as completed).",
+)
+def complete_service(
+    id: int,
+    payload: TechnicianActionRequest = TechnicianActionRequest(),
+    current_user: User = Depends(get_current_technician),
+    db: Session = Depends(get_db),
+) -> Any:
+    """Complete service work."""
+    service = TechnicianService(db)
+    return service.complete_service(current_user, id, reason=payload.reason)
 
 
 # ── Earnings ──────────────────────────────────────────────────────────
@@ -178,3 +367,4 @@ def get_technician_dashboard(
     """Get the technician dashboard with job stats and today's schedule."""
     service = TechnicianDashboardService(db)
     return service.get_dashboard(current_user)
+

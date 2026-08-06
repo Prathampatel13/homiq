@@ -5,7 +5,7 @@ from sqlalchemy.orm import Session, joinedload
 
 from app.models.auth import User
 from app.models.users import Customer, Technician
-from app.models.bookings import Booking
+from app.models.bookings import Booking, BookingStatus
 
 
 class TechnicianCRUD:
@@ -110,3 +110,125 @@ class TechnicianCRUD:
         if status:
             stmt = stmt.where(Booking.status == status)
         return self.db.scalar(stmt) or 0
+
+    def get_active_bookings(
+        self,
+        technician_id: int,
+        offset: int = 0,
+        limit: int = 100,
+    ) -> list[Booking]:
+        """Return active (in-flight/pending execution) bookings assigned to a technician."""
+        active_statuses = [
+            BookingStatus.ASSIGNED,
+            BookingStatus.ACCEPTED,
+            BookingStatus.ON_THE_WAY,
+            BookingStatus.ARRIVED,
+            BookingStatus.WAITING_QR,
+            BookingStatus.QR_VERIFIED,
+            BookingStatus.IN_PROGRESS,
+        ]
+        stmt = (
+            select(Booking)
+            .options(
+                joinedload(Booking.customer).joinedload(Customer.user),
+                joinedload(Booking.service),
+                joinedload(Booking.address),
+            )
+            .where(
+                Booking.technician_id == technician_id,
+                Booking.status.in_(active_statuses),
+            )
+            .order_by(Booking.created_at.desc())
+            .offset(offset)
+            .limit(limit)
+        )
+        return list(self.db.execute(stmt).scalars().all())
+
+    def count_active_bookings(self, technician_id: int) -> int:
+        """Count active bookings assigned to a technician."""
+        active_statuses = [
+            BookingStatus.ASSIGNED,
+            BookingStatus.ACCEPTED,
+            BookingStatus.ON_THE_WAY,
+            BookingStatus.ARRIVED,
+            BookingStatus.WAITING_QR,
+            BookingStatus.QR_VERIFIED,
+            BookingStatus.IN_PROGRESS,
+        ]
+        stmt = select(func.count(Booking.id)).where(
+            Booking.technician_id == technician_id,
+            Booking.status.in_(active_statuses),
+        )
+        return self.db.scalar(stmt) or 0
+
+    def get_booking_history(
+        self,
+        technician_id: int,
+        offset: int = 0,
+        limit: int = 100,
+    ) -> list[Booking]:
+        """Return historical (completed/terminal) bookings assigned to a technician."""
+        history_statuses = [
+            BookingStatus.COMPLETED,
+            BookingStatus.WAITING_PAYMENT,
+            BookingStatus.PAID,
+            BookingStatus.REVIEW_PENDING,
+            BookingStatus.CLOSED,
+            BookingStatus.CANCELLED,
+            BookingStatus.EXPIRED,
+            BookingStatus.REJECTED,
+        ]
+        stmt = (
+            select(Booking)
+            .options(
+                joinedload(Booking.customer).joinedload(Customer.user),
+                joinedload(Booking.service),
+                joinedload(Booking.address),
+            )
+            .where(
+                Booking.technician_id == technician_id,
+                Booking.status.in_(history_statuses),
+            )
+            .order_by(Booking.created_at.desc())
+            .offset(offset)
+            .limit(limit)
+        )
+        return list(self.db.execute(stmt).scalars().all())
+
+    def count_booking_history(self, technician_id: int) -> int:
+        """Count historical bookings assigned to a technician."""
+        history_statuses = [
+            BookingStatus.COMPLETED,
+            BookingStatus.WAITING_PAYMENT,
+            BookingStatus.PAID,
+            BookingStatus.REVIEW_PENDING,
+            BookingStatus.CLOSED,
+            BookingStatus.CANCELLED,
+            BookingStatus.EXPIRED,
+            BookingStatus.REJECTED,
+        ]
+        stmt = select(func.count(Booking.id)).where(
+            Booking.technician_id == technician_id,
+            Booking.status.in_(history_statuses),
+        )
+        return self.db.scalar(stmt) or 0
+
+    def has_active_booking(self, technician_id: int, exclude_booking_id: Optional[int] = None) -> bool:
+        """Check if technician has another booking currently in progress (ACCEPTED through IN_PROGRESS)."""
+        busy_statuses = [
+            BookingStatus.ACCEPTED,
+            BookingStatus.ON_THE_WAY,
+            BookingStatus.ARRIVED,
+            BookingStatus.WAITING_QR,
+            BookingStatus.QR_VERIFIED,
+            BookingStatus.IN_PROGRESS,
+        ]
+        stmt = select(func.count(Booking.id)).where(
+            Booking.technician_id == technician_id,
+            Booking.status.in_(busy_statuses),
+        )
+        if exclude_booking_id:
+            stmt = stmt.where(Booking.id != exclude_booking_id)
+        count = self.db.scalar(stmt) or 0
+        return count > 0
+

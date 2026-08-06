@@ -48,19 +48,37 @@ class CustomerDashboardService:
         active_bookings = self.db.scalar(
             select(func.count(Booking.id)).where(
                 Booking.customer_id == customer_id,
-                Booking.status.in_([BookingStatus.ASSIGNED, BookingStatus.ACCEPTED, BookingStatus.IN_PROGRESS]),
+                Booking.status.in_([
+                    BookingStatus.ASSIGNED,
+                    BookingStatus.ACCEPTED,
+                    BookingStatus.ON_THE_WAY,
+                    BookingStatus.ARRIVED,
+                    BookingStatus.WAITING_QR,
+                    BookingStatus.QR_VERIFIED,
+                    BookingStatus.IN_PROGRESS,
+                ]),
             )
         ) or 0
         completed_bookings = self.db.scalar(
             select(func.count(Booking.id)).where(
                 Booking.customer_id == customer_id,
-                Booking.status == BookingStatus.COMPLETED,
+                Booking.status.in_([
+                    BookingStatus.COMPLETED,
+                    BookingStatus.WAITING_PAYMENT,
+                    BookingStatus.PAID,
+                    BookingStatus.REVIEW_PENDING,
+                    BookingStatus.CLOSED,
+                ]),
             )
         ) or 0
         cancelled_bookings = self.db.scalar(
             select(func.count(Booking.id)).where(
                 Booking.customer_id == customer_id,
-                Booking.status == BookingStatus.CANCELLED,
+                Booking.status.in_([
+                    BookingStatus.CANCELLED,
+                    BookingStatus.EXPIRED,
+                    BookingStatus.REJECTED,
+                ]),
             )
         ) or 0
 
@@ -94,7 +112,15 @@ class CustomerDashboardService:
             select(func.count(Booking.id)).where(
                 Booking.customer_id == customer_id,
                 Booking.booking_date >= now.date(),
-                Booking.status.in_([BookingStatus.PENDING, BookingStatus.ASSIGNED, BookingStatus.ACCEPTED]),
+                Booking.status.in_([
+                    BookingStatus.PENDING,
+                    BookingStatus.ASSIGNED,
+                    BookingStatus.ACCEPTED,
+                    BookingStatus.ON_THE_WAY,
+                    BookingStatus.ARRIVED,
+                    BookingStatus.WAITING_QR,
+                    BookingStatus.QR_VERIFIED,
+                ]),
             )
         ) or 0
 
@@ -150,7 +176,15 @@ class CustomerDashboardService:
             .where(
                 Booking.customer_id == customer_id,
                 Booking.booking_date >= date.today(),
-                Booking.status.in_([BookingStatus.PENDING, BookingStatus.ASSIGNED, BookingStatus.ACCEPTED]),
+                Booking.status.in_([
+                    BookingStatus.PENDING,
+                    BookingStatus.ASSIGNED,
+                    BookingStatus.ACCEPTED,
+                    BookingStatus.ON_THE_WAY,
+                    BookingStatus.ARRIVED,
+                    BookingStatus.WAITING_QR,
+                    BookingStatus.QR_VERIFIED,
+                ]),
             )
             .order_by(Booking.booking_date.asc(), Booking.preferred_time.asc())
             .limit(1)

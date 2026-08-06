@@ -34,3 +34,35 @@ class NotificationListResponse(BaseModel):
 class NotificationMarkRead(BaseModel):
     notification_ids: list[int] = Field(..., min_length=1, description="List of notification IDs to mark as read")
 
+
+# ─── Notification System Extensions ─────────────────────────────────────
+
+
+class UnreadNotificationsResponse(BaseModel):
+    items: list[NotificationResponse]
+    unread_count: int
+
+    model_config = {"from_attributes": True}
+
+
+class MultiChannelNotificationCreate(BaseModel):
+    user_id: int = Field(..., gt=0)
+    title: str = Field(..., min_length=1, max_length=255)
+    message: str = Field(..., min_length=1, max_length=5000)
+    channels: list[str] = Field(default_factory=lambda: ["email", "sms", "push", "in_app"])
+    recipient_email: Optional[str] = None
+    recipient_phone: Optional[str] = None
+    fcm_token: Optional[str] = None
+    data: Optional[dict] = None
+
+
+class NotificationDispatchResult(BaseModel):
+    user_id: int
+    title: str
+    channels_sent: list[str]
+    email_status: str = "skipped"
+    sms_status: str = "skipped"
+    push_status: str = "skipped"
+    in_app_status: str = "skipped"
+
+

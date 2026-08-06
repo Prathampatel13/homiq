@@ -42,3 +42,54 @@ class PaymentResponse(BaseModel):
 class PaymentListResponse(BaseModel):
     items: list[PaymentResponse]
     total: int
+
+
+# ─── Payment Extensions (Refund, Webhook, History, Invoice) ──────────────
+
+
+class PaymentRefundRequest(BaseModel):
+    payment_id: int = Field(..., gt=0)
+    reason: Optional[str] = None
+    amount: Optional[float] = Field(None, gt=0)
+
+
+class PaymentWebhookPayload(BaseModel):
+    event: str
+    payload: dict = Field(default_factory=dict)
+
+
+class PaymentHistoryEntry(BaseModel):
+    id: int
+    booking_id: int
+    booking_number: Optional[str] = None
+    service_name: Optional[str] = None
+    amount: float
+    currency: str
+    status: PaymentStatus
+    payment_method: PaymentMethod
+    created_at: datetime
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class PaymentHistoryResponse(BaseModel):
+    items: list[PaymentHistoryEntry]
+    total: int
+
+
+class PaymentInvoiceResponse(BaseModel):
+    invoice_id: int
+    invoice_number: str
+    booking_id: int
+    customer_name: str
+    technician_name: Optional[str] = None
+    service_name: str
+    subtotal: float
+    gst_amount: float
+    discount_amount: float
+    total_amount: float
+    payment_method: str
+    status: str
+    paid_at: datetime
+
+    model_config = ConfigDict(from_attributes=True)

@@ -1,7 +1,7 @@
 from datetime import datetime, timedelta, timezone
 from typing import Optional
 
-from sqlalchemy import select
+from sqlalchemy import func, or_, select
 from sqlalchemy.orm import Session
 
 from app.core.config import settings
@@ -37,14 +37,28 @@ class UserCRUD:
                 raise ValueError("Password or password_hash is required")
             password_hash = hash_password(password)
 
+        # Normalize role name
+        normalized_role = role_name.strip().lower()
+
+        role_mapping = {
+            "customer": "customer",
+            "role_customer": "customer",
+            "technician": "technician",
+            "role_technician": "technician",
+            "company": "company",
+            "role_company": "company",
+            "admin": "admin",
+            "role_admin": "admin",
+        }
+
+        normalized_role = role_mapping.get(normalized_role, normalized_role)
+
         role = self.db.scalar(
-            select(Role).where(Role.name == role_name)
+            select(Role).where(Role.name == normalized_role)
         )
 
         if role is None:
-            role = Role(name=role_name)
-            self.db.add(role)
-            self.db.flush()
+            raise ValueError(f"Invalid role: {role_name}")
 
         user = User(
             email=email,
@@ -54,22 +68,36 @@ class UserCRUD:
             role=role,
             is_active=True,
             is_verified=False,
-            is_superuser=False,
+            is_superuser=(normalized_role == "admin"),
         )
 
         self.db.add(user)
-        self.db.flush()  # ensure user.id is populated
+        self.db.flush()
 
-        # Auto-create the role-specific profile record so that
-        # /customer/profile, /technician/profile etc. work immediately.
-        from app.models.users import Customer, Technician
+        from app.models.users import Company, Customer, Technician
 
-        if role_name.lower() == "customer":
-            customer = Customer(user_id=user.id, phone=phone)
-            self.db.add(customer)
-        elif role_name.lower() == "technician":
-            technician = Technician(user_id=user.id)
-            self.db.add(technician)
+        if normalized_role == "customer":
+            self.db.add(
+                Customer(
+                    user_id=user.id,
+                    phone=phone,
+                )
+            )
+
+        elif normalized_role == "technician":
+            self.db.add(
+                Technician(
+                    user_id=user.id,
+                )
+            )
+
+        elif normalized_role == "company":
+            self.db.add(
+                Company(
+                    user_id=user.id,
+                    company_name=full_name,
+                )
+            )
 
         self.db.commit()
         self.db.refresh(user)
@@ -178,3 +206,84 @@ class UserCRUD:
             "refresh_token": refresh_token,
             "token_type": "bearer",
         }
+
+    # ── Admin User Management CRUD ─────────────────────────────────────
+
+    def list_users(
+        self,
+        query: Optional[str] = None,
+        role: Optional[str] = None,
+        is_active: Optional[bool] = None,
+        offset: int = 0,
+        limit: int = 100,
+    ) -> list[User]:
+        """List users with search, role filter, and active status filter."""
+        stmt = select(User).join(Role, User.role_id == Role.id)
+        if query:
+            stmt = stmt.where(
+                or_(
+                    User.full_name.ilike(f"%{query}%"),
+                    User.email.ilike(f"%{query}%"),
+                    User.phone.ilike(f"%{query}%"),
+                )
+            )
+        if role:
+            stmt = stmt.where(Role.name.ilike(role))
+        if is_active is not None:
+            stmt = stmt.where(User.is_active == is_active)
+
+        stmt = stmt.order_by(User.created_at.desc()).offset(offset).limit(limit)
+        return list(self.db.execute(stmt).scalars().all())
+
+    def count_users(
+        self,
+        query: Optional[str] = None,
+        role: Optional[str] = None,
+        is_active: Optional[bool] = None,
+    ) -> int:
+        """Count users matching search and filter criteria."""
+        stmt = select(func.count(User.id)).join(Role, User.role_id == Role.id)
+        if query:
+            stmt = stmt.where(
+                or_(
+                    User.full_name.ilike(f"%{query}%"),
+                    User.email.ilike(f"%{query}%"),
+                    User.phone.ilike(f"%{query}%"),
+                )
+            )
+        if role:
+            stmt = stmt.where(Role.name.ilike(role))
+        if is_active is not None:
+            stmt = stmt.where(User.is_active == is_active)
+
+        return self.db.scalar(stmt) or 0
+
+    def set_active_status(self, user_id: int, is_active: bool) -> Optional[User]:
+        """Activate or suspend a user account."""
+        user = self.get_by_id(user_id)
+        if not user:
+            return None
+        user.is_active = is_active
+        self.db.commit()
+        self.db.refresh(user)
+        return user
+
+    def set_verified_status(self, user_id: int, is_verified: bool) -> Optional[User]:
+        """Approve or reject verification for a user."""
+        user = self.get_by_id(user_id)
+        if not user:
+            return None
+        user.is_verified = is_verified
+        self.db.commit()
+        self.db.refresh(user)
+        return user
+
+    def delete_user(self, user_id: int) -> bool:
+        """Delete a user account."""
+        user = self.get_by_id(user_id)
+        if not user:
+            return False
+        self.db.delete(user)
+        self.db.commit()
+        return True
+

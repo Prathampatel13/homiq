@@ -10,6 +10,7 @@ from sqlalchemy import (
     Enum as SAEnum,
     Float,
     ForeignKey,
+    Integer,
     String,
     Text,
     Time,
@@ -28,11 +29,20 @@ if TYPE_CHECKING:
 
 class BookingStatus(str, Enum):
     PENDING = "pending"
-    ACCEPTED = "accepted"
     ASSIGNED = "assigned"
+    ACCEPTED = "accepted"
+    ON_THE_WAY = "on_the_way"
+    ARRIVED = "arrived"
+    WAITING_QR = "waiting_qr"
+    QR_VERIFIED = "qr_verified"
     IN_PROGRESS = "in_progress"
     COMPLETED = "completed"
+    WAITING_PAYMENT = "waiting_payment"
+    PAID = "paid"
+    REVIEW_PENDING = "review_pending"
+    CLOSED = "closed"
     CANCELLED = "cancelled"
+    EXPIRED = "expired"
     REJECTED = "rejected"
 
 
@@ -166,4 +176,59 @@ class Booking(Base):
         "Invoice",
         back_populates="booking",
         cascade="all, delete-orphan",
+    )
+
+    status_logs: Mapped[list["BookingStatusLog"]] = relationship(
+        "BookingStatusLog",
+        back_populates="booking",
+        cascade="all, delete-orphan",
+    )
+
+
+class BookingStatusLog(Base):
+    """Audit trail for every booking status change.
+
+    Records the old and new status, the user who performed the change,
+    an optional reason, and the timestamp.  This is the single source of
+    truth for the booking lifecycle history.
+    """
+
+    __tablename__ = "booking_status_logs"
+
+    id: Mapped[int] = mapped_column(primary_key=True, index=True)
+
+    booking_id: Mapped[int] = mapped_column(
+        ForeignKey("bookings.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+
+    old_status: Mapped[Optional[BookingStatus]] = mapped_column(
+        SAEnum(BookingStatus, native_enum=False),
+        nullable=True,
+    )
+
+    new_status: Mapped[BookingStatus] = mapped_column(
+        SAEnum(BookingStatus, native_enum=False),
+        nullable=False,
+    )
+
+    changed_by_user_id: Mapped[Optional[int]] = mapped_column(
+        Integer,
+        nullable=True,
+    )
+
+    reason: Mapped[Optional[str]] = mapped_column(
+        Text,
+        nullable=True,
+    )
+
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        default=lambda: datetime.now(timezone.utc),
+    )
+
+    booking: Mapped["Booking"] = relationship(
+        "Booking",
+        back_populates="status_logs",
     )

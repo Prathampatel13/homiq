@@ -12,10 +12,17 @@ from pydantic import BaseModel, Field
 class AdminDashboardStats(BaseModel):
     total_revenue: float = 0.0
     total_customers: int = 0
+    total_users: int = 0
     total_bookings: int = 0
     pending_jobs: int = 0
     completed_jobs: int = 0
+    pending_bookings: int = 0
+    active_bookings: int = 0
+    completed_bookings: int = 0
+    cancelled_bookings: int = 0
     total_technicians: int = 0
+    pending_technicians: int = 0
+    verified_technicians: int = 0
     active_technicians: int = 0
     total_services: int = 0
     total_categories: int = 0
@@ -71,6 +78,83 @@ class AdminDashboardResponse(BaseModel):
     recent_bookings: list[RecentBookingResponse] = []
 
     model_config = {"from_attributes": True}
+
+
+# ── Admin User & Technician Management ───────────────────────────────
+
+
+class AdminUserResponse(BaseModel):
+    id: int
+    email: str
+    full_name: str
+    phone: Optional[str] = None
+    role: str
+    is_active: bool
+    is_verified: bool
+    is_superuser: bool
+    created_at: datetime
+    updated_at: datetime
+
+    model_config = {"from_attributes": True}
+
+
+class AdminUserListResponse(BaseModel):
+    items: list[AdminUserResponse]
+    total: int
+
+
+class AdminUserDetailResponse(BaseModel):
+    user: AdminUserResponse
+    total_bookings: int = 0
+    total_spent: float = 0.0
+    recent_bookings: list[RecentBookingResponse] = []
+
+
+class TechnicianDocumentResponse(BaseModel):
+    technician_id: int
+    user_id: int
+    full_name: str
+    profile_image: Optional[str] = None
+    government_id_image: Optional[str] = None
+    is_verified: bool
+
+
+class BookingStatusLogResponse(BaseModel):
+    id: int
+    booking_id: int
+    old_status: Optional[str] = None
+    new_status: str
+    changed_by_user_id: Optional[int] = None
+    reason: Optional[str] = None
+    created_at: datetime
+
+    model_config = {"from_attributes": True}
+
+
+# ── System Settings ────────────────────────────────────────────────────
+
+
+class AdminSettingsResponse(BaseModel):
+    platform_name: str = "HomiQ"
+    support_email: str = "support@homiq.com"
+    support_phone: str = "+1-800-HOMIQ"
+    commission_percentage: float = 10.0
+    tax_percentage: float = 18.0
+    working_hours: str = "08:00 AM - 08:00 PM"
+    max_active_bookings_per_technician: int = 1
+    cancellation_window_hours: int = 2
+
+
+class AdminSettingsUpdate(BaseModel):
+    platform_name: Optional[str] = Field(None, max_length=255)
+    support_email: Optional[str] = Field(None, max_length=255)
+    support_phone: Optional[str] = Field(None, max_length=50)
+    commission_percentage: Optional[float] = Field(None, ge=0, le=100)
+    tax_percentage: Optional[float] = Field(None, ge=0, le=100)
+    working_hours: Optional[str] = Field(None, max_length=255)
+    max_active_bookings_per_technician: Optional[int] = Field(None, ge=1, le=50)
+    cancellation_window_hours: Optional[int] = Field(None, ge=0, le=72)
+
 
 
 # ── Customer Dashboard ─────────────────────────────────────────────────

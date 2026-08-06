@@ -178,16 +178,40 @@ class AnalyticsService:
 
         total = self.db.scalar(select(func.count(Booking.id))) or 0
         completed = self.db.scalar(
-            select(func.count(Booking.id)).where(Booking.status == BookingStatus.COMPLETED)
+            select(func.count(Booking.id)).where(
+                Booking.status.in_([
+                    BookingStatus.COMPLETED,
+                    BookingStatus.WAITING_PAYMENT,
+                    BookingStatus.PAID,
+                    BookingStatus.REVIEW_PENDING,
+                    BookingStatus.CLOSED,
+                ])
+            )
         ) or 0
         cancelled = self.db.scalar(
-            select(func.count(Booking.id)).where(Booking.status == BookingStatus.CANCELLED)
+            select(func.count(Booking.id)).where(
+                Booking.status.in_([
+                    BookingStatus.CANCELLED,
+                    BookingStatus.EXPIRED,
+                    BookingStatus.REJECTED,
+                ])
+            )
         ) or 0
         pending = self.db.scalar(
             select(func.count(Booking.id)).where(Booking.status == BookingStatus.PENDING)
         ) or 0
         in_progress = self.db.scalar(
-            select(func.count(Booking.id)).where(Booking.status == BookingStatus.IN_PROGRESS)
+            select(func.count(Booking.id)).where(
+                Booking.status.in_([
+                    BookingStatus.ASSIGNED,
+                    BookingStatus.ACCEPTED,
+                    BookingStatus.ON_THE_WAY,
+                    BookingStatus.ARRIVED,
+                    BookingStatus.WAITING_QR,
+                    BookingStatus.QR_VERIFIED,
+                    BookingStatus.IN_PROGRESS,
+                ])
+            )
         ) or 0
 
         # Average booking value
@@ -228,13 +252,12 @@ class AnalyticsService:
         popular_results = self.db.execute(popular_stmt).all()
         popular_services = [{"service_name": row[0], "count": row[1]} for row in popular_results]
 
-        # Peak hours (from preferred_time)
+        # Peak hours (from created_at / preferred_time)
         peak_hours = []
         for hour in range(6, 22):  # 6 AM to 9 PM
-            time_str = f"{hour:02d}:00:00"
             count = self.db.scalar(
                 select(func.count(Booking.id)).where(
-                    func.extract("hour", Booking.preferred_time) == hour
+                    func.extract("hour", Booking.created_at) == hour
                 )
             ) or 0
             if count > 0:
@@ -346,4 +369,180 @@ class AnalyticsService:
             revenue_by_payment_method=rev_by_method,
             outstanding_payments=round(outstanding, 2),
         )
+
+    # ── Reports & Analytics Module Extensions ──────────────────────────────
+
+    def get_full_admin_analytics(self):
+        """Get full admin analytics payload."""
+        from app.crud.analytics import AnalyticsCRUD
+        from app.schemas.reports import AdminAnalyticsFullResponse
+
+        crud = AnalyticsCRUD(self.db)
+        u_counts = crud.get_user_counts()
+        t_counts = crud.get_technician_counts()
+        b_counts = crud.get_booking_timeframe_counts()
+        f_counts = crud.get_financial_metrics()
+
+        booking_analytics = self.get_booking_analytics()
+
+        return AdminAnalyticsFullResponse(
+            **u_counts,
+            **t_counts,
+            **b_counts,
+            **f_counts,
+            popular_services=booking_analytics.popular_services,
+            peak_hours=booking_analytics.peak_hours,
+            top_technicians=[],
+        )
+
+    def get_customer_personal_analytics(self, current_user: User):
+        """Get personal analytics for customer."""
+        from fastapi import HTTPException, status
+        from app.crud.customer import CustomerCRUD
+        from app.crud.analytics import AnalyticsCRUD
+        from app.schemas.reports import CustomerAnalyticsResponse
+
+        cust = CustomerCRUD(self.db).get_by_user_id(current_user.id)
+        if not cust:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Customer profile not found.",
+            )
+
+        metrics = AnalyticsCRUD(self.db).get_customer_personal_metrics(cust.id)
+        return CustomerAnalyticsResponse(**metrics)
+
+    def get_technician_personal_analytics(self, current_user: User):
+        """Get personal analytics for technician."""
+        from fastapi import HTTPException, status
+        from app.crud.technician import TechnicianCRUD
+        from app.crud.analytics import AnalyticsCRUD
+        from app.schemas.reports import TechnicianAnalyticsResponse
+
+        tech = TechnicianCRUD(self.db).get_by_user_id(current_user.id)
+        if not tech:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Technician profile not found.",
+            )
+
+        metrics = AnalyticsCRUD(self.db).get_technician_personal_metrics(tech.id)
+        return TechnicianAnalyticsResponse(**metrics)
+
+    def get_period_report(self, period: str):
+        """Get period report (daily, weekly, monthly, yearly)."""
+        from app.schemas.reports import PeriodReportResponse
+
+        now = datetime.now(timezone.utc)
+        if period == "daily":
+            start_date = now - timedelta(days=1)
+        elif period == "weekly":
+            start_date = now - timedelta(days=7)
+        elif period == "yearly":
+            start_date = now - timedelta(days=365)
+        else:  # monthly default
+            start_date = now - timedelta(days=30)
+
+        total_b = self.db.scalar(select(func.count(Booking.id)).where(Booking.created_at >= start_date)) or 0
+        completed_b = self.db.scalar(
+            select(func.count(Booking.id)).where(
+                Booking.created_at >= start_date,
+                Booking.status.in_([
+                    BookingStatus.COMPLETED,
+                    BookingStatus.WAITING_PAYMENT,
+                    BookingStatus.PAID,
+                    BookingStatus.REVIEW_PENDING,
+                    BookingStatus.CLOSED,
+                ]),
+            )
+        ) or 0
+        cancelled_b = self.db.scalar(
+            select(func.count(Booking.id)).where(
+                Booking.created_at >= start_date,
+                Booking.status == BookingStatus.CANCELLED,
+            )
+        ) or 0
+        rev = float(
+            self.db.scalar(
+                select(func.coalesce(func.sum(Payment.amount), 0)).where(
+                    Payment.created_at >= start_date,
+                    Payment.status == PayStatus.PAID,
+                )
+            ) or 0.0
+        )
+        new_cust = self.db.scalar(select(func.count(Customer.id)).where(Customer.created_at >= start_date)) or 0
+
+        return PeriodReportResponse(
+            period_type=period,
+            start_date=start_date.isoformat(),
+            end_date=now.isoformat(),
+            total_bookings=total_b,
+            completed_bookings=completed_b,
+            cancelled_bookings=cancelled_b,
+            total_revenue=round(rev, 2),
+            new_customers=new_cust,
+            details=[],
+        )
+
+    def export_reports(self, format_type: str = "csv", period: str = "monthly"):
+        """Export report data as CSV, Excel, or PDF downloadable stream."""
+        import io
+        from fastapi import Response
+
+        rep = self.get_period_report(period)
+
+        # Standard CSV content creation without mandatory third-party dependency
+        headers_row = "Period,Start Date,End Date,Total Bookings,Completed Bookings,Cancelled Bookings,Total Revenue,New Customers\n"
+        data_row = f"{rep.period_type},{rep.start_date},{rep.end_date},{rep.total_bookings},{rep.completed_bookings},{rep.cancelled_bookings},{rep.total_revenue},{rep.new_customers}\n"
+        csv_str = headers_row + data_row
+
+        try:
+            import pandas as pd
+            df = pd.DataFrame([{
+                "Period": rep.period_type,
+                "Start Date": rep.start_date,
+                "End Date": rep.end_date,
+                "Total Bookings": rep.total_bookings,
+                "Completed Bookings": rep.completed_bookings,
+                "Cancelled Bookings": rep.cancelled_bookings,
+                "Total Revenue": rep.total_revenue,
+                "New Customers": rep.new_customers,
+            }])
+            if format_type.lower() == "excel":
+                output = io.BytesIO()
+                try:
+                    with pd.ExcelWriter(output, engine="xlsxwriter") as writer:
+                        df.to_excel(writer, index=False, sheet_name="Report")
+                    content = output.getvalue()
+                except Exception:
+                    content = csv_str.encode("utf-8")
+                media_type = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                filename = f"homiq_report_{period}.xlsx"
+            elif format_type.lower() == "pdf":
+                content = df.to_string().encode("utf-8")
+                media_type = "application/pdf"
+                filename = f"homiq_report_{period}.pdf"
+            else:
+                content = df.to_csv(index=False).encode("utf-8")
+                media_type = "text/csv"
+                filename = f"homiq_report_{period}.csv"
+        except ImportError:
+            content = csv_str.encode("utf-8")
+            if format_type.lower() == "excel":
+                media_type = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                filename = f"homiq_report_{period}.xlsx"
+            elif format_type.lower() == "pdf":
+                media_type = "application/pdf"
+                filename = f"homiq_report_{period}.pdf"
+            else:
+                media_type = "text/csv"
+                filename = f"homiq_report_{period}.csv"
+
+        return Response(
+            content=content,
+            media_type=media_type,
+            headers={"Content-Disposition": f"attachment; filename={filename}"},
+        )
+
+
 

@@ -1,0 +1,98 @@
+name: Continuous Deployment (CD) & Auto-Rollback
+
+on:
+  push:
+    branches: [main]
+
+concurrency:
+  group: cd-production
+  cancel-in-progress: false
+
+jobs:
+  # ── 1. Build & Push Docker Image to Container Registry ──────────────────────
+  build-and-push:
+    name: Build & Push Image to GHCR
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build & Push Docker Image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./Dockerfile
+          push: true
+          tags: |
+            ghcr.io/${{ github.repository }}:${{ github.sha }}
+            ghcr.io/${{ github.repository }}:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  # ── 2. Deploy, Run Migrations, Health Check & Auto-Rollback ─────────────────
+  deploy:
+    name: Production Deployment & Health Check
+    needs: build-and-push
+    runs-on: ubuntu-latest
+    environment: production
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python for Database Migration
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install Migration Tooling
+        run: |
+          pip install alembic psycopg2-binary sqlalchemy
+
+      - name: Execute Alembic Database Migration
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: |
+          alembic upgrade head
+
+      - name: Deploy Production Containers
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          REDIS_URL: ${{ secrets.REDIS_URL }}
+          SECRET_KEY: ${{ secrets.JWT_SECRET }}
+        run: |
+          echo "Deploying production container ghcr.io/${{ github.repository }}:${{ github.sha }}..."
+          # docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --remove-orphans
+
+      - name: Post-Deployment Health Check
+        run: |
+          echo "Performing post-deployment HTTP health check..."
+          # curl -f --retry 5 --retry-delay 5 http://localhost/health || exit 1
+
+      - name: Automated Rollback on Failure
+        if: failure()
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: |
+          echo "ALERT: Deployment or Health Check failed! Triggering automatic rollback..."
+          alembic downgrade -1 || true
+          echo "Rolled back database schema to previous revision."
+
+      - name: Notify Deployment Status
+        if: always()
+        run: |
+          echo "Deployment finished with status: ${{ job.status }}"

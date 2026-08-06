@@ -82,3 +82,137 @@ class BookingListResponse(BaseModel):
     total: int = Field(..., ge=0)
 
     model_config = {"from_attributes": True}
+
+
+# ─── Booking Lifecycle (cancel / reschedule / reject) ─────────────────
+
+
+class BookingCancelRequest(BaseModel):
+    reason: Optional[str] = Field(
+        None,
+        max_length=2000,
+        description="Optional reason for cancelling the booking.",
+    )
+
+
+class BookingRejectRequest(BaseModel):
+    reason: Optional[str] = Field(
+        None,
+        max_length=2000,
+        description="Optional reason for rejecting the booking.",
+    )
+
+
+class BookingRescheduleRequest(BaseModel):
+    booking_date: date = Field(..., description="New booking date")
+    preferred_time: Optional[time] = Field(None, description="New preferred time slot")
+
+    @field_validator("booking_date")
+    @classmethod
+    def validate_booking_date(cls, v: date) -> date:
+        today = date.today()
+        if v < today:
+            raise ValueError("booking_date cannot be in the past")
+        return v
+
+
+# ─── Booking History ──────────────────────────────────────────────────
+
+
+class BookingHistoryEntry(BaseModel):
+    id: int
+    booking_id: int
+    old_status: Optional[BookingStatus]
+    new_status: BookingStatus
+    changed_by_user_id: Optional[int]
+    reason: Optional[str]
+    created_at: datetime
+
+    model_config = {"from_attributes": True}
+
+
+class BookingHistoryResponse(BaseModel):
+    items: List[BookingHistoryEntry]
+    total: int = Field(..., ge=0)
+
+    model_config = {"from_attributes": True}
+
+
+# ─── Assigned Technician ──────────────────────────────────────────────
+
+
+class AssignedTechnicianResponse(BaseModel):
+    id: int
+    user_id: int
+    full_name: str
+    phone: Optional[str] = None
+    specialization: Optional[str] = None
+    rating: Optional[float] = None
+    reviews_count: Optional[int] = None
+    profile_image: Optional[str] = None
+
+    model_config = {"from_attributes": True}
+
+
+# ─── SmartVerify QR & OTP Schemas ─────────────────────────────────────
+
+
+class QRDataPayload(BaseModel):
+    booking_id: int
+    booking_uuid: str
+    verification_token: str
+    expires_at: datetime
+    version: str = "1.0"
+
+
+class QRGenerateResponse(BaseModel):
+    booking_id: int
+    qr_code_data: str
+    verification_token: str
+    expires_at: datetime
+    version: str = "1.0"
+    message: str = "QR code generated successfully"
+
+
+class QRScanRequest(BaseModel):
+    verification_token: str
+    device_info: Optional[str] = None
+
+
+class QRScanResponse(BaseModel):
+    booking_id: int
+    scanned_at: datetime
+    technician_id: int
+    status: str = "qr_verified"
+    message: str = "QR code verified successfully. Please enter OTP to start service."
+
+
+class OTPGenerateResponse(BaseModel):
+    booking_id: int
+    otp_code: Optional[str] = None
+    expires_at: datetime
+    message: str = "OTP generated successfully and sent to customer"
+
+
+class OTPVerifyRequest(BaseModel):
+    otp_code: str = Field(..., min_length=6, max_length=6, pattern="^[0-9]{6}$")
+
+
+class OTPVerifyResponse(BaseModel):
+    booking_id: int
+    verified_at: datetime
+    status: str = "in_progress"
+    message: str = "OTP verified successfully. Service is now in progress."
+
+
+class SmartVerifyStatusResponse(BaseModel):
+    booking_id: int
+    booking_status: str
+    is_qr_generated: bool = False
+    is_qr_scanned: bool = False
+    is_otp_generated: bool = False
+    is_otp_verified: bool = False
+    qr_expires_at: Optional[datetime] = None
+    otp_expires_at: Optional[datetime] = None
+    attempts_remaining: int = 3
+

@@ -166,3 +166,27 @@ class PaymentCRUD:
         self.db.refresh(payment)
 
         return payment
+
+    # -----------------------------------
+    # Payment History
+    # -----------------------------------
+
+    def get_payment_history(
+        self,
+        customer_id: Optional[int] = None,
+        offset: int = 0,
+        limit: int = 100,
+    ) -> list[Payment]:
+        """Fetch payment transaction history."""
+        stmt = select(Payment)
+        if customer_id is not None:
+            stmt = stmt.where(Payment.customer_id == customer_id)
+        stmt = stmt.order_by(Payment.created_at.desc()).offset(offset).limit(limit)
+        return list(self.db.execute(stmt).scalars().all())
+
+    def count_payment_history(self, customer_id: Optional[int] = None) -> int:
+        """Count total payment records for history pagination."""
+        stmt = select(func.count(Payment.id))
+        if customer_id is not None:
+            stmt = stmt.where(Payment.customer_id == customer_id)
+        return self.db.scalar(stmt) or 0

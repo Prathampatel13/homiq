@@ -15,11 +15,12 @@ from datetime import date, datetime, timedelta, timezone
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
+from app.models.auth import User
 from app.models.bookings import Booking, BookingStatus
-from app.models.users import Customer, Technician
-from app.models.services import Service, Category
 from app.models.payments import Payment, PaymentStatus as PayStatus
 from app.models.reviews import Review
+from app.models.services import Category, Service
+from app.models.users import Customer, Technician
 from app.schemas.dashboard import (
     AdminDashboardResponse,
     AdminDashboardStats,
@@ -49,14 +50,65 @@ class AdminDashboardService:
         # ── Core Counts ────────────────────────────────────────────────
         total_revenue = self._total_revenue()
         total_customers = self.db.scalar(select(func.count(Customer.id))) or 0
+        total_users = self.db.scalar(select(func.count(User.id))) or 0
         total_bookings = self.db.scalar(select(func.count(Booking.id))) or 0
         pending_jobs = self.db.scalar(
+            select(func.count(Booking.id)).where(
+                Booking.status.in_([
+                    BookingStatus.PENDING,
+                    BookingStatus.ASSIGNED,
+                    BookingStatus.ACCEPTED,
+                ])
+            )
+        ) or 0
+        pending_bookings = self.db.scalar(
             select(func.count(Booking.id)).where(Booking.status == BookingStatus.PENDING)
         ) or 0
+        active_bookings = self.db.scalar(
+            select(func.count(Booking.id)).where(
+                Booking.status.in_([
+                    BookingStatus.ASSIGNED,
+                    BookingStatus.ACCEPTED,
+                    BookingStatus.ON_THE_WAY,
+                    BookingStatus.ARRIVED,
+                    BookingStatus.WAITING_QR,
+                    BookingStatus.QR_VERIFIED,
+                    BookingStatus.IN_PROGRESS,
+                ])
+            )
+        ) or 0
         completed_jobs = self.db.scalar(
-            select(func.count(Booking.id)).where(Booking.status == BookingStatus.COMPLETED)
+            select(func.count(Booking.id)).where(
+                Booking.status.in_([
+                    BookingStatus.COMPLETED,
+                    BookingStatus.WAITING_PAYMENT,
+                    BookingStatus.PAID,
+                    BookingStatus.REVIEW_PENDING,
+                    BookingStatus.CLOSED,
+                ])
+            )
+        ) or 0
+        completed_bookings = completed_jobs
+        cancelled_bookings = self.db.scalar(
+            select(func.count(Booking.id)).where(
+                Booking.status.in_([
+                    BookingStatus.CANCELLED,
+                    BookingStatus.EXPIRED,
+                    BookingStatus.REJECTED,
+                ])
+            )
         ) or 0
         total_technicians = self.db.scalar(select(func.count(Technician.id))) or 0
+        pending_technicians = self.db.scalar(
+            select(func.count(Technician.id))
+            .join(User, Technician.user_id == User.id)
+            .where(User.is_verified.is_(False))
+        ) or 0
+        verified_technicians = self.db.scalar(
+            select(func.count(Technician.id))
+            .join(User, Technician.user_id == User.id)
+            .where(User.is_verified.is_(True))
+        ) or 0
         active_technicians = self.db.scalar(
             select(func.count(Technician.id)).where(Technician.availability.is_(True))
         ) or 0
@@ -91,10 +143,17 @@ class AdminDashboardService:
         stats = AdminDashboardStats(
             total_revenue=total_revenue,
             total_customers=total_customers,
+            total_users=total_users,
             total_bookings=total_bookings,
             pending_jobs=pending_jobs,
             completed_jobs=completed_jobs,
+            pending_bookings=pending_bookings,
+            active_bookings=active_bookings,
+            completed_bookings=completed_bookings,
+            cancelled_bookings=cancelled_bookings,
             total_technicians=total_technicians,
+            pending_technicians=pending_technicians,
+            verified_technicians=verified_technicians,
             active_technicians=active_technicians,
             total_services=total_services,
             total_categories=total_categories,
@@ -229,7 +288,13 @@ class AdminDashboardService:
             booking_count = self.db.scalar(
                 select(func.count(Booking.id)).where(
                     Booking.technician_id == tech.id,
-                    Booking.status == BookingStatus.COMPLETED,
+                    Booking.status.in_([
+                        BookingStatus.COMPLETED,
+                        BookingStatus.WAITING_PAYMENT,
+                        BookingStatus.PAID,
+                        BookingStatus.REVIEW_PENDING,
+                        BookingStatus.CLOSED,
+                    ]),
                 )
             ) or 0
             revenue = float(
@@ -274,4 +339,303 @@ class AdminDashboardService:
                 created_at=booking.created_at,
             ))
         return result
+
+
+# ═══════════════════════════════════════════════════════════════════════
+# ADMIN USER & TECHNICIAN MANAGEMENT SERVICE
+# ═══════════════════════════════════════════════════════════════════════
+
+
+class AdminUserService:
+    """Service layer for Admin User & Technician management."""
+
+    def __init__(self, db: Session):
+        self.db = db
+        from app.crud.user import UserCRUD
+        from app.crud.technician import TechnicianCRUD
+        self.user_crud = UserCRUD(db)
+        self.technician_crud = TechnicianCRUD(db)
+
+    def list_users(
+        self,
+        query: str | None = None,
+        role: str | None = None,
+        is_active: bool | None = None,
+        offset: int = 0,
+        limit: int = 100,
+    ) -> AdminUserListResponse:
+        from app.schemas.dashboard import AdminUserListResponse, AdminUserResponse
+
+        users = self.user_crud.list_users(
+            query=query, role=role, is_active=is_active, offset=offset, limit=limit
+        )
+        total = self.user_crud.count_users(query=query, role=role, is_active=is_active)
+        items = [
+            AdminUserResponse(
+                id=u.id,
+                email=u.email,
+                full_name=u.full_name,
+                phone=u.phone,
+                role=u.role.name if u.role else "customer",
+                is_active=u.is_active,
+                is_verified=u.is_verified,
+                is_superuser=u.is_superuser,
+                created_at=u.created_at,
+                updated_at=u.updated_at,
+            )
+            for u in users
+        ]
+        return AdminUserListResponse(items=items, total=total)
+
+    def get_user_detail(self, user_id: int) -> AdminUserDetailResponse:
+        from fastapi import HTTPException, status
+        from app.models.auth import User
+        from app.schemas.dashboard import AdminUserDetailResponse, AdminUserResponse, RecentBookingResponse
+
+        user = self.user_crud.get_by_id(user_id)
+        if not user:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="User not found",
+            )
+
+        user_resp = AdminUserResponse(
+            id=user.id,
+            email=user.email,
+            full_name=user.full_name,
+            phone=user.phone,
+            role=user.role.name if user.role else "customer",
+            is_active=user.is_active,
+            is_verified=user.is_verified,
+            is_superuser=user.is_superuser,
+            created_at=user.created_at,
+            updated_at=user.updated_at,
+        )
+
+        total_bookings = 0
+        total_spent = 0.0
+        recent_bookings = []
+
+        if user.customer:
+            total_bookings = len(user.customer.bookings)
+            total_spent = float(
+                self.db.scalar(
+                    select(func.coalesce(func.sum(Payment.amount), 0))
+                    .where(Payment.customer_id == user.customer.id, Payment.status == PayStatus.PAID)
+                ) or 0.0
+            )
+            stmt = (
+                select(Booking)
+                .where(Booking.customer_id == user.customer.id)
+                .order_by(Booking.created_at.desc())
+                .limit(5)
+            )
+            for b in self.db.execute(stmt).scalars().all():
+                recent_bookings.append(
+                    RecentBookingResponse(
+                        id=b.id,
+                        booking_number=b.booking_number,
+                        customer_name=user.full_name,
+                        service_name=b.service.name if b.service else "N/A",
+                        status=b.status.value if hasattr(b.status, "value") else str(b.status),
+                        amount=b.final_price or b.estimated_price or 0.0,
+                        created_at=b.created_at,
+                    )
+                )
+
+        return AdminUserDetailResponse(
+            user=user_resp,
+            total_bookings=total_bookings,
+            total_spent=round(total_spent, 2),
+            recent_bookings=recent_bookings,
+        )
+
+    def activate_user(self, user_id: int) -> AdminUserResponse:
+        from fastapi import HTTPException, status
+        from app.schemas.dashboard import AdminUserResponse
+
+        user = self.user_crud.set_active_status(user_id, is_active=True)
+        if not user:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="User not found",
+            )
+        return AdminUserResponse(
+            id=user.id,
+            email=user.email,
+            full_name=user.full_name,
+            phone=user.phone,
+            role=user.role.name if user.role else "customer",
+            is_active=user.is_active,
+            is_verified=user.is_verified,
+            is_superuser=user.is_superuser,
+            created_at=user.created_at,
+            updated_at=user.updated_at,
+        )
+
+    def suspend_user(self, user_id: int) -> AdminUserResponse:
+        from fastapi import HTTPException, status
+        from app.schemas.dashboard import AdminUserResponse
+
+        user = self.user_crud.set_active_status(user_id, is_active=False)
+        if not user:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="User not found",
+            )
+        return AdminUserResponse(
+            id=user.id,
+            email=user.email,
+            full_name=user.full_name,
+            phone=user.phone,
+            role=user.role.name if user.role else "customer",
+            is_active=user.is_active,
+            is_verified=user.is_verified,
+            is_superuser=user.is_superuser,
+            created_at=user.created_at,
+            updated_at=user.updated_at,
+        )
+
+    def delete_user(self, user_id: int) -> dict[str, str]:
+        from fastapi import HTTPException, status
+
+        ok = self.user_crud.delete_user(user_id)
+        if not ok:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="User not found",
+            )
+        return {"detail": f"User {user_id} deleted successfully"}
+
+    def approve_technician(self, technician_id: int) -> AdminUserResponse:
+        from fastapi import HTTPException, status
+        from app.schemas.dashboard import AdminUserResponse
+
+        tech = self.technician_crud.get_by_technician_id(technician_id)
+        if not tech:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Technician not found",
+            )
+        user = self.user_crud.set_verified_status(tech.user_id, is_verified=True)
+        return AdminUserResponse(
+            id=user.id,
+            email=user.email,
+            full_name=user.full_name,
+            phone=user.phone,
+            role=user.role.name if user.role else "technician",
+            is_active=user.is_active,
+            is_verified=user.is_verified,
+            is_superuser=user.is_superuser,
+            created_at=user.created_at,
+            updated_at=user.updated_at,
+        )
+
+    def reject_technician(self, technician_id: int) -> AdminUserResponse:
+        from fastapi import HTTPException, status
+        from app.schemas.dashboard import AdminUserResponse
+
+        tech = self.technician_crud.get_by_technician_id(technician_id)
+        if not tech:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Technician not found",
+            )
+        user = self.user_crud.set_verified_status(tech.user_id, is_verified=False)
+        return AdminUserResponse(
+            id=user.id,
+            email=user.email,
+            full_name=user.full_name,
+            phone=user.phone,
+            role=user.role.name if user.role else "technician",
+            is_active=user.is_active,
+            is_verified=user.is_verified,
+            is_superuser=user.is_superuser,
+            created_at=user.created_at,
+            updated_at=user.updated_at,
+        )
+
+    def activate_technician(self, technician_id: int):
+        from fastapi import HTTPException, status
+        from app.schemas.technician import TechnicianResponse
+
+        tech = self.technician_crud.get_by_technician_id(technician_id)
+        if not tech:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Technician not found",
+            )
+        self.technician_crud.update(technician_id, {"availability": True})
+        self.db.refresh(tech)
+        from app.services.technician import TechnicianService
+        return TechnicianService(self.db)._build_response(tech.user, tech)
+
+    def suspend_technician(self, technician_id: int):
+        from fastapi import HTTPException, status
+        from app.schemas.technician import TechnicianResponse
+
+        tech = self.technician_crud.get_by_technician_id(technician_id)
+        if not tech:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Technician not found",
+            )
+        self.technician_crud.update(technician_id, {"availability": False, "is_online": False})
+        self.db.refresh(tech)
+        from app.services.technician import TechnicianService
+        return TechnicianService(self.db)._build_response(tech.user, tech)
+
+    def get_technician_documents(self, technician_id: int):
+        from fastapi import HTTPException, status
+        from app.schemas.dashboard import TechnicianDocumentResponse
+
+        tech = self.technician_crud.get_by_technician_id(technician_id)
+        if not tech:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Technician not found",
+            )
+        return TechnicianDocumentResponse(
+            technician_id=tech.id,
+            user_id=tech.user_id,
+            full_name=tech.user.full_name if tech.user else "N/A",
+            profile_image=tech.profile_image,
+            government_id_image=tech.government_id_image,
+            is_verified=getattr(tech.user, "is_verified", False),
+        )
+
+
+# ═══════════════════════════════════════════════════════════════════════
+# ADMIN SETTINGS SERVICE
+# ═══════════════════════════════════════════════════════════════════════
+
+
+_SETTINGS_STORE = {
+    "platform_name": "HomiQ",
+    "support_email": "support@homiq.com",
+    "support_phone": "+1-800-HOMIQ",
+    "commission_percentage": 10.0,
+    "tax_percentage": 18.0,
+    "working_hours": "08:00 AM - 08:00 PM",
+    "max_active_bookings_per_technician": 1,
+    "cancellation_window_hours": 2,
+}
+
+
+class AdminSettingsService:
+    """Service layer for Admin System Settings."""
+
+    def __init__(self, db: Session):
+        self.db = db
+
+    def get_settings(self):
+        from app.schemas.dashboard import AdminSettingsResponse
+        return AdminSettingsResponse(**_SETTINGS_STORE)
+
+    def update_settings(self, payload):
+        from app.schemas.dashboard import AdminSettingsResponse
+
+        data = payload.model_dump(exclude_unset=True)
+        _SETTINGS_STORE.update(data)
+        return AdminSettingsResponse(**_SETTINGS_STORE)
 

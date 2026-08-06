@@ -110,7 +110,27 @@ class TechnicianService:
             is_online=technician.is_online,
         )
 
-    # ── Jobs ──────────────────────────────────────────────────────────
+    def set_online(self, current_user: User) -> TechnicianAvailabilityResponse:
+        """Set technician online status to True and availability to True."""
+        technician = self._get_technician_or_404(current_user.id)
+        self.crud.update(technician.id, {"is_online": True, "availability": True})
+        self.db.refresh(technician)
+        return TechnicianAvailabilityResponse(
+            availability=technician.availability,
+            is_online=technician.is_online,
+        )
+
+    def set_offline(self, current_user: User) -> TechnicianAvailabilityResponse:
+        """Set technician online status to False and availability to False."""
+        technician = self._get_technician_or_404(current_user.id)
+        self.crud.update(technician.id, {"is_online": False, "availability": False})
+        self.db.refresh(technician)
+        return TechnicianAvailabilityResponse(
+            availability=technician.availability,
+            is_online=technician.is_online,
+        )
+
+    # ── Jobs & History ────────────────────────────────────────────────
 
     def get_my_jobs(
         self,
@@ -136,6 +156,142 @@ class TechnicianService:
             total=int(total),
         )
 
+    def get_active_bookings(
+        self,
+        current_user: User,
+        offset: int = 0,
+        limit: int = 100,
+    ) -> TechnicianJobListResponse:
+        """Return active jobs (bookings) assigned to the authenticated technician."""
+        technician = self._get_technician_or_404(current_user.id)
+        bookings = self.crud.get_active_bookings(
+            technician_id=technician.id,
+            offset=offset,
+            limit=limit,
+        )
+        total = self.crud.count_active_bookings(technician_id=technician.id)
+        return TechnicianJobListResponse(
+            items=[self._build_job_response(b) for b in bookings],
+            total=int(total),
+        )
+
+    def get_booking_history(
+        self,
+        current_user: User,
+        offset: int = 0,
+        limit: int = 100,
+    ) -> TechnicianJobListResponse:
+        """Return historical completed/terminal jobs assigned to the authenticated technician."""
+        technician = self._get_technician_or_404(current_user.id)
+        bookings = self.crud.get_booking_history(
+            technician_id=technician.id,
+            offset=offset,
+            limit=limit,
+        )
+        total = self.crud.count_booking_history(technician_id=technician.id)
+        return TechnicianJobListResponse(
+            items=[self._build_job_response(b) for b in bookings],
+            total=int(total),
+        )
+
+    # ── Technician Workflow Actions ───────────────────────────────────
+
+    def accept_booking(
+        self, current_user: User, booking_id: int, reason: str | None = None
+    ) -> TechnicianJobResponse:
+        """Accept an assigned booking with busy guard validation."""
+        from app.schemas.bookings import BookingRejectRequest
+        from app.services.booking import BookingService
+
+        technician = self._get_technician_or_404(current_user.id)
+        if self.crud.has_active_booking(technician.id, exclude_booking_id=booking_id):
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail="Technician already has an active booking in progress",
+            )
+
+        booking_service = BookingService(self.db)
+        booking_service.accept_booking(
+            current_user, booking_id, BookingRejectRequest(reason=reason)
+        )
+        booking = booking_service.crud.get_booking(booking_id)
+        return self._build_job_response(booking)
+
+    def reject_booking(
+        self, current_user: User, booking_id: int, reason: str | None = None
+    ) -> TechnicianJobResponse:
+        """Reject an assigned booking."""
+        from app.schemas.bookings import BookingRejectRequest
+        from app.services.booking import BookingService
+
+        self._get_technician_or_404(current_user.id)
+        booking_service = BookingService(self.db)
+        booking_service.reject_booking(
+            current_user, booking_id, BookingRejectRequest(reason=reason)
+        )
+        booking = booking_service.crud.get_booking(booking_id)
+        return self._build_job_response(booking)
+
+    def start_trip(
+        self, current_user: User, booking_id: int, reason: str | None = None
+    ) -> TechnicianJobResponse:
+        """Start navigation to the job site (mark on_the_way)."""
+        from app.schemas.bookings import BookingRejectRequest
+        from app.services.booking import BookingService
+
+        self._get_technician_or_404(current_user.id)
+        booking_service = BookingService(self.db)
+        booking_service.start_trip(
+            current_user, booking_id, BookingRejectRequest(reason=reason)
+        )
+        booking = booking_service.crud.get_booking(booking_id)
+        return self._build_job_response(booking)
+
+    def mark_arrived(
+        self, current_user: User, booking_id: int, reason: str | None = None
+    ) -> TechnicianJobResponse:
+        """Mark technician arrived at the customer location."""
+        from app.schemas.bookings import BookingRejectRequest
+        from app.services.booking import BookingService
+
+        self._get_technician_or_404(current_user.id)
+        booking_service = BookingService(self.db)
+        booking_service.mark_arrived(
+            current_user, booking_id, BookingRejectRequest(reason=reason)
+        )
+        booking = booking_service.crud.get_booking(booking_id)
+        return self._build_job_response(booking)
+
+    def start_service(
+        self, current_user: User, booking_id: int, reason: str | None = None
+    ) -> TechnicianJobResponse:
+        """Start work on the service (mark in_progress)."""
+        from app.schemas.bookings import BookingRejectRequest
+        from app.services.booking import BookingService
+
+        self._get_technician_or_404(current_user.id)
+        booking_service = BookingService(self.db)
+        booking_service.start_service(
+            current_user, booking_id, BookingRejectRequest(reason=reason)
+        )
+        booking = booking_service.crud.get_booking(booking_id)
+        return self._build_job_response(booking)
+
+    def complete_service(
+        self, current_user: User, booking_id: int, reason: str | None = None
+    ) -> TechnicianJobResponse:
+        """Complete work on the service (mark completed)."""
+        from app.schemas.bookings import BookingRejectRequest
+        from app.services.booking import BookingService
+
+        self._get_technician_or_404(current_user.id)
+        booking_service = BookingService(self.db)
+        booking_service.complete_service(
+            current_user, booking_id, BookingRejectRequest(reason=reason)
+        )
+        booking = booking_service.crud.get_booking(booking_id)
+        return self._build_job_response(booking)
+
     # ── Earnings ──────────────────────────────────────────────────────
 
     def get_my_earnings(self, current_user: User) -> TechnicianEarningsResponse:
@@ -159,7 +315,10 @@ class TechnicianService:
                 select(func.coalesce(func.sum(Booking.final_price), 0))
                 .where(
                     Booking.technician_id == technician_id,
-                    Booking.status == BookingStatus.COMPLETED,
+                    Booking.status.in_([
+                        BookingStatus.COMPLETED,
+                        BookingStatus.WAITING_PAYMENT,
+                    ]),
                     Booking.payment_status == BookingPayStatus.PENDING,
                 )
             ) or 0.0
@@ -168,7 +327,13 @@ class TechnicianService:
         completed_jobs = self.db.scalar(
             select(func.count(Booking.id)).where(
                 Booking.technician_id == technician_id,
-                Booking.status == BookingStatus.COMPLETED,
+                Booking.status.in_([
+                    BookingStatus.COMPLETED,
+                    BookingStatus.WAITING_PAYMENT,
+                    BookingStatus.PAID,
+                    BookingStatus.REVIEW_PENDING,
+                    BookingStatus.CLOSED,
+                ]),
             )
         ) or 0
 
@@ -184,7 +349,14 @@ class TechnicianService:
         pending_jobs = self.db.scalar(
             select(func.count(Booking.id)).where(
                 Booking.technician_id == technician_id,
-                Booking.status.in_([BookingStatus.ASSIGNED, BookingStatus.ACCEPTED]),
+                Booking.status.in_([
+                    BookingStatus.ASSIGNED,
+                    BookingStatus.ACCEPTED,
+                    BookingStatus.ON_THE_WAY,
+                    BookingStatus.ARRIVED,
+                    BookingStatus.WAITING_QR,
+                    BookingStatus.QR_VERIFIED,
+                ]),
             )
         ) or 0
 
@@ -285,6 +457,7 @@ class TechnicianService:
             longitude=technician.longitude,
             service_radius_km=technician.service_radius_km,
             is_online=technician.is_online,
+            is_verified=getattr(user, "is_verified", False),
             rating=technician.rating,
             reviews_count=technician.reviews_count,
             profile_image=technician.profile_image,
@@ -292,3 +465,4 @@ class TechnicianService:
             created_at=technician.created_at,
             updated_at=technician.updated_at,
         )
+

@@ -20,6 +20,17 @@ from app.api.reviews.router import router as reviews_router
 from app.api.notifications.router import router as notifications_router
 from app.api.tracking.router import router as tracking_router
 from app.api.admin.router import router as admin_router
+from app.api.company.router import router as company_router
+from app.api.jobs.router import router as jobs_router
+from app.api.media.router import router as media_router
+from app.api.reports.router import router as reports_router
+from app.api.search.router import router as search_router
+from app.api.tasks.router import router as tasks_router
+from app.api.websocket.router import router as websocket_router
+from app.api.security.router import router as security_router
+from app.api.monitoring.router import router as monitoring_router
+from app.middleware.security import SecurityHeadersMiddleware
+from fastapi.middleware.gzip import GZipMiddleware
 
 from app.core.config import BASE_DIR, settings
 from app.database.session import get_db
@@ -33,6 +44,8 @@ app = FastAPI(
     redoc_url="/redoc",
 )
 
+app.add_middleware(GZipMiddleware, minimum_size=500)
+app.add_middleware(SecurityHeadersMiddleware)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -58,6 +71,15 @@ app.include_router(reviews_router)
 app.include_router(notifications_router)
 app.include_router(tracking_router)
 app.include_router(admin_router)
+app.include_router(company_router)
+app.include_router(jobs_router)
+app.include_router(media_router)
+app.include_router(reports_router)
+app.include_router(search_router)
+app.include_router(tasks_router)
+app.include_router(websocket_router)
+app.include_router(security_router)
+app.include_router(monitoring_router)
 
 
 @app.get("/health")

@@ -28,3 +28,36 @@ def verify_password(password: str, hashed_password: str) -> bool:
     except (ValueError, TypeError):
         return False
 
+
+def validate_password_strength(password: str) -> tuple[bool, str]:
+    """
+    Validate password against enterprise security policy.
+    Requires minimum 8 characters, uppercase, lowercase, digit, and special character.
+    """
+    import re
+    if not password or len(password) < 8:
+        return False, "Password must be at least 8 characters long."
+    if not re.search(r"[A-Z]", password):
+        return False, "Password must contain at least one uppercase letter."
+    if not re.search(r"[a-z]", password):
+        return False, "Password must contain at least one lowercase letter."
+    if not re.search(r"\d", password):
+        return False, "Password must contain at least one digit."
+    if not re.search(r"[!@#$%^&*(),.?\":{}|<>]", password):
+        return False, "Password must contain at least one special character."
+    return True, "Password meets security requirements."
+
+
+def generate_secure_otp(length: int = 6) -> str:
+    """Generate cryptographically secure numeric OTP string."""
+    import secrets
+    return "".join(secrets.choice("0123456789") for _ in range(length))
+
+
+def sanitize_input(text: str) -> str:
+    """Sanitize string input against basic HTML/XSS injection."""
+    if not text:
+        return ""
+    import html
+    return html.escape(text.strip())
+

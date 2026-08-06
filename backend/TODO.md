@@ -29,9 +29,32 @@
 - [x] Update TODO.md — mark Module 2 complete
 
 ## Module 3: Jobs Module
+
+### Plan Steps
+- [x] Create `app/crud/jobs.py` — JobCRUD (job posts + applications)
+- [x] Create `app/schemas/jobs.py` — Jobs Pydantic schemas
+- [x] Create `app/services/jobs.py` — JobService (company + technician flows)
+- [x] Create `app/api/jobs/__init__.py` + `app/api/jobs/router.py` — Jobs endpoints
+- [x] Add `job_posts`/`job_applications` relationships on `Company`/`Technician`/`JobPost`/`JobApplication` models
+- [x] Fix company auto-registration (`company_name` NOT NULL) in `app/crud/user.py`
+- [x] Register jobs router in `app/main.py`
+- [x] Export `JobService` in `app/services/__init__.py`
+- [x] Verify syntax (AST parse)
+- [x] Verify full app import + route registration (all jobs routes present)
+- [x] Create `jobs_smoke_test.py` — end-to-end jobs flow test
+- [x] Run jobs smoke test (all 10 checks pass)
+- [x] Update TODO.md — mark Module 3 complete
+
 ## Module 4: Notifications Module
+- [x] Completed earlier (already implemented in codebase)
+
 ## Module 5: QR Verification Module
 ## Module 6: Coupon Module
+- [x] Completed earlier (already implemented in codebase)
+
 ## Module 7: Invoice Module
+- [x] Completed earlier (already implemented in codebase)
+
 ## Module 8: Reports & Analytics
 ## Module 9: Final End-to-End Testing
+

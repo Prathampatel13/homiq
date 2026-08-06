@@ -111,3 +111,22 @@ class ReviewCRUD:
             distribution[int(row[0])] = row[1]
         return distribution
 
+    def get_technician_rating_summary(self, technician_id: int) -> dict:
+        """Returns structured rating summary for a technician."""
+        avg_rating = self.average_rating(technician_id)
+        total = self.count_reviews(technician_id=technician_id)
+        dist_dict = self.rating_distribution(technician_id)
+        return {
+            "technician_id": technician_id,
+            "average_rating": round(avg_rating, 2),
+            "total_reviews": total,
+            "distribution": {
+                "star_5": dist_dict.get(5, 0),
+                "star_4": dist_dict.get(4, 0),
+                "star_3": dist_dict.get(3, 0),
+                "star_2": dist_dict.get(2, 0),
+                "star_1": dist_dict.get(1, 0),
+            },
+        }
+
+

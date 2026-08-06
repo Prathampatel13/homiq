@@ -11,17 +11,20 @@ from __future__ import annotations
 
 from typing import Any, Optional
 
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Depends, status, BackgroundTasks
 from sqlalchemy.orm import Session
 
 from app.database.session import get_db
 from app.models.auth import User
 from app.security.deps import get_current_user
 from app.schemas.notifications import (
+    MultiChannelNotificationCreate,
     NotificationCreate,
+    NotificationDispatchResult,
     NotificationListResponse,
     NotificationMarkRead,
     NotificationResponse,
+    UnreadNotificationsResponse,
 )
 from app.services.notification import NotificationService
 
@@ -50,6 +53,22 @@ def list_notifications(
     )
 
 
+@router.get(
+    "/unread",
+    response_model=UnreadNotificationsResponse,
+    summary="Get unread notifications",
+    description="Returns all unread notifications and the unread count for the authenticated user.",
+)
+def get_unread_notifications(
+    offset: int = 0,
+    limit: int = 50,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> Any:
+    """Get unread notifications for current user."""
+    return NotificationService(db).get_unread_notifications(current_user, offset=offset, limit=limit)
+
+
 @router.post(
     "/",
     response_model=NotificationResponse,
@@ -66,10 +85,47 @@ def create_notification(
     return NotificationService(db).create_notification(payload)
 
 
+@router.post(
+    "/dispatch",
+    response_model=NotificationDispatchResult,
+    status_code=status.HTTP_200_OK,
+    summary="Dispatch multi-channel notification",
+    description="Dispatches a notification across Email, SMS, Push, and In-App channels in the background.",
+)
+def dispatch_notification(
+    payload: MultiChannelNotificationCreate,
+    background_tasks: BackgroundTasks,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> Any:
+    """Dispatch multi-channel notification in the background."""
+    service = NotificationService(db)
+    background_tasks.add_task(service.dispatch_multi_channel_notification, payload)
+    return service.dispatch_multi_channel_notification(payload)
+
+
+# ─── MARK AS READ ENDPOINTS ──────────────────────────────────────────────
+
+
+@router.patch(
+    "/{notification_id}/read",
+    response_model=NotificationResponse,
+    summary="Mark notification as read (PATCH)",
+    description="Marks a single notification as read for the authenticated user.",
+)
+def patch_mark_as_read(
+    notification_id: int,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> Any:
+    """Mark a notification as read via PATCH."""
+    return NotificationService(db).mark_as_read(current_user, notification_id)
+
+
 @router.put(
     "/{notification_id}/read",
     response_model=NotificationResponse,
-    summary="Mark notification as read",
+    summary="Mark notification as read (PUT)",
     description="Marks a single notification as read for the authenticated user.",
 )
 def mark_as_read(
@@ -77,20 +133,33 @@ def mark_as_read(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ) -> Any:
-    """Mark a notification as read."""
+    """Mark a notification as read via PUT."""
     return NotificationService(db).mark_as_read(current_user, notification_id)
+
+
+@router.patch(
+    "/read-all",
+    summary="Mark all notifications as read (PATCH)",
+    description="Marks all notifications as read for the authenticated user.",
+)
+def patch_mark_all_as_read(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> Any:
+    """Mark all notifications as read via PATCH."""
+    return NotificationService(db).mark_all_as_read(current_user)
 
 
 @router.put(
     "/read-all",
-    summary="Mark all notifications as read",
+    summary="Mark all notifications as read (PUT)",
     description="Marks all notifications as read for the authenticated user.",
 )
 def mark_all_as_read(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ) -> Any:
-    """Mark all notifications as read."""
+    """Mark all notifications as read via PUT."""
     return NotificationService(db).mark_all_as_read(current_user)
 
 
@@ -106,6 +175,9 @@ def mark_multiple_as_read(
 ) -> Any:
     """Mark multiple notifications as read."""
     return NotificationService(db).mark_multiple_as_read(current_user, payload)
+
+
+# ─── DELETE ENDPOINTS ───────────────────────────────────────────────────
 
 
 @router.delete(
@@ -135,4 +207,5 @@ def delete_all_notifications(
 ) -> Any:
     """Delete all notifications for the current user."""
     return NotificationService(db).delete_all_notifications(current_user)
+
 

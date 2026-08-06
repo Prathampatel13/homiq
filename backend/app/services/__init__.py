@@ -13,6 +13,8 @@ from app.services.customer_dashboard import CustomerDashboardService
 from app.services.technician_dashboard import TechnicianDashboardService
 from app.services.report import ReportService
 from app.services.analytics import AnalyticsService
+from app.services.company import CompanyService
+from app.services.jobs import JobService
 
 __all__ = [
     "BookingService",
@@ -30,6 +32,6 @@ __all__ = [
     "TechnicianDashboardService",
     "ReportService",
     "AnalyticsService",
+    "CompanyService",
+    "JobService",
 ]
-
-

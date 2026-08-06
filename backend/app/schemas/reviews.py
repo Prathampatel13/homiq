@@ -43,3 +43,29 @@ class ReviewListResponse(BaseModel):
 
     model_config = {"from_attributes": True}
 
+
+# ─── Reviews & Ratings Extensions ─────────────────────────────────────────
+
+
+class RatingDistributionBreakdown(BaseModel):
+    star_5: int = 0
+    star_4: int = 0
+    star_3: int = 0
+    star_2: int = 0
+    star_1: int = 0
+
+
+class TechnicianRatingSummaryResponse(BaseModel):
+    technician_id: int
+    average_rating: float = 0.0
+    total_reviews: int = 0
+    distribution: RatingDistributionBreakdown
+
+    model_config = {"from_attributes": True}
+
+
+class ReviewPatch(BaseModel):
+    rating: Optional[int] = Field(None, ge=1, le=5)
+    comment: Optional[str] = Field(None, max_length=2000)
+
+

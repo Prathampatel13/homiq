@@ -162,16 +162,40 @@ class ReportService:
 
         total = self.db.scalar(select(func.count()).select_from(base.subquery())) or 0
         completed = self.db.scalar(
-            select(func.count(Booking.id)).where(Booking.status == BookingStatus.COMPLETED)
+            select(func.count(Booking.id)).where(
+                Booking.status.in_([
+                    BookingStatus.COMPLETED,
+                    BookingStatus.WAITING_PAYMENT,
+                    BookingStatus.PAID,
+                    BookingStatus.REVIEW_PENDING,
+                    BookingStatus.CLOSED,
+                ])
+            )
         ) or 0
         cancelled = self.db.scalar(
-            select(func.count(Booking.id)).where(Booking.status == BookingStatus.CANCELLED)
+            select(func.count(Booking.id)).where(
+                Booking.status.in_([
+                    BookingStatus.CANCELLED,
+                    BookingStatus.EXPIRED,
+                    BookingStatus.REJECTED,
+                ])
+            )
         ) or 0
         pending = self.db.scalar(
             select(func.count(Booking.id)).where(Booking.status == BookingStatus.PENDING)
         ) or 0
         in_progress = self.db.scalar(
-            select(func.count(Booking.id)).where(Booking.status == BookingStatus.IN_PROGRESS)
+            select(func.count(Booking.id)).where(
+                Booking.status.in_([
+                    BookingStatus.ASSIGNED,
+                    BookingStatus.ACCEPTED,
+                    BookingStatus.ON_THE_WAY,
+                    BookingStatus.ARRIVED,
+                    BookingStatus.WAITING_QR,
+                    BookingStatus.QR_VERIFIED,
+                    BookingStatus.IN_PROGRESS,
+                ])
+            )
         ) or 0
 
         # Average completion time (in hours)

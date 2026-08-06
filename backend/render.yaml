@@ -1,0 +1,80 @@
+services:
+  # ── 1. FastAPI Web Backend Service ─────────────────────────────────────────
+  - type: web
+    name: homiq-backend
+    env: docker
+    dockerfilePath: ./Dockerfile
+    healthCheckPath: /health
+    autoDeploy: true
+    envVars:
+      - key: ENV
+        value: production
+      - key: DATABASE_URL
+        fromDatabase:
+          name: homiq-postgres
+          property: connectionString
+      - key: REDIS_URL
+        fromService:
+          type: redis
+          name: homiq-redis
+          property: connectionString
+      - key: REDIS_BROKER_URL
+        fromService:
+          type: redis
+          name: homiq-redis
+          property: connectionString
+      - key: SECRET_KEY
+        generateValue: true
+
+  # ── 2. Celery Background Worker Service ─────────────────────────────────────
+  - type: worker
+    name: homiq-celery-worker
+    env: docker
+    dockerfilePath: ./Dockerfile
+    dockerCommand: celery -A app.core.celery_app worker --loglevel=info
+    autoDeploy: true
+    envVars:
+      - key: ENV
+        value: production
+      - key: DATABASE_URL
+        fromDatabase:
+          name: homiq-postgres
+          property: connectionString
+      - key: REDIS_URL
+        fromService:
+          type: redis
+          name: homiq-redis
+          property: connectionString
+
+  # ── 3. Celery Beat Scheduler Service ───────────────────────────────────────
+  - type: worker
+    name: homiq-celery-beat
+    env: docker
+    dockerfilePath: ./Dockerfile
+    dockerCommand: celery -A app.core.celery_app beat --loglevel=info
+    autoDeploy: true
+    envVars:
+      - key: ENV
+        value: production
+      - key: DATABASE_URL
+        fromDatabase:
+          name: homiq-postgres
+          property: connectionString
+      - key: REDIS_URL
+        fromService:
+          type: redis
+          name: homiq-redis
+          property: connectionString
+
+# ── Databases & Managed Services ─────────────────────────────────────────────
+databases:
+  - name: homiq-postgres
+    databaseName: homiq_db
+    user: homiq_user
+    plan: starter
+
+services:
+  - type: redis
+    name: homiq-redis
+    plan: starter
+    ipAllowList: []

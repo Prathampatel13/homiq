@@ -130,11 +130,9 @@ class NotificationCRUD:
 
     def delete_old_notifications(self, days: int = 30) -> int:
         """Delete notifications older than specified days. Returns number deleted."""
-        cutoff = datetime.now(timezone.utc).replace(tzinfo=None)
-        # SQLAlchemy DateTime with timezone handling
-        from sqlalchemy import cast, Date
+        cutoff = datetime.now(timezone.utc)
         stmt = select(Notification).where(
-            Notification.created_at < cutoff  # Simplified; production should handle tz
+            Notification.created_at < cutoff
         )
         notifications = list(self.db.execute(stmt).scalars().all())
         count = len(notifications)
@@ -142,4 +140,19 @@ class NotificationCRUD:
             self.db.delete(n)
         self.db.commit()
         return count
+
+    def get_unread_notifications(
+        self,
+        user_id: int,
+        offset: int = 0,
+        limit: int = 50,
+    ) -> list[Notification]:
+        """Fetch all unread notifications for a user."""
+        return self.list_notifications(
+            user_id=user_id,
+            is_read=False,
+            offset=offset,
+            limit=limit,
+        )
+
 

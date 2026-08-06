@@ -59,8 +59,14 @@ class ReviewService:
                 detail="This booking does not belong to you.",
             )
 
-        # Verify booking is completed
-        if booking.status != BookingStatus.COMPLETED:
+        # Verify booking is completed (post-completion pipeline)
+        if booking.status not in [
+            BookingStatus.COMPLETED,
+            BookingStatus.WAITING_PAYMENT,
+            BookingStatus.PAID,
+            BookingStatus.REVIEW_PENDING,
+            BookingStatus.CLOSED,
+        ]:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="Can only review completed bookings.",
@@ -223,4 +229,24 @@ class ReviewService:
             offset=offset,
             limit=limit,
         )
+
+    def get_technician_rating_summary(self, technician_id: int):
+        """Get rating summary and star distribution breakdown for a technician."""
+        from app.schemas.reviews import TechnicianRatingSummaryResponse
+        technician = self.technician_crud.get_by_technician_id(technician_id)
+        if not technician:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Technician not found.",
+            )
+        summary = self.crud.get_technician_rating_summary(technician_id)
+        return TechnicianRatingSummaryResponse.model_validate(summary)
+
+    def patch_review(
+        self, current_user: User, review_id: int, payload: Any
+    ) -> ReviewResponse:
+        """Patch rating or comment of an existing review."""
+        update_payload = ReviewUpdate(**payload.model_dump(exclude_unset=True, exclude_none=True))
+        return self.update_review(current_user, review_id, update_payload)
+
 

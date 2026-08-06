@@ -16,14 +16,27 @@ from app.database.session import get_db
 from app.models.auth import User
 from app.security.deps import get_current_user
 from app.schemas.bookings import (
+    AssignedTechnicianResponse,
     BookingAssignTechnician,
+    BookingCancelRequest,
     BookingCreate,
+    BookingHistoryResponse,
     BookingListResponse,
+    BookingRejectRequest,
+    BookingRescheduleRequest,
     BookingResponse,
     BookingStatusUpdate,
     BookingUpdate,
+    OTPGenerateResponse,
+    OTPVerifyRequest,
+    OTPVerifyResponse,
+    QRGenerateResponse,
+    QRScanRequest,
+    QRScanResponse,
+    SmartVerifyStatusResponse,
 )
 from app.services.booking import BookingService
+from app.services.smart_verify import SmartVerifyService
 
 router = APIRouter(prefix="/bookings", tags=["Bookings"])
 
@@ -96,10 +109,7 @@ def list_bookings(
         db: Database session.
 
     Returns:
-        BookingListResponse: A list of bookings and the total count.
-
-    Raises:
-        401: If not authenticated.
+        BookingListResponse: Paginated list of bookings.
     """
     return BookingService(db).list_bookings(current_user, offset=offset, limit=limit)
 
@@ -314,4 +324,555 @@ def update_status(
     return BookingService(db).update_status(
         current_user, booking_id, payload.status, admin_note=payload.admin_note
     )
+
+
+# ─── CUSTOMER: CANCEL ────────────────────────────────────────────────
+
+
+@router.post(
+    "/{booking_id}/cancel",
+    response_model=BookingResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Cancel a booking",
+    description=(
+        "Cancels an existing booking. The booking owner (customer) or an "
+        "admin may cancel. Customers may only cancel from the "
+        "pending / assigned / accepted / on_the_way statuses. "
+        "Returns 409 if the booking cannot be cancelled from its current status."
+    ),
+    response_description="The cancelled booking details.",
+)
+def cancel_booking(
+    booking_id: int,
+    payload: BookingCancelRequest,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> Any:
+    """Cancel a booking.
+
+    Args:
+        booking_id: The unique booking ID.
+        payload: Reason for cancellation.
+        current_user: Authenticated user (JWT).
+        db: Database session.
+
+    Returns:
+        BookingResponse: The cancelled booking.
+
+    Raises:
+        401: If not authenticated.
+        403: If not authorized to cancel.
+        404: If the booking is not found.
+        409: If the booking cannot be cancelled from its current status.
+    """
+    return BookingService(db).cancel_booking(current_user, booking_id, payload)
+
+
+# ─── CUSTOMER: RESCHEDULE ────────────────────────────────────────────
+
+
+@router.put(
+    "/{booking_id}/reschedule",
+    response_model=BookingResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Reschedule a booking",
+    description=(
+        "Reschedules an existing booking to a new date/time. The booking "
+        "owner (customer) or an admin may reschedule. Customers may only "
+        "reschedule from the pending / assigned / accepted statuses."
+    ),
+    response_description="The rescheduled booking details.",
+)
+def reschedule_booking(
+    booking_id: int,
+    payload: BookingRescheduleRequest,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> Any:
+    """Reschedule a booking.
+
+    Args:
+        booking_id: The unique booking ID.
+        payload: New booking date and preferred time.
+        current_user: Authenticated user (JWT).
+        db: Database session.
+
+    Returns:
+        BookingResponse: The rescheduled booking.
+
+    Raises:
+        401: If not authenticated.
+        403: If not authorized to reschedule.
+        404: If the booking is not found.
+        409: If the booking cannot be rescheduled from its current status.
+    """
+    return BookingService(db).reschedule_booking(current_user, booking_id, payload)
+
+
+# ─── CUSTOMER: HISTORY ───────────────────────────────────────────────
+
+
+@router.get(
+    "/{booking_id}/history",
+    response_model=BookingHistoryResponse,
+    summary="Booking history",
+    description=(
+        "Returns the status-change history (audit trail) for a booking. "
+        "Access is restricted to the booking owner, the assigned "
+        "technician, or an admin."
+    ),
+    response_description="The booking's status-change history.",
+)
+def get_booking_history(
+    booking_id: int,
+    offset: int = 0,
+    limit: int = 100,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> Any:
+    """Get the status-change history for a booking.
+
+    Args:
+        booking_id: The unique booking ID.
+        offset: Number of records to skip (pagination).
+        limit: Maximum number of records to return.
+        current_user: Authenticated user (JWT).
+        db: Database session.
+
+    Returns:
+        BookingHistoryResponse: The booking's status-change history.
+
+    Raises:
+        401: If not authenticated.
+        403: If not authorized to view.
+        404: If the booking is not found.
+    """
+    return BookingService(db).get_booking_history(
+        current_user, booking_id, offset=offset, limit=limit
+    )
+
+
+# ─── CUSTOMER: TRACK ─────────────────────────────────────────────────
+
+
+@router.get(
+    "/{booking_id}/track",
+    response_model=BookingResponse,
+    summary="Track a booking",
+    description=(
+        "Returns the current state of a booking for live tracking. "
+        "Access is restricted to the booking owner, the assigned "
+        "technician, or an admin."
+    ),
+    response_description="The current booking details.",
+)
+def track_booking(
+    booking_id: int,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> Any:
+    """Track a booking.
+
+    Args:
+        booking_id: The unique booking ID.
+        current_user: Authenticated user (JWT).
+        db: Database session.
+
+    Returns:
+        BookingResponse: The current booking details.
+
+    Raises:
+        401: If not authenticated.
+        403: If not authorized to view.
+        404: If the booking is not found.
+    """
+    return BookingService(db).track_booking(current_user, booking_id)
+
+
+# ─── CUSTOMER: ASSIGNED TECHNICIAN ───────────────────────────────────
+
+
+@router.get(
+    "/{booking_id}/technician",
+    response_model=AssignedTechnicianResponse,
+    summary="View assigned technician",
+    description=(
+        "Returns the technician assigned to a booking. Access is "
+        "restricted to the booking owner, the assigned technician, or an admin."
+    ),
+    response_description="The assigned technician's details.",
+)
+def get_assigned_technician(
+    booking_id: int,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> Any:
+    """View the technician assigned to a booking.
+
+    Args:
+        booking_id: The unique booking ID.
+        current_user: Authenticated user (JWT).
+        db: Database session.
+
+    Returns:
+        AssignedTechnicianResponse: The assigned technician's details.
+
+    Raises:
+        401: If not authenticated.
+        403: If not authorized to view.
+        404: If the booking or technician is not found.
+    """
+    return BookingService(db).get_assigned_technician(current_user, booking_id)
+
+
+# ─── TECHNICIAN: ACCEPT ──────────────────────────────────────────────
+
+
+@router.post(
+    "/{booking_id}/accept",
+    response_model=BookingResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Accept a booking",
+    description=(
+        "Accepts an assigned booking. Only the assigned technician or an "
+        "admin may accept. The booking must be in 'assigned' status."
+    ),
+    response_description="The accepted booking details.",
+)
+def accept_booking(
+    booking_id: int,
+    payload: BookingRejectRequest,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> Any:
+    """Accept an assigned booking.
+
+    Args:
+        booking_id: The unique booking ID.
+        payload: Reason for the action.
+        current_user: Authenticated user (JWT, must be technician or admin).
+        db: Database session.
+
+    Returns:
+        BookingResponse: The accepted booking.
+
+    Raises:
+        401: If not authenticated.
+        403: If not the assigned technician or admin.
+        404: If the booking is not found.
+        409: If the transition is invalid.
+    """
+    return BookingService(db).accept_booking(current_user, booking_id, payload)
+
+
+# ─── TECHNICIAN: REJECT ──────────────────────────────────────────────
+
+
+@router.post(
+    "/{booking_id}/reject",
+    response_model=BookingResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Reject a booking",
+    description=(
+        "Rejects an assigned booking. Only the assigned technician or an "
+        "admin may reject. The booking must be in 'assigned' status."
+    ),
+    response_description="The rejected booking details.",
+)
+def reject_booking(
+    booking_id: int,
+    payload: BookingRejectRequest,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> Any:
+    """Reject an assigned booking.
+
+    Args:
+        booking_id: The unique booking ID.
+        payload: Reason for the rejection.
+        current_user: Authenticated user (JWT, must be technician or admin).
+        db: Database session.
+
+    Returns:
+        BookingResponse: The rejected booking.
+
+    Raises:
+        401: If not authenticated.
+        403: If not the assigned technician or admin.
+        404: If the booking is not found.
+        409: If the transition is invalid.
+    """
+    return BookingService(db).reject_booking(current_user, booking_id, payload)
+
+
+# ─── TECHNICIAN: START TRIP ──────────────────────────────────────────
+
+
+@router.post(
+    "/{booking_id}/start-trip",
+    response_model=BookingResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Start trip",
+    description=(
+        "Marks the technician as 'on the way'. Only the assigned "
+        "technician or an admin may start the trip. The booking must be "
+        "in 'accepted' status."
+    ),
+    response_description="The updated booking details.",
+)
+def start_trip(
+    booking_id: int,
+    payload: BookingRejectRequest,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> Any:
+    """Mark the technician as on the way.
+
+    Args:
+        booking_id: The unique booking ID.
+        payload: Reason for the action.
+        current_user: Authenticated user (JWT, must be technician or admin).
+        db: Database session.
+
+    Returns:
+        BookingResponse: The updated booking.
+
+    Raises:
+        401: If not authenticated.
+        403: If not the assigned technician or admin.
+        404: If the booking is not found.
+        409: If the transition is invalid.
+    """
+    return BookingService(db).start_trip(current_user, booking_id, payload)
+
+
+# ─── TECHNICIAN: ARRIVED ─────────────────────────────────────────────
+
+
+@router.post(
+    "/{booking_id}/arrived",
+    response_model=BookingResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Mark arrived",
+    description=(
+        "Marks the technician as arrived. Only the assigned technician or "
+        "an admin may mark arrived. The booking must be in 'on_the_way' status."
+    ),
+    response_description="The updated booking details.",
+)
+def mark_arrived(
+    booking_id: int,
+    payload: BookingRejectRequest,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> Any:
+    """Mark the technician as arrived.
+
+    Args:
+        booking_id: The unique booking ID.
+        payload: Reason for the action.
+        current_user: Authenticated user (JWT, must be technician or admin).
+        db: Database session.
+
+    Returns:
+        BookingResponse: The updated booking.
+
+    Raises:
+        401: If not authenticated.
+        403: If not the assigned technician or admin.
+        404: If the booking is not found.
+        409: If the transition is invalid.
+    """
+    return BookingService(db).mark_arrived(current_user, booking_id, payload)
+
+
+# ─── TECHNICIAN: START SERVICE ───────────────────────────────────────
+
+
+@router.post(
+    "/{booking_id}/start-service",
+    response_model=BookingResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Start service",
+    description=(
+        "Starts the service for a booking. Only the assigned technician or "
+        "an admin may start the service. The booking must be in "
+        "'qr_verified' status."
+    ),
+    response_description="The updated booking details.",
+)
+def start_service(
+    booking_id: int,
+    payload: BookingRejectRequest,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> Any:
+    """Start the service for a booking.
+
+    Args:
+        booking_id: The unique booking ID.
+        payload: Reason for the action.
+        current_user: Authenticated user (JWT, must be technician or admin).
+        db: Database session.
+
+    Returns:
+        BookingResponse: The updated booking.
+
+    Raises:
+        401: If not authenticated.
+        403: If not the assigned technician or admin.
+        404: If the booking is not found.
+        409: If the transition is invalid.
+    """
+    return BookingService(db).start_service(current_user, booking_id, payload)
+
+
+# ─── TECHNICIAN: COMPLETE SERVICE ────────────────────────────────────
+
+
+@router.post(
+    "/{booking_id}/complete",
+    response_model=BookingResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Complete service",
+    description=(
+        "Completes the service for a booking. Only the assigned technician "
+        "or an admin may complete. The booking must be in 'in_progress' status."
+    ),
+    response_description="The completed booking details.",
+)
+def complete_service(
+    booking_id: int,
+    payload: BookingRejectRequest,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> Any:
+    """Complete the service for a booking.
+
+    Args:
+        booking_id: The unique booking ID.
+        payload: Reason for the action.
+        current_user: Authenticated user (JWT, must be technician or admin).
+        db: Database session.
+
+    Returns:
+        BookingResponse: The completed booking.
+
+    Raises:
+        401: If not authenticated.
+        403: If not the assigned technician or admin.
+        404: If the booking is not found.
+        409: If the transition is invalid.
+    """
+    return BookingService(db).complete_service(current_user, booking_id, payload)
+
+
+# ─── SMARTVERIFY QR & OTP ENDPOINTS ──────────────────────────────────────
+
+
+@router.post(
+    "/{booking_id}/generate-qr",
+    response_model=QRGenerateResponse,
+    status_code=status.HTTP_201_CREATED,
+    summary="Generate verification QR code",
+    description=(
+        "Generates a single-use, time-limited, encrypted verification QR token "
+        "for a booking. Booking must be assigned to a technician."
+    ),
+)
+def generate_qr(
+    booking_id: int,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> Any:
+    """Generate SmartVerify QR code (Customer only)."""
+    return SmartVerifyService(db).generate_qr(current_user, booking_id)
+
+
+@router.get(
+    "/{booking_id}/qr",
+    response_model=QRGenerateResponse,
+    summary="Get active verification QR code",
+    description="Retrieves active QR code data and token for a booking.",
+)
+def get_qr(
+    booking_id: int,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> Any:
+    """Get active QR code (Customer or Assigned Technician)."""
+    return SmartVerifyService(db).get_qr(current_user, booking_id)
+
+
+@router.post(
+    "/{booking_id}/scan-qr",
+    response_model=QRScanResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Scan and verify QR code",
+    description=(
+        "Scans and verifies the QR code. Only the assigned technician "
+        "can scan the QR code. On success, transitions booking to 'qr_verified' "
+        "and sends 6-digit OTP to customer."
+    ),
+)
+def scan_qr(
+    booking_id: int,
+    payload: QRScanRequest,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> Any:
+    """Scan and verify QR code (Assigned Technician only)."""
+    return SmartVerifyService(db).scan_qr(current_user, booking_id, payload)
+
+
+@router.post(
+    "/{booking_id}/generate-otp",
+    response_model=OTPGenerateResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Generate 6-digit OTP",
+    description="Generates a 6-digit OTP code for service start verification (5-min TTL).",
+)
+def generate_otp(
+    booking_id: int,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> Any:
+    """Generate 6-digit OTP."""
+    return SmartVerifyService(db).generate_otp(current_user, booking_id)
+
+
+@router.post(
+    "/{booking_id}/verify-otp",
+    response_model=OTPVerifyResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Verify OTP and start service",
+    description=(
+        "Verifies the 6-digit OTP entered by customer. On success, invalidates OTP "
+        "and transitions booking status to 'in_progress'."
+    ),
+)
+def verify_otp(
+    booking_id: int,
+    payload: OTPVerifyRequest,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> Any:
+    """Verify OTP and start service (Customer only)."""
+    return SmartVerifyService(db).verify_otp(current_user, booking_id, payload)
+
+
+@router.get(
+    "/{booking_id}/verification-status",
+    response_model=SmartVerifyStatusResponse,
+    summary="Get verification status",
+    description="Returns current SmartVerify step and verification status flags for a booking.",
+)
+def get_verification_status(
+    booking_id: int,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> Any:
+    """Get SmartVerify status."""
+    return SmartVerifyService(db).get_verification_status(current_user, booking_id)
+
 

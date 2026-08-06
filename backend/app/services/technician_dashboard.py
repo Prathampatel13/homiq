@@ -55,7 +55,13 @@ class TechnicianDashboardService:
         in_progress = self.db.scalar(
             select(func.count(Booking.id)).where(
                 Booking.technician_id == technician_id,
-                Booking.status == BookingStatus.IN_PROGRESS,
+                Booking.status.in_([
+                    BookingStatus.ON_THE_WAY,
+                    BookingStatus.ARRIVED,
+                    BookingStatus.WAITING_QR,
+                    BookingStatus.QR_VERIFIED,
+                    BookingStatus.IN_PROGRESS,
+                ]),
             )
         ) or 0
         completed = self.db.scalar(
@@ -162,7 +168,14 @@ class TechnicianDashboardService:
             select(Booking)
             .where(
                 Booking.technician_id == technician_id,
-                Booking.status.in_([BookingStatus.ASSIGNED, BookingStatus.ACCEPTED]),
+                Booking.status.in_([
+                    BookingStatus.ASSIGNED,
+                    BookingStatus.ACCEPTED,
+                    BookingStatus.ON_THE_WAY,
+                    BookingStatus.ARRIVED,
+                    BookingStatus.WAITING_QR,
+                    BookingStatus.QR_VERIFIED,
+                ]),
             )
             .order_by(Booking.booking_date.asc(), Booking.preferred_time.asc())
             .limit(1)
@@ -182,4 +195,3 @@ class TechnicianDashboardService:
             amount=amount,
             created_at=booking.created_at,
         )
-

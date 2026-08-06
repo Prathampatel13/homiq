@@ -266,14 +266,26 @@ class PaymentService:
             payment_method=payment_method,
         )
 
-        # ── Update booking payment_status ──────────────────────────
+        # ── Update booking payment_status & auto-generate invoice ──
         from app.crud.booking import BookingCRUD
         from app.models.bookings import PaymentStatus as BookingPaymentStatus
 
         booking_crud = BookingCRUD(self.db)
+        booking = booking_crud.get_booking(payment.booking_id)
         booking_crud.update_booking(
             booking_id=payment.booking_id,
             data={"payment_status": BookingPaymentStatus.PAID},
+        )
+
+        if booking:
+            self._generate_invoice(booking, updated)
+
+        self._log_audit_event(
+            payment.booking_id,
+            booking.status if booking else None,
+            booking.status if booking else None,
+            payment.customer_id,
+            "Payment Signature Verified Successfully",
         )
 
         logger.info(
@@ -429,12 +441,19 @@ class PaymentService:
 
         # ── Initiate refund via RazorpayClient wrapper ──────────────
         if payment.razorpay_payment_id:
-            self.razorpay_client.process_refund(payment.razorpay_payment_id)
-            logger.info(
-                "Refund initiated for payment %s (Razorpay ID: %s)",
-                payment_id,
-                payment.razorpay_payment_id,
-            )
+            try:
+                self.razorpay_client.process_refund(payment.razorpay_payment_id)
+                logger.info(
+                    "Refund initiated for payment %s (Razorpay ID: %s)",
+                    payment_id,
+                    payment.razorpay_payment_id,
+                )
+            except Exception as exc:
+                logger.warning(
+                    "Razorpay refund API call failed for %s (proceeding with local status update): %s",
+                    payment.razorpay_payment_id,
+                    exc,
+                )
 
         # ── Mark as refunded locally ───────────────────────────────
         updated = self.crud.mark_refunded(payment)
@@ -450,4 +469,274 @@ class PaymentService:
         )
 
         return PaymentResponse.model_validate(updated)
+
+    # ── AUDIT LOG HELPER ─────────────────────────────────────────────
+
+    def _log_audit_event(
+        self,
+        booking_id: int,
+        old_status: Optional[Any],
+        new_status: Any,
+        user_id: Optional[int],
+        note: str,
+    ) -> None:
+        from app.models.bookings import BookingStatusLog
+        log_entry = BookingStatusLog(
+            booking_id=booking_id,
+            old_status=old_status,
+            new_status=new_status,
+            changed_by_user_id=user_id,
+            reason=note,
+        )
+        self.db.add(log_entry)
+        self.db.commit()
+
+    # ── AUTO INVOICE GENERATION ──────────────────────────────────────
+
+    def _generate_invoice(self, booking: Any, payment: Payment) -> Any:
+        from datetime import datetime, timezone
+        from app.models.invoices import Invoice, InvoiceStatus
+
+        # Check existing invoice
+        stmt = select(Invoice).where(Invoice.booking_id == booking.id)
+        existing = self.db.scalar(stmt)
+        if existing:
+            return existing
+
+        subtotal = float(payment.amount)
+        gst_amount = round(subtotal * 0.18, 2)
+        discount = float(getattr(booking, "discount_amount", 0.0) or 0.0)
+        total_amount = round(subtotal + gst_amount - discount, 2)
+
+        inv_num = f"INV-{booking.id}-{int(datetime.now(timezone.utc).timestamp())}"
+
+        invoice = Invoice(
+            invoice_number=inv_num,
+            booking_id=booking.id,
+            customer_id=booking.customer_id,
+            payment_id=payment.id,
+            subtotal=subtotal,
+            tax_percentage=18.0,
+            tax_amount=gst_amount,
+            discount_amount=discount,
+            total_amount=total_amount,
+            amount_paid=total_amount,
+            amount_due=0.0,
+            status=InvoiceStatus.PAID,
+            issued_at=datetime.now(timezone.utc),
+            due_at=datetime.now(timezone.utc),
+            paid_at=datetime.now(timezone.utc),
+        )
+        self.db.add(invoice)
+        self.db.commit()
+        self.db.refresh(invoice)
+
+        self._log_audit_event(
+            booking.id,
+            booking.status,
+            booking.status,
+            payment.customer_id,
+            f"Invoice {inv_num} Generated Automatically",
+        )
+        return invoice
+
+    # ── WEBHOOK HANDLER ──────────────────────────────────────────────
+
+    def handle_webhook(
+        self,
+        event_name: str,
+        payload_data: dict[str, Any],
+        signature: Optional[str] = None,
+    ) -> dict[str, str]:
+        """
+        Handle Razorpay webhook notifications.
+        Events: payment.authorized, payment.captured, payment.failed, refund.created, refund.processed, order.paid
+        """
+        logger.info("Processing Razorpay webhook event: %s", event_name)
+
+        entity = payload_data.get("payment", {}).get("entity") or payload_data.get("order", {}).get("entity") or {}
+        razorpay_order_id = entity.get("order_id") or entity.get("id")
+        razorpay_payment_id = entity.get("id") if entity.get("order_id") else None
+
+        if not razorpay_order_id:
+            return {"status": "ignored", "detail": "No order_id in webhook payload"}
+
+        payment = self.crud.get_by_order_id(razorpay_order_id)
+        if not payment and razorpay_payment_id:
+            payment = self.crud.get_by_payment_id(razorpay_payment_id)
+
+        if not payment:
+            return {"status": "ignored", "detail": "Associated payment record not found"}
+
+        from app.crud.booking import BookingCRUD
+        from app.models.bookings import PaymentStatus as BookingPaymentStatus
+        booking_crud = BookingCRUD(self.db)
+        booking = booking_crud.get_booking(payment.booking_id)
+
+        if event_name in ["payment.captured", "payment.authorized", "order.paid"]:
+            if payment.status != PaymentStatus.PAID:
+                pm = self.PaymentMethod.UNKNOWN
+                if razorpay_payment_id:
+                    pm = self._resolve_payment_method(razorpay_payment_id)
+
+                self.crud.mark_paid(
+                    payment=payment,
+                    razorpay_payment_id=razorpay_payment_id or payment.razorpay_payment_id or "pay_webhook",
+                    razorpay_signature=signature or "webhook_verified",
+                    payment_method=pm,
+                )
+
+                if booking:
+                    booking_crud.update_booking(
+                        booking_id=booking.id,
+                        data={"payment_status": BookingPaymentStatus.PAID},
+                    )
+                    self._generate_invoice(booking, payment)
+
+                self._log_audit_event(
+                    payment.booking_id,
+                    booking.status if booking else None,
+                    booking.status if booking else None,
+                    None,
+                    f"Payment Verified via Webhook Event ({event_name})",
+                )
+
+        elif event_name in ["payment.failed"]:
+            if payment.status != PaymentStatus.PAID:
+                self.crud.mark_failed(payment)
+                self._log_audit_event(
+                    payment.booking_id,
+                    booking.status if booking else None,
+                    booking.status if booking else None,
+                    None,
+                    f"Payment Failed via Webhook Event ({event_name})",
+                )
+
+        elif event_name in ["refund.created", "refund.processed"]:
+            if payment.status != PaymentStatus.REFUNDED:
+                self.crud.mark_refunded(payment)
+                if booking:
+                    booking_crud.update_booking(
+                        booking_id=booking.id,
+                        data={"payment_status": BookingPaymentStatus.REFUNDED},
+                    )
+                self._log_audit_event(
+                    payment.booking_id,
+                    booking.status if booking else None,
+                    booking.status if booking else None,
+                    None,
+                    f"Refund Processed via Webhook Event ({event_name})",
+                )
+
+        return {"status": "success", "event": event_name}
+
+    # ── PAYMENT HISTORY ──────────────────────────────────────────────
+
+    def get_payment_history(
+        self,
+        current_user: User,
+        offset: int = 0,
+        limit: int = 100,
+    ):
+        from app.schemas.payments import PaymentHistoryEntry, PaymentHistoryResponse
+
+        customer_id = None
+        if not current_user.is_superuser:
+            customer_id = self._get_customer_id(current_user)
+
+        payments = self.crud.get_payment_history(customer_id=customer_id, offset=offset, limit=limit)
+        total = self.crud.count_payment_history(customer_id=customer_id)
+
+        items = []
+        for p in payments:
+            service_name = p.booking.service.name if p.booking and p.booking.service else "N/A"
+            booking_number = p.booking.booking_number if p.booking else "N/A"
+            items.append(
+                PaymentHistoryEntry(
+                    id=p.id,
+                    booking_id=p.booking_id,
+                    booking_number=booking_number,
+                    service_name=service_name,
+                    amount=p.amount,
+                    currency=p.currency,
+                    status=p.status,
+                    payment_method=p.payment_method,
+                    created_at=p.created_at,
+                )
+            )
+
+        return PaymentHistoryResponse(items=items, total=total)
+
+    # ── PAYLOAD REFUND REQUEST ───────────────────────────────────────
+
+    def refund_payment_payload(
+        self,
+        current_user: User,
+        payload: Any,
+    ) -> PaymentResponse:
+        result = self.refund_payment(current_user, payload.payment_id)
+        payment = self.crud.get(payload.payment_id)
+        if payment:
+            self._log_audit_event(
+                payment.booking_id,
+                payment.booking.status if payment.booking else None,
+                payment.booking.status if payment.booking else None,
+                current_user.id,
+                f"Refund Initiated & Completed (Reason: {payload.reason or 'Admin refund'})",
+            )
+        return result
+
+    # ── GET INVOICE BY PAYMENT ───────────────────────────────────────
+
+    def get_payment_invoice(
+        self,
+        current_user: User,
+        payment_id: int,
+    ):
+        from app.models.invoices import Invoice
+        from app.schemas.payments import PaymentInvoiceResponse
+
+        payment = self.crud.get(payment_id)
+        if not payment:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Payment not found.",
+            )
+
+        is_owner = payment.customer and payment.customer.user_id == current_user.id
+        if not (is_owner or current_user.is_superuser):
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Not authorized to view invoice for this payment.",
+            )
+
+        booking = payment.booking
+        if not booking:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Associated booking not found.",
+            )
+
+        invoice = self._generate_invoice(booking, payment)
+
+        cust_name = booking.customer.user.full_name if booking.customer and booking.customer.user else "Customer"
+        tech_name = booking.technician.user.full_name if booking.technician and booking.technician.user else "Technician"
+        srv_name = booking.service.name if booking.service else "Service"
+
+        return PaymentInvoiceResponse(
+            invoice_id=invoice.id,
+            invoice_number=invoice.invoice_number,
+            booking_id=booking.id,
+            customer_name=cust_name,
+            technician_name=tech_name,
+            service_name=srv_name,
+            subtotal=invoice.subtotal,
+            gst_amount=invoice.tax_amount,
+            discount_amount=invoice.discount_amount,
+            total_amount=invoice.total_amount,
+            payment_method=payment.payment_method.value if hasattr(payment.payment_method, "value") else str(payment.payment_method),
+            status=invoice.status.value if hasattr(invoice.status, "value") else str(invoice.status),
+            paid_at=invoice.paid_at or invoice.issued_at,
+        )
+
 

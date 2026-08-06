@@ -1,0 +1,121 @@
+version: '3.8'
+
+services:
+  # ── 1. PostgreSQL Database Container ───────────────────────────────────────
+  postgres:
+    image: postgres:16-alpine
+    container_name: homiq_postgres
+    restart: always
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      POSTGRES_DB: ${POSTGRES_DB:-homiq_db}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-homiq_db}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - homiq_network
+
+  # ── 2. Redis Cache & Broker Container ─────────────────────────────────────
+  redis:
+    image: redis:7-alpine
+    container_name: homiq_redis
+    restart: always
+    command: redis-server --appendonly yes
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - homiq_network
+
+  # ── 3. FastAPI Backend Container ──────────────────────────────────────────
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: homiq_backend
+    restart: always
+    env_file:
+      - .env
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:5432/${POSTGRES_DB:-homiq_db}
+      REDIS_URL: redis://redis:6379/0
+      REDIS_BROKER_URL: redis://redis:6379/0
+      REDIS_RESULT_BACKEND: redis://redis:6379/1
+    volumes:
+      - uploads_data:/app/uploads
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8000/health || exit 1"]
+      interval: 15s
+      timeout: 10s
+      retries: 3
+    networks:
+      - homiq_network
+
+  # ── 4. Celery Background Worker Container ─────────────────────────────────
+  celery_worker:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: homiq_celery_worker
+    restart: always
+    command: celery -A app.core.celery_app worker --loglevel=info
+    env_file:
+      - .env
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:5432/${POSTGRES_DB:-homiq_db}
+      REDIS_URL: redis://redis:6379/0
+      REDIS_BROKER_URL: redis://redis:6379/0
+      REDIS_RESULT_BACKEND: redis://redis:6379/1
+    depends_on:
+      backend:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - homiq_network
+
+  # ── 5. Celery Beat Scheduler Container ───────────────────────────────────
+  celery_beat:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: homiq_celery_beat
+    restart: always
+    command: celery -A app.core.celery_app beat --loglevel=info
+    env_file:
+      - .env
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:5432/${POSTGRES_DB:-homiq_db}
+      REDIS_URL: redis://redis:6379/0
+      REDIS_BROKER_URL: redis://redis:6379/0
+      REDIS_RESULT_BACKEND: redis://redis:6379/1
+    depends_on:
+      backend:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - homiq_network
+
+volumes:
+  postgres_data:
+  redis_data:
+  uploads_data:
+
+networks:
+  homiq_network:
+    driver: bridge

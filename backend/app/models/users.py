@@ -12,6 +12,7 @@ if TYPE_CHECKING:
     from app.models.auth import User
     from app.models.addresses import CustomerAddress
     from app.models.bookings import Booking
+    from app.models.jobs import JobApplication, JobPost
     from app.models.payments import Payment
     from app.models.invoices import Invoice
 
@@ -97,6 +98,11 @@ class Technician(Base):
         back_populates="technician",
     )
 
+    job_applications: Mapped[list["JobApplication"]] = relationship(
+        "JobApplication",
+        back_populates="technician_profile",
+    )
+
 
 class Company(Base):
     __tablename__ = "companies"
@@ -110,6 +116,12 @@ class Company(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
 
     user: Mapped["User"] = relationship(back_populates="company")
+
+    job_posts: Mapped[list["JobPost"]] = relationship(
+        "JobPost",
+        back_populates="company_profile",
+        cascade="all, delete-orphan",
+    )
 
 
 class Admin(Base):

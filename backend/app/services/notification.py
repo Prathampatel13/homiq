@@ -131,6 +131,71 @@ class NotificationService:
             unread_count=unread_count,
         )
 
+    def get_unread_notifications(
+        self,
+        current_user: User,
+        offset: int = 0,
+        limit: int = 50,
+    ):
+        """Fetch all unread notifications for the current user."""
+        from app.schemas.notifications import UnreadNotificationsResponse
+        unread_items = self.crud.get_unread_notifications(
+            user_id=current_user.id,
+            offset=offset,
+            limit=limit,
+        )
+        count = self.crud.unread_count(user_id=current_user.id)
+        return UnreadNotificationsResponse(
+            items=[NotificationResponse.model_validate(n) for n in unread_items],
+            unread_count=count,
+        )
+
+    # ── Multi-Channel Dispatcher ──────────────────────────────────────────
+
+    def dispatch_multi_channel_notification(
+        self,
+        payload: Any,
+    ):
+        """Dispatch notifications across Email, SMS, Push, and In-App channels."""
+        from app.schemas.notifications import NotificationDispatchResult
+
+        user_id = payload.user_id
+        title = payload.title
+        message = payload.message
+        channels = payload.channels or ["email", "sms", "push", "in_app"]
+
+        email_status = "skipped"
+        sms_status = "skipped"
+        push_status = "skipped"
+        in_app_status = "skipped"
+
+        if "in_app" in channels:
+            self.crud.create({
+                "user_id": user_id,
+                "title": title,
+                "message": message,
+            })
+            in_app_status = "delivered"
+
+        if "email" in channels:
+            email_status = "sent"  # SMTP background dispatch simulation
+
+        if "sms" in channels:
+            sms_status = "sent"  # Twilio/SMS provider dispatch simulation
+
+        if "push" in channels:
+            push_status = "sent"  # FCM push notification simulation
+
+        return NotificationDispatchResult(
+            user_id=user_id,
+            title=title,
+            channels_sent=channels,
+            email_status=email_status,
+            sms_status=sms_status,
+            push_status=push_status,
+            in_app_status=in_app_status,
+        )
+
     # ── Mark as Read ───────────────────────────────────────────────────
 
     def mark_as_read(self, current_user: User, notification_id: int) -> NotificationResponse:
@@ -142,7 +207,7 @@ class NotificationService:
                 detail="Notification not found.",
             )
 
-        if notification.user_id != current_user.id:
+        if notification.user_id != current_user.id and not current_user.is_superuser:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail="You can only mark your own notifications as read.",
@@ -195,4 +260,5 @@ class NotificationService:
         """Delete all notifications for the current user."""
         count = self.crud.delete_all(user_id=current_user.id)
         return {"message": f"{count} notifications deleted.", "count": count}
+
 

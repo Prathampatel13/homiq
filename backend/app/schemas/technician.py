@@ -117,6 +117,7 @@ class TechnicianResponse(BaseModel):
     longitude: Optional[float] = None
     service_radius_km: Optional[float] = None
     is_online: bool
+    is_verified: bool = False
     rating: float
     reviews_count: int
     profile_image: Optional[str] = None
@@ -135,3 +136,8 @@ class ProfileImageResponse(BaseModel):
 class GovernmentIdImageResponse(BaseModel):
     government_id_image: str
     message: str = "Government ID uploaded successfully"
+
+
+class TechnicianActionRequest(BaseModel):
+    reason: Optional[str] = Field(None, description="Optional reason or note for the status change")
+

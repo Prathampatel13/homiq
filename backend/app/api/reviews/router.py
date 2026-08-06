@@ -18,8 +18,10 @@ from app.security.deps import get_current_user
 from app.schemas.reviews import (
     ReviewCreate,
     ReviewListResponse,
+    ReviewPatch,
     ReviewResponse,
     ReviewUpdate,
+    TechnicianRatingSummaryResponse,
 )
 from app.services.review import ReviewService
 
@@ -80,6 +82,22 @@ def get_review(
     return ReviewService(db).get_review(review_id)
 
 
+@router.patch(
+    "/{review_id}",
+    response_model=ReviewResponse,
+    summary="Patch a review",
+    description="Partially update the rating or comment of a review. Only the review author can update.",
+)
+def patch_review(
+    review_id: int,
+    payload: ReviewPatch,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> Any:
+    """Patch a review. Only the review author can update."""
+    return ReviewService(db).patch_review(current_user, review_id, payload)
+
+
 @router.put(
     "/{review_id}",
     response_model=ReviewResponse,
@@ -129,4 +147,19 @@ def get_technician_reviews(
         offset=offset,
         limit=limit,
     )
+
+
+@router.get(
+    "/technician/{technician_id}/summary",
+    response_model=TechnicianRatingSummaryResponse,
+    summary="Get technician rating summary",
+    description="Returns rating breakdown (5 to 1 stars), total review count, and average rating for a technician.",
+)
+def get_technician_rating_summary(
+    technician_id: int,
+    db: Session = Depends(get_db),
+) -> Any:
+    """Get rating summary and star distribution breakdown for a technician."""
+    return ReviewService(db).get_technician_rating_summary(technician_id)
+
 
