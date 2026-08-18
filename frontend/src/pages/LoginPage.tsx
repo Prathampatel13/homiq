@@ -1,167 +1,127 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { motion } from 'framer-motion';
-import { ShieldCheck, Mail, Lock, Eye, EyeOff, UserCheck, Wrench, ShieldAlert } from 'lucide-react';
-import { useAuthStore } from '../store/useAuthStore';
+import { ShieldCheck, Mail, Lock, ArrowRight, Eye, EyeOff } from 'lucide-react';
 import { authApi } from '../api/auth';
-import { UserRole } from '../types';
+import { useAuthStore } from '../store/useAuthStore';
 import { Button } from '../components/ui/Button';
 import { Input } from '../components/ui/Input';
+import { Card } from '../components/ui/Card';
+import { useToast } from '../components/ui/Toast';
+import { extractErrorMessage } from '../api/axios';
+import { UserRole } from '../types';
 
 export const LoginPage: React.FC = () => {
-  const [selectedRole, setSelectedRole] = useState<UserRole>(UserRole.CUSTOMER);
+  const navigate = useNavigate();
+  const toast = useToast();
+  const { login } = useAuthStore();
+
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [errorMessage, setErrorMessage] = useState('');
 
-  const { login } = useAuthStore();
-  const navigate = useNavigate();
-
-  const handleLoginSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setErrorMessage('');
+    if (!email.trim() || !password) {
+      toast.error('Required Fields', 'Please enter your email and password.');
+      return;
+    }
+
     setIsLoading(true);
-
     try {
-      const response = await authApi.login({
-        email,
-        password,
-        role: selectedRole,
-      });
+      const data = await authApi.login({ email: email.trim(), password });
+      login(data.access_token, data.refresh_token, data.user);
+      toast.success('Welcome Back!', `Signed in as ${data.user.full_name}.`);
 
-      login(response.access_token, response.user);
-
-      // Redirect to appropriate dashboard based on user role
-      if (response.user.role === UserRole.ADMIN) {
+      // Role-based redirect
+      const role = String(data.user.role).toUpperCase();
+      if (role.includes('ADMIN') || data.user.is_superuser) {
         navigate('/admin/dashboard');
-      } else if (response.user.role === UserRole.TECHNICIAN) {
+      } else if (role.includes('TECH')) {
         navigate('/provider/dashboard');
+      } else if (role.includes('COMP')) {
+        navigate('/company/dashboard');
       } else {
         navigate('/customer/dashboard');
       }
-    } catch (err: any) {
-      setErrorMessage(
-        err.response?.data?.detail || 'Invalid email or password. Please try again.'
-      );
+    } catch (err) {
+      toast.error('Authentication Failed', extractErrorMessage(err, 'Invalid email or password.'));
     } finally {
       setIsLoading(false);
     }
   };
 
   return (
-    <div className="min-h-[80vh] flex items-center justify-center px-4 sm:px-6 lg:px-8 py-12">
-      <div className="w-full max-w-md space-y-8">
-        {/* Header */}
-        <div className="text-center space-y-3">
-          <Link to="/" className="inline-flex items-center gap-3">
-            <div className="w-12 h-12 rounded-xl bg-gradient-to-tr from-brand-600 to-indigo-500 flex items-center justify-center text-white shadow-lg shadow-brand-500/20">
-              <ShieldCheck className="w-7 h-7" />
-            </div>
-          </Link>
-          <h2 className="text-3xl font-extrabold text-white">Welcome Back</h2>
-          <p className="text-sm text-slate-400">Sign in to manage your bookings and services</p>
+    <div className="min-h-[85vh] flex items-center justify-center px-4 py-12">
+      <div className="w-full max-w-md space-y-6 text-center">
+        {/* Logo Badge */}
+        <div className="inline-flex items-center justify-center w-12 h-12 rounded-2xl bg-gradient-to-tr from-brand-600 to-brand-400 text-white shadow-accent mx-auto">
+          <ShieldCheck className="w-7 h-7" />
         </div>
 
-        {/* Role Selector Tabs */}
-        <div className="grid grid-cols-3 gap-2 p-1.5 glass-card border-slate-800 rounded-xl">
-          <button
-            type="button"
-            onClick={() => setSelectedRole(UserRole.CUSTOMER)}
-            className={`flex items-center justify-center gap-1.5 py-2 px-3 rounded-lg text-xs font-semibold transition-all ${
-              selectedRole === UserRole.CUSTOMER
-                ? 'bg-brand-600 text-white shadow-md'
-                : 'text-slate-400 hover:text-white'
-            }`}
-          >
-            <UserCheck className="w-3.5 h-3.5" /> Customer
-          </button>
-          <button
-            type="button"
-            onClick={() => setSelectedRole(UserRole.TECHNICIAN)}
-            className={`flex items-center justify-center gap-1.5 py-2 px-3 rounded-lg text-xs font-semibold transition-all ${
-              selectedRole === UserRole.TECHNICIAN
-                ? 'bg-brand-600 text-white shadow-md'
-                : 'text-slate-400 hover:text-white'
-            }`}
-          >
-            <Wrench className="w-3.5 h-3.5" /> Technician
-          </button>
-          <button
-            type="button"
-            onClick={() => setSelectedRole(UserRole.ADMIN)}
-            className={`flex items-center justify-center gap-1.5 py-2 px-3 rounded-lg text-xs font-semibold transition-all ${
-              selectedRole === UserRole.ADMIN
-                ? 'bg-brand-600 text-white shadow-md'
-                : 'text-slate-400 hover:text-white'
-            }`}
-          >
-            <ShieldAlert className="w-3.5 h-3.5" /> Admin
-          </button>
+        <div>
+          <h1 className="text-2xl font-bold text-white tracking-tight">Sign in to HomiQ</h1>
+          <p className="text-xs text-slate-400 mt-1.5">
+            Access your customer bookings, technician portal, or management console.
+          </p>
         </div>
 
-        {/* Login Form Card */}
-        <motion.div
-          initial={{ opacity: 0, y: 15 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="glass-card p-8 border-slate-800 space-y-6"
-        >
-          {errorMessage && (
-            <div className="p-3.5 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-400 text-xs font-medium">
-              {errorMessage}
-            </div>
-          )}
-
-          <form onSubmit={handleLoginSubmit} className="space-y-5">
+        <Card className="p-6 text-left shadow-card">
+          <form onSubmit={handleSubmit} className="space-y-4">
             <Input
               label="Email Address"
               type="email"
               placeholder="name@example.com"
-              required
+              leftIcon={Mail}
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              leftIcon={<Mail className="w-4 h-4" />}
+              required
+              autoFocus
             />
 
-            <div className="space-y-1">
+            <div className="space-y-1.5">
               <Input
                 label="Password"
                 type={showPassword ? 'text' : 'password'}
                 placeholder="••••••••"
-                required
+                leftIcon={Lock}
+                rightIcon={showPassword ? EyeOff : Eye}
+                onRightIconClick={() => setShowPassword(!showPassword)}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                leftIcon={<Lock className="w-4 h-4" />}
-                rightIcon={
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    className="focus:outline-none hover:text-white transition-colors"
-                  >
-                    {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                  </button>
-                }
+                required
               />
-              <div className="flex justify-end pt-1">
-                <Link to="/forgot-password" className="text-xs text-brand-400 hover:text-brand-300">
+              <div className="flex justify-end">
+                <Link
+                  to="/forgot-password"
+                  className="text-[11px] text-brand-400 hover:text-brand-300 transition-colors"
+                >
                   Forgot password?
                 </Link>
               </div>
             </div>
 
-            <Button type="submit" variant="primary" size="md" isLoading={isLoading} className="w-full">
-              Sign In
-            </Button>
+            <div className="pt-2">
+              <Button
+                variant="primary"
+                size="md"
+                className="w-full"
+                type="submit"
+                isLoading={isLoading}
+                rightIcon={ArrowRight}
+              >
+                Sign In
+              </Button>
+            </div>
           </form>
 
-          <div className="text-center text-xs text-slate-400 pt-2 border-t border-slate-800">
-            Don't have an account?{' '}
+          <div className="mt-6 pt-4 border-t border-dark-800 text-center text-xs text-slate-400">
+            <span>Don't have an account? </span>
             <Link to="/register" className="text-brand-400 hover:text-brand-300 font-semibold">
               Create an account
             </Link>
           </div>
-        </motion.div>
+        </Card>
       </div>
     </div>
   );

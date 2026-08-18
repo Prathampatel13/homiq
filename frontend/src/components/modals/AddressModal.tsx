@@ -1,129 +1,204 @@
-import React, { useState } from 'react';
-import { motion } from 'framer-motion';
-import { MapPin, X, Plus } from 'lucide-react';
-import { addressApi } from '../../api/address';
+import React, { useState, useEffect } from 'react';
 import { CustomerAddress } from '../../types';
+import { Modal } from '../ui/Modal';
 import { Input } from '../ui/Input';
 import { Button } from '../ui/Button';
+import { customerApi } from '../../api/customer';
+import { useToast } from '../ui/Toast';
+import { extractErrorMessage } from '../../api/axios';
 
 interface AddressModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onAddressCreated: (newAddress: CustomerAddress) => void;
+  addressToEdit?: CustomerAddress | null;
+  onSuccess: (address: CustomerAddress) => void;
 }
 
 export const AddressModal: React.FC<AddressModalProps> = ({
   isOpen,
   onClose,
-  onAddressCreated,
+  addressToEdit,
+  onSuccess,
 }) => {
-  const [fullName, setFullName] = useState('');
-  const [phone, setPhone] = useState('');
-  const [houseNo, setHouseNo] = useState('');
-  const [area, setArea] = useState('');
-  const [city, setCity] = useState('Mumbai');
-  const [state, setState] = useState('Maharashtra');
-  const [pincode, setPincode] = useState('');
-  const [isDefault, setIsDefault] = useState(true);
+  const toast = useToast();
   const [isLoading, setIsLoading] = useState(false);
-  const [errorMessage, setErrorMessage] = useState('');
 
-  if (!isOpen) return null;
+  const [formData, setFormData] = useState({
+    full_name: '',
+    phone: '',
+    house_no: '',
+    building: '',
+    landmark: '',
+    area: '',
+    city: '',
+    state: '',
+    pincode: '',
+    is_default: false,
+    address_type: 'home',
+  });
+
+  useEffect(() => {
+    if (addressToEdit) {
+      setFormData({
+        full_name: addressToEdit.full_name || '',
+        phone: addressToEdit.phone || '',
+        house_no: addressToEdit.house_no || '',
+        building: addressToEdit.building || '',
+        landmark: addressToEdit.landmark || '',
+        area: addressToEdit.area || '',
+        city: addressToEdit.city || '',
+        state: addressToEdit.state || '',
+        pincode: addressToEdit.pincode || '',
+        is_default: addressToEdit.is_default || false,
+        address_type: addressToEdit.address_type || 'home',
+      });
+    } else {
+      setFormData({
+        full_name: '',
+        phone: '',
+        house_no: '',
+        building: '',
+        landmark: '',
+        area: '',
+        city: '',
+        state: '',
+        pincode: '',
+        is_default: false,
+        address_type: 'home',
+      });
+    }
+  }, [addressToEdit, isOpen]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!formData.full_name || !formData.phone || !formData.house_no || !formData.area || !formData.city || !formData.state || !formData.pincode) {
+      toast.error('Validation Error', 'Please fill in all required address fields.');
+      return;
+    }
+
     setIsLoading(true);
-    setErrorMessage('');
-
     try {
-      const newAddr = await addressApi.createAddress({
-        full_name: fullName,
-        phone,
-        house_no: houseNo,
-        area,
-        city,
-        state,
-        pincode,
-        is_default: isDefault,
-      });
-
-      onAddressCreated(newAddr);
+      let savedAddress: CustomerAddress;
+      if (addressToEdit) {
+        savedAddress = await customerApi.updateAddress(addressToEdit.id, formData);
+        toast.success('Address Updated', 'Saved changes to address.');
+      } else {
+        savedAddress = await customerApi.createAddress(formData);
+        toast.success('Address Added', 'New service address created.');
+      }
+      onSuccess(savedAddress);
       onClose();
-    } catch (err: any) {
-      setErrorMessage(
-        err.response?.data?.detail || 'Failed to add address. Please verify details.'
-      );
+    } catch (err) {
+      toast.error('Failed to save address', extractErrorMessage(err));
     } finally {
       setIsLoading(false);
     }
   };
 
   return (
-    <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4 z-50">
-      <motion.div
-        initial={{ scale: 0.95, opacity: 0 }}
-        animate={{ scale: 1, opacity: 1 }}
-        exit={{ scale: 0.95, opacity: 0 }}
-        className="glass-card p-6 max-w-lg w-full space-y-6 relative border-slate-800"
-      >
-        <div className="flex items-center justify-between border-b border-slate-800 pb-4">
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg bg-brand-500/10 text-brand-400 flex items-center justify-center">
-              <MapPin className="w-4 h-4" />
-            </div>
-            <h3 className="text-lg font-bold text-white">Add Delivery Address</h3>
-          </div>
-          <button onClick={onClose} className="text-slate-400 hover:text-white transition-colors">
-            <X className="w-5 h-5" />
-          </button>
+    <Modal
+      isOpen={isOpen}
+      onClose={onClose}
+      title={addressToEdit ? 'Edit Service Address' : 'Add New Address'}
+      description="Service technicians will arrive at this location."
+      maxWidth="lg"
+    >
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <Input
+            label="Contact Person Full Name *"
+            placeholder="e.g. John Doe"
+            value={formData.full_name}
+            onChange={(e) => setFormData({ ...formData, full_name: e.target.value })}
+            required
+          />
+          <Input
+            label="Contact Phone Number *"
+            placeholder="e.g. +91 98765 43210"
+            value={formData.phone}
+            onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+            required
+          />
         </div>
 
-        {errorMessage && (
-          <div className="p-3 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-400 text-xs font-medium">
-            {errorMessage}
-          </div>
-        )}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <Input
+            label="Flat / House / Apt No. *"
+            placeholder="e.g. Flat 402"
+            value={formData.house_no}
+            onChange={(e) => setFormData({ ...formData, house_no: e.target.value })}
+            required
+          />
+          <Input
+            label="Building / Society Name"
+            placeholder="e.g. Horizon Towers"
+            value={formData.building}
+            onChange={(e) => setFormData({ ...formData, building: e.target.value })}
+          />
+        </div>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="grid grid-cols-2 gap-4">
-            <Input label="Recipient Full Name" value={fullName} onChange={(e) => setFullName(e.target.value)} required placeholder="John Doe" />
-            <Input label="Contact Phone" value={phone} onChange={(e) => setPhone(e.target.value)} required placeholder="+91 98765 43210" />
-          </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <Input
+            label="Area / Neighborhood *"
+            placeholder="e.g. Indiranagar"
+            value={formData.area}
+            onChange={(e) => setFormData({ ...formData, area: e.target.value })}
+            required
+          />
+          <Input
+            label="Landmark"
+            placeholder="e.g. Opposite Metro Station"
+            value={formData.landmark}
+            onChange={(e) => setFormData({ ...formData, landmark: e.target.value })}
+          />
+        </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            <Input label="House / Flat / Building No." value={houseNo} onChange={(e) => setHouseNo(e.target.value)} required placeholder="Apt 4B, Sky Tower" />
-            <Input label="Area / Locality / Landmark" value={area} onChange={(e) => setArea(e.target.value)} required placeholder="Bandra West" />
-          </div>
+        <div className="grid grid-cols-3 gap-3">
+          <Input
+            label="City *"
+            placeholder="e.g. Bengaluru"
+            value={formData.city}
+            onChange={(e) => setFormData({ ...formData, city: e.target.value })}
+            required
+          />
+          <Input
+            label="State *"
+            placeholder="e.g. Karnataka"
+            value={formData.state}
+            onChange={(e) => setFormData({ ...formData, state: e.target.value })}
+            required
+          />
+          <Input
+            label="Pincode *"
+            placeholder="e.g. 560038"
+            value={formData.pincode}
+            onChange={(e) => setFormData({ ...formData, pincode: e.target.value })}
+            required
+          />
+        </div>
 
-          <div className="grid grid-cols-3 gap-3">
-            <Input label="City" value={city} onChange={(e) => setCity(e.target.value)} required />
-            <Input label="State" value={state} onChange={(e) => setState(e.target.value)} required />
-            <Input label="Pincode" value={pincode} onChange={(e) => setPincode(e.target.value)} required placeholder="400050" />
-          </div>
+        <div className="flex items-center gap-2 pt-2">
+          <input
+            type="checkbox"
+            id="is_default"
+            checked={formData.is_default}
+            onChange={(e) => setFormData({ ...formData, is_default: e.target.checked })}
+            className="rounded border-dark-700 bg-dark-800 text-brand-500 focus:ring-brand-500 h-4 w-4"
+          />
+          <label htmlFor="is_default" className="text-xs text-slate-300 select-none cursor-pointer">
+            Set as default service address
+          </label>
+        </div>
 
-          <div className="flex items-center gap-2 pt-2">
-            <input
-              type="checkbox"
-              id="isDefaultCheck"
-              checked={isDefault}
-              onChange={(e) => setIsDefault(e.target.checked)}
-              className="w-4 h-4 rounded bg-slate-900 border-slate-800 text-brand-500 focus:ring-brand-500"
-            />
-            <label htmlFor="isDefaultCheck" className="text-xs text-slate-300">
-              Set as primary default delivery address
-            </label>
-          </div>
-
-          <div className="flex gap-3 pt-4 border-t border-slate-800">
-            <Button type="button" variant="secondary" size="md" className="w-1/2" onClick={onClose}>
-              Cancel
-            </Button>
-            <Button type="submit" variant="primary" size="md" isLoading={isLoading} className="w-1/2" leftIcon={<Plus className="w-4 h-4" />}>
-              Save Address
-            </Button>
-          </div>
-        </form>
-      </motion.div>
-    </div>
+        <div className="flex items-center justify-end gap-3 pt-4 border-t border-dark-750">
+          <Button variant="outline" size="sm" type="button" onClick={onClose} disabled={isLoading}>
+            Cancel
+          </Button>
+          <Button variant="primary" size="sm" type="submit" isLoading={isLoading}>
+            {addressToEdit ? 'Save Address' : 'Create Address'}
+          </Button>
+        </div>
+      </form>
+    </Modal>
   );
 };

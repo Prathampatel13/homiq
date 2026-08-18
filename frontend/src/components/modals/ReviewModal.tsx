@@ -1,124 +1,123 @@
 import React, { useState } from 'react';
-import { motion } from 'framer-motion';
-import { Star, X, Send } from 'lucide-react';
-import { reviewsApi } from '../../api/reviews';
-import { Review } from '../../types';
+import { Star, CheckCircle2 } from 'lucide-react';
+import { Modal } from '../ui/Modal';
 import { Button } from '../ui/Button';
+import { Textarea } from '../ui/Textarea';
+import { reviewsApi } from '../../api/reviews';
+import { useToast } from '../ui/Toast';
+import { extractErrorMessage } from '../../api/axios';
+import { Booking } from '../../types';
 
 interface ReviewModalProps {
   isOpen: boolean;
-  bookingId: number;
-  serviceName: string;
   onClose: () => void;
-  onReviewSubmitted: (newReview: Review) => void;
+  booking: Booking;
+  onSuccess?: () => void;
 }
 
 export const ReviewModal: React.FC<ReviewModalProps> = ({
   isOpen,
-  bookingId,
-  serviceName,
   onClose,
-  onReviewSubmitted,
+  booking,
+  onSuccess,
 }) => {
-  const [rating, setRating] = useState(5);
-  const [comment, setComment] = useState('');
+  const toast = useToast();
+  const [rating, setRating] = useState<number>(5);
+  const [hoverRating, setHoverRating] = useState<number>(0);
+  const [comment, setComment] = useState<string>('');
   const [isLoading, setIsLoading] = useState(false);
-  const [errorMessage, setErrorMessage] = useState('');
-
-  if (!isOpen) return null;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!comment.trim()) {
+      toast.error('Review Required', 'Please share a brief comment about your service experience.');
+      return;
+    }
+
+    const techId = booking.technician_id || (booking.technician ? (booking.technician as any).id : 1);
+
     setIsLoading(true);
-    setErrorMessage('');
-
     try {
-      const review = await reviewsApi.createReview({
-        booking_id: bookingId,
+      await reviewsApi.createReview({
+        booking_id: booking.id,
+        technician_id: techId,
         rating,
-        comment,
+        comment: comment.trim(),
       });
-
-      onReviewSubmitted(review);
+      toast.success('Thank You!', 'Your review has been verified and published.');
+      if (onSuccess) onSuccess();
       onClose();
-    } catch (err: any) {
-      setErrorMessage(
-        err.response?.data?.detail || 'Failed to submit review. Please try again.'
-      );
+    } catch (err) {
+      toast.error('Could not submit review', extractErrorMessage(err));
     } finally {
       setIsLoading(false);
     }
   };
 
   return (
-    <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4 z-50">
-      <motion.div
-        initial={{ scale: 0.95, opacity: 0 }}
-        animate={{ scale: 1, opacity: 1 }}
-        exit={{ scale: 0.95, opacity: 0 }}
-        className="glass-card p-6 max-w-md w-full space-y-6 relative border-slate-800 text-center"
-      >
-        <div className="flex items-center justify-between border-b border-slate-800 pb-4">
-          <div className="text-left">
-            <h3 className="text-lg font-bold text-white">Rate Service Performance</h3>
-            <p className="text-xs text-slate-400">{serviceName}</p>
-          </div>
-          <button onClick={onClose} className="text-slate-400 hover:text-white transition-colors">
-            <X className="w-5 h-5" />
-          </button>
-        </div>
-
-        {errorMessage && (
-          <div className="p-3 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-400 text-xs font-medium">
-            {errorMessage}
-          </div>
-        )}
-
-        <form onSubmit={handleSubmit} className="space-y-6">
-          {/* Star Selector */}
-          <div className="space-y-2">
-            <label className="text-xs font-medium text-slate-300">Your Rating Score</label>
-            <div className="flex items-center justify-center gap-2">
-              {[1, 2, 3, 4, 5].map((star) => (
+    <Modal
+      isOpen={isOpen}
+      onClose={onClose}
+      title="Rate Your Experience"
+      description={`Service: ${booking.service?.name || 'Home Service'}`}
+      maxWidth="md"
+    >
+      <form onSubmit={handleSubmit} className="space-y-5">
+        {/* Star Selector */}
+        <div className="flex flex-col items-center justify-center p-4 bg-dark-850 border border-dark-750 rounded-2xl space-y-2">
+          <p className="text-xs text-slate-400 font-medium">How would you rate the service quality?</p>
+          <div className="flex items-center gap-2">
+            {[1, 2, 3, 4, 5].map((star) => {
+              const filled = (hoverRating || rating) >= star;
+              return (
                 <button
-                  type="button"
                   key={star}
+                  type="button"
+                  onMouseEnter={() => setHoverRating(star)}
+                  onMouseLeave={() => setHoverRating(0)}
                   onClick={() => setRating(star)}
-                  className="p-1 hover:scale-125 transition-transform"
+                  className="p-1 text-slate-600 hover:scale-110 transition-transform focus:outline-none"
                 >
                   <Star
-                    className={`w-8 h-8 ${
-                      star <= rating ? 'text-amber-400 fill-amber-400' : 'text-slate-700'
-                    }`}
+                    className={`w-7 h-7 ${
+                      filled ? 'text-amber-400 fill-amber-400' : 'text-slate-600'
+                    } transition-colors`}
                   />
                 </button>
-              ))}
-            </div>
+              );
+            })}
           </div>
+          <span className="text-xs font-semibold text-amber-400 font-mono">
+            {rating === 5
+              ? 'Excellent (5.0 / 5)'
+              : rating === 4
+              ? 'Very Good (4.0 / 5)'
+              : rating === 3
+              ? 'Average (3.0 / 5)'
+              : rating === 2
+              ? 'Below Expectations (2.0 / 5)'
+              : 'Poor (1.0 / 5)'}
+          </span>
+        </div>
 
-          {/* Feedback Textarea */}
-          <div className="space-y-1.5 text-left">
-            <label className="text-xs font-medium text-slate-300">Detailed Feedback & Experience</label>
-            <textarea
-              rows={3}
-              placeholder="Tell us about the technician's punctuality, repair quality, and professionalism..."
-              value={comment}
-              onChange={(e) => setComment(e.target.value)}
-              required
-              className="w-full px-4 py-3 bg-slate-900 border border-slate-800 rounded-xl text-slate-100 placeholder-slate-500 text-xs focus:outline-none focus:ring-2 focus:ring-brand-500"
-            />
-          </div>
+        <Textarea
+          label="Your Feedback *"
+          placeholder="Describe punctuality, quality of work, cleanliness, and overall satisfaction..."
+          rows={4}
+          value={comment}
+          onChange={(e) => setComment(e.target.value)}
+          required
+        />
 
-          <div className="flex gap-3 pt-2">
-            <Button type="button" variant="secondary" size="md" className="w-1/2" onClick={onClose}>
-              Cancel
-            </Button>
-            <Button type="submit" variant="primary" size="md" isLoading={isLoading} className="w-1/2" leftIcon={<Send className="w-4 h-4" />}>
-              Submit Review
-            </Button>
-          </div>
-        </form>
-      </motion.div>
-    </div>
+        <div className="flex items-center justify-end gap-3 pt-3 border-t border-dark-750">
+          <Button variant="outline" size="sm" type="button" onClick={onClose} disabled={isLoading}>
+            Cancel
+          </Button>
+          <Button variant="primary" size="sm" type="submit" isLoading={isLoading} leftIcon={CheckCircle2}>
+            Submit Review
+          </Button>
+        </div>
+      </form>
+    </Modal>
   );
 };

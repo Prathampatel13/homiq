@@ -1,163 +1,168 @@
 import React, { useState } from 'react';
-import { Link, useNavigate, useSearchParams } from 'react-router-dom';
-import { motion } from 'framer-motion';
-import { ShieldCheck, User, Mail, Phone, Lock, UserCheck, Wrench } from 'lucide-react';
+import { Link, useNavigate } from 'react-router-dom';
+import { ShieldCheck, Mail, Lock, User, Phone, ArrowRight, Eye, EyeOff, Briefcase, Building2 } from 'lucide-react';
 import { authApi } from '../api/auth';
 import { useAuthStore } from '../store/useAuthStore';
-import { UserRole } from '../types';
 import { Button } from '../components/ui/Button';
 import { Input } from '../components/ui/Input';
+import { Card } from '../components/ui/Card';
+import { useToast } from '../components/ui/Toast';
+import { extractErrorMessage } from '../api/axios';
 
 export const RegisterPage: React.FC = () => {
-  const [searchParams] = useSearchParams();
-  const initialRole = searchParams.get('role') === 'technician' ? UserRole.TECHNICIAN : UserRole.CUSTOMER;
+  const navigate = useNavigate();
+  const toast = useToast();
+  const { login } = useAuthStore();
 
-  const [role, setRole] = useState<UserRole>(initialRole);
+  const [role, setRole] = useState<'customer' | 'technician' | 'company'>('customer');
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [errorMessage, setErrorMessage] = useState('');
 
-  const { login } = useAuthStore();
-  const navigate = useNavigate();
-
-  const handleRegisterSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setErrorMessage('');
-    setIsLoading(true);
+    if (!fullName.trim() || !email.trim() || !password) {
+      toast.error('Required Fields', 'Please complete the registration fields.');
+      return;
+    }
+    if (password.length < 8) {
+      toast.error('Weak Password', 'Password must be at least 8 characters long.');
+      return;
+    }
 
+    setIsLoading(true);
     try {
-      const response = await authApi.register({
-        full_name: fullName,
-        email,
-        phone,
+      const data = await authApi.register({
+        full_name: fullName.trim(),
+        email: email.trim(),
+        phone: phone.trim() || undefined,
         password,
         role,
       });
 
-      login(response.access_token, response.user);
+      login(data.access_token, data.refresh_token, data.user);
+      toast.success('Account Created!', `Welcome to HomiQ, ${data.user.full_name}.`);
 
-      if (response.user.role === UserRole.TECHNICIAN) {
+      if (role === 'technician') {
         navigate('/provider/dashboard');
+      } else if (role === 'company') {
+        navigate('/company/dashboard');
       } else {
         navigate('/customer/dashboard');
       }
-    } catch (err: any) {
-      setErrorMessage(
-        err.response?.data?.detail || 'Registration failed. Please check your details and try again.'
-      );
+    } catch (err) {
+      toast.error('Registration Failed', extractErrorMessage(err));
     } finally {
       setIsLoading(false);
     }
   };
 
   return (
-    <div className="min-h-[85vh] flex items-center justify-center px-4 sm:px-6 lg:px-8 py-12">
-      <div className="w-full max-w-md space-y-8">
-        {/* Header */}
-        <div className="text-center space-y-3">
-          <Link to="/" className="inline-flex items-center gap-3">
-            <div className="w-12 h-12 rounded-xl bg-gradient-to-tr from-brand-600 to-indigo-500 flex items-center justify-center text-white shadow-lg shadow-brand-500/20">
-              <ShieldCheck className="w-7 h-7" />
-            </div>
-          </Link>
-          <h2 className="text-3xl font-extrabold text-white">Create Account</h2>
-          <p className="text-sm text-slate-400">Join HomiQ for verified home maintenance services</p>
+    <div className="min-h-[85vh] flex items-center justify-center px-4 py-12">
+      <div className="w-full max-w-md space-y-6 text-center">
+        {/* Logo Badge */}
+        <div className="inline-flex items-center justify-center w-12 h-12 rounded-2xl bg-gradient-to-tr from-brand-600 to-brand-400 text-white shadow-accent mx-auto">
+          <ShieldCheck className="w-7 h-7" />
         </div>
 
-        {/* Role Selector Tabs */}
-        <div className="grid grid-cols-2 gap-2 p-1.5 glass-card border-slate-800 rounded-xl">
-          <button
-            type="button"
-            onClick={() => setRole(UserRole.CUSTOMER)}
-            className={`flex items-center justify-center gap-2 py-2.5 px-4 rounded-lg text-xs font-semibold transition-all ${
-              role === UserRole.CUSTOMER
-                ? 'bg-brand-600 text-white shadow-md'
-                : 'text-slate-400 hover:text-white'
-            }`}
-          >
-            <UserCheck className="w-4 h-4" /> Book Services (Customer)
-          </button>
-          <button
-            type="button"
-            onClick={() => setRole(UserRole.TECHNICIAN)}
-            className={`flex items-center justify-center gap-2 py-2.5 px-4 rounded-lg text-xs font-semibold transition-all ${
-              role === UserRole.TECHNICIAN
-                ? 'bg-brand-600 text-white shadow-md'
-                : 'text-slate-400 hover:text-white'
-            }`}
-          >
-            <Wrench className="w-4 h-4" /> Provide Services (Partner)
-          </button>
+        <div>
+          <h1 className="text-2xl font-bold text-white tracking-tight">Create your HomiQ account</h1>
+          <p className="text-xs text-slate-400 mt-1.5">
+            Join thousands of homeowners, verified specialists, and enterprise teams.
+          </p>
         </div>
 
-        {/* Form Card */}
-        <motion.div
-          initial={{ opacity: 0, y: 15 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="glass-card p-8 border-slate-800 space-y-6"
-        >
-          {errorMessage && (
-            <div className="p-3.5 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-400 text-xs font-medium">
-              {errorMessage}
+        <Card className="p-6 text-left shadow-card space-y-4">
+          {/* Account Role Selector */}
+          <div className="space-y-1.5">
+            <label className="text-xs font-medium text-slate-300">Account Type</label>
+            <div className="grid grid-cols-3 gap-2">
+              {[
+                { id: 'customer', label: 'Homeowner', icon: User },
+                { id: 'technician', label: 'Technician', icon: Briefcase },
+                { id: 'company', label: 'Enterprise', icon: Building2 },
+              ].map((r) => (
+                <button
+                  key={r.id}
+                  type="button"
+                  onClick={() => setRole(r.id as any)}
+                  className={`p-2.5 rounded-xl border text-xs font-medium flex flex-col items-center gap-1.5 transition-all ${
+                    role === r.id
+                      ? 'bg-dark-800 border-brand-500 text-white shadow-subtle'
+                      : 'bg-dark-850/50 border-dark-750 text-slate-400 hover:text-slate-200'
+                  }`}
+                >
+                  <r.icon className={`w-4 h-4 ${role === r.id ? 'text-brand-400' : 'text-slate-500'}`} />
+                  <span>{r.label}</span>
+                </button>
+              ))}
             </div>
-          )}
+          </div>
 
-          <form onSubmit={handleRegisterSubmit} className="space-y-4">
+          <form onSubmit={handleSubmit} className="space-y-4">
             <Input
-              label="Full Name"
-              type="text"
-              placeholder="John Doe"
-              required
+              label="Full Name *"
+              placeholder="e.g. Rahul Sharma"
+              leftIcon={User}
               value={fullName}
               onChange={(e) => setFullName(e.target.value)}
-              leftIcon={<User className="w-4 h-4" />}
+              required
             />
 
             <Input
-              label="Email Address"
+              label="Email Address *"
               type="email"
               placeholder="name@example.com"
-              required
+              leftIcon={Mail}
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              leftIcon={<Mail className="w-4 h-4" />}
+              required
             />
 
             <Input
               label="Phone Number"
-              type="tel"
               placeholder="+91 98765 43210"
-              required
+              leftIcon={Phone}
               value={phone}
               onChange={(e) => setPhone(e.target.value)}
-              leftIcon={<Phone className="w-4 h-4" />}
             />
 
             <Input
-              label="Password"
-              type="password"
+              label="Password (min 8 characters) *"
+              type={showPassword ? 'text' : 'password'}
               placeholder="••••••••"
-              required
+              leftIcon={Lock}
+              rightIcon={showPassword ? EyeOff : Eye}
+              onRightIconClick={() => setShowPassword(!showPassword)}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              leftIcon={<Lock className="w-4 h-4" />}
+              required
             />
 
-            <Button type="submit" variant="primary" size="md" isLoading={isLoading} className="w-full mt-2">
-              Create Account
-            </Button>
+            <div className="pt-2">
+              <Button
+                variant="primary"
+                size="md"
+                className="w-full"
+                type="submit"
+                isLoading={isLoading}
+                rightIcon={ArrowRight}
+              >
+                Create Account
+              </Button>
+            </div>
           </form>
 
-          <div className="text-center text-xs text-slate-400 pt-2 border-t border-slate-800">
-            Already have an account?{' '}
+          <div className="mt-6 pt-4 border-t border-dark-800 text-center text-xs text-slate-400">
+            <span>Already have an account? </span>
             <Link to="/login" className="text-brand-400 hover:text-brand-300 font-semibold">
-              Sign In
+              Sign in
             </Link>
           </div>
-        </motion.div>
+        </Card>
       </div>
     </div>
   );

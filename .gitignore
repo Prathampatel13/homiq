@@ -30,6 +30,7 @@ dist-ssr/
 *.sqlite3
 backend/uploads/
 frontend.zip
+backend.zip
 
 # OS / IDE
 .DS_Store

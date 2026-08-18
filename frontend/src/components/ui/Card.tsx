@@ -1,34 +1,24 @@
 import React from 'react';
-import { motion, HTMLMotionProps } from 'framer-motion';
+import { clsx } from 'clsx';
+import { twMerge } from 'tailwind-merge';
 
-interface CardProps extends HTMLMotionProps<'div'> {
-  variant?: 'glass' | 'solid' | 'gradient';
-  hoverable?: boolean;
-  children: React.ReactNode;
+export interface CardProps extends React.HTMLAttributes<HTMLDivElement> {
+  interactive?: boolean;
 }
 
-export const Card: React.FC<CardProps> = ({
-  variant = 'glass',
-  hoverable = false,
-  children,
-  className = '',
-  ...props
-}) => {
-  const variants = {
-    glass: 'bg-slate-900/60 backdrop-blur-xl border border-slate-800/80 shadow-glass',
-    solid: 'bg-slate-900 border border-slate-800 shadow-xl',
-    gradient: 'bg-gradient-to-br from-slate-900/90 via-slate-900/50 to-indigo-950/40 border border-indigo-500/20 shadow-glass',
-  };
-
+export const Card: React.FC<CardProps> = ({ children, interactive = false, className, ...props }) => {
   return (
-    <motion.div
-      whileHover={hoverable ? { y: -4, transition: { duration: 0.2 } } : undefined}
-      className={`rounded-2xl p-6 transition-colors duration-200 ${variants[variant]} ${
-        hoverable ? 'hover:border-slate-700/80 hover:shadow-2xl' : ''
-      } ${className}`}
+    <div
+      className={twMerge(
+        clsx(
+          'bg-dark-900/90 border border-dark-700/60 rounded-2xl p-5 shadow-card transition-all duration-200',
+          interactive && 'hover:bg-dark-850 hover:border-dark-750 cursor-pointer hover:shadow-subtle',
+          className
+        )
+      )}
       {...props}
     >
       {children}
-    </motion.div>
+    </div>
   );
 };
