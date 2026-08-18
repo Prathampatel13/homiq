@@ -846,6 +846,14 @@ class BookingService:
             total=int(total),
         )
 
+    def get_booking_history_logs(
+        self,
+        current_user: User,
+        booking_id: int,
+    ) -> list[Any]:
+        """Return raw status logs for admin booking audit log view."""
+        return self.crud.list_status_logs(booking_id, offset=0, limit=100)
+
     # ─── CUSTOMER: TRACK ─────────────────────────────────────────────
 
     def track_booking(self, current_user: User, booking_id: int) -> BookingResponse:

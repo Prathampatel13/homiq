@@ -94,6 +94,6 @@ def get_current_user_profile(
         "role": f"ROLE_{current_user.role.name.upper()}" if current_user.role else "ROLE_CUSTOMER",
         "is_active": current_user.is_active,
         "is_verified": current_user.is_verified,
-        "avatar_url": current_user.avatar_url,
+        "avatar_url": None,
         "created_at": current_user.created_at.isoformat() if current_user.created_at else None,
     }

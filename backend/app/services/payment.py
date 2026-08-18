@@ -575,7 +575,7 @@ class PaymentService:
 
         if event_name in ["payment.captured", "payment.authorized", "order.paid"]:
             if payment.status != PaymentStatus.PAID:
-                pm = self.PaymentMethod.UNKNOWN
+                pm = PaymentMethod.UNKNOWN
                 if razorpay_payment_id:
                     pm = self._resolve_payment_method(razorpay_payment_id)
 

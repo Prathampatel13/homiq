@@ -125,7 +125,7 @@ class SearchService:
                 id=b.id,
                 booking_number=b.booking_number,
                 status=b.status.value if hasattr(b.status, 'value') else str(b.status),
-                total_amount=float(b.total_amount or 0.0),
+                total_amount=float(getattr(b, "final_price", None) or getattr(b, "estimated_price", None) or 0.0),
                 service_id=b.service_id,
                 customer_id=b.customer_id,
                 created_at=b.created_at.isoformat() if b.created_at else "",

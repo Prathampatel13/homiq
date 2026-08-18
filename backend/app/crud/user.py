@@ -17,6 +17,9 @@ class UserCRUD:
     def get_by_id(self, user_id: int) -> Optional[User]:
         return self.db.get(User, user_id)
 
+    def get_user_by_id(self, user_id: int) -> Optional[User]:
+        return self.get_by_id(user_id)
+
     def get_user_by_email(self, email: str) -> Optional[User]:
         return self.db.scalar(
             select(User).where(User.email == email)

@@ -1,0 +1,3890 @@
+{
+  "summary": {
+    "total_tests": 226,
+    "passed": 226,
+    "failed": 0,
+    "pass_rate_percent": 100.0,
+    "duration_seconds": 26.7,
+    "timestamp": "2026-08-19T01:14:20.236099"
+  },
+  "category_breakdown": {
+    "VALIDATION_422_400": {
+      "total": 5,
+      "passed": 5,
+      "failed": 0
+    },
+    "POSITIVE": {
+      "total": 204,
+      "passed": 204,
+      "failed": 0
+    },
+    "AUTH_401": {
+      "total": 3,
+      "passed": 3,
+      "failed": 0
+    },
+    "NOT_FOUND_404": {
+      "total": 4,
+      "passed": 4,
+      "failed": 0
+    },
+    "ROLE_403": {
+      "total": 7,
+      "passed": 7,
+      "failed": 0
+    },
+    "STATE_409": {
+      "total": 3,
+      "passed": 3,
+      "failed": 0
+    }
+  },
+  "results": [
+    {
+      "test_id": "AUTH_REG_DUP",
+      "category": "VALIDATION_422_400",
+      "method": "POST",
+      "path": "/auth/register",
+      "description": "Register with already existing email",
+      "actor": "anonymous",
+      "request_summary": "body={\"email\": \"test_cust_actor_36dae381@example.com\", \"password\": \"TestPassword@1234",
+      "expected_status": [
+        400
+      ],
+      "actual_status": 400,
+      "passed": true,
+      "duration_ms": 6.18,
+      "error_detail": null,
+      "code_changed": null
+    },
+    {
+      "test_id": "AUTH_REG_INVALID",
+      "category": "VALIDATION_422_400",
+      "method": "POST",
+      "path": "/auth/register",
+      "description": "Register with invalid email format",
+      "actor": "anonymous",
+      "request_summary": "body={\"email\": \"not-an-email\", \"password\": \"123\", \"full_name\": \"Dup\", \"phone\": \"123\",",
+      "expected_status": [
+        422
+      ],
+      "actual_status": 422,
+      "passed": true,
+      "duration_ms": 3.96,
+      "error_detail": null,
+      "code_changed": null
+    },
+    {
+      "test_id": "AUTH_LOGIN_OK",
+      "category": "POSITIVE",
+      "method": "POST",
+      "path": "/auth/login",
+      "description": "Login with valid credentials",
+      "actor": "anonymous",
+      "request_summary": "body={\"email\": \"test_cust_actor_36dae381@example.com\", \"password\": \"TestPassword@1234",
+      "expected_status": [
+        200
+      ],
+      "actual_status": 200,
+      "passed": true,
+      "duration_ms": 382.7,
+      "error_detail": null,
+      "code_changed": null
+    },
+    {
+      "test_id": "AUTH_LOGIN_BAD_PWD",
+      "category": "AUTH_401",
+      "method": "POST",
+      "path": "/auth/login",
+      "description": "Login with incorrect password",
+      "actor": "anonymous",
+      "request_summary": "body={\"email\": \"test_cust_actor_36dae381@example.com\", \"password\": \"WrongPassword123!",
+      "expected_status": [
+        401
+      ],
+      "actual_status": 401,
+      "passed": true,
+      "duration_ms": 315.39,
+      "error_detail": null,
+      "code_changed": null
+    },
+    {
+      "test_id": "AUTH_REFRESH_OK",
+      "category": "POSITIVE",
+      "method": "POST",
+      "path": "/auth/refresh?refresh_token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIyNzciLCJ0eXBlIjoicmVmcmVzaCIsImp0aSI6IjBkNWVkYmRlZmVjZTQyYzA4N2QwZTQ4OGMwMjg4NWJhIiwiZXhwIjoxNzg3Njg3MDMzfQ.hs6WqWAsOyVpYb6IlotPhiDTs3cq9otMBL2K0-1-FTI",
+      "description": "Refresh JWT access token",
+      "actor": "anonymous",
+      "request_summary": "no_body",
+      "expected_status": [
+        200
+      ],
+      "actual_status": 200,
+      "passed": true,
+      "duration_ms": 117.31,
+      "error_detail": null,
+      "code_changed": "Added get_user_by_id alias to UserCRUD in app/crud/user.py"
+    },
+    {
+      "test_id": "AUTH_REFRESH_BAD",
+      "category": "AUTH_401",
+      "method": "POST",
+      "path": "/auth/refresh?refresh_token=fake_refresh_token_abc",
+      "description": "Refresh with invalid refresh token",
+      "actor": "anonymous",
+      "request_summary": "no_body",
+      "expected_status": [
+        401
+      ],
+      "actual_status": 401,
+      "passed": true,
+      "duration_ms": 11.6,
+      "error_detail": null,
+      "code_changed": null
+    },
+    {
+      "test_id": "AUTH_FORGOT_PWD",
+      "category": "POSITIVE",
+      "method": "POST",
+      "path": "/auth/forgot-password",
+      "description": "Request password reset link/instructions",
+      "actor": "anonymous",
+      "request_summary": "body={\"email\": \"test_cust_actor_36dae381@example.com\"}",
+      "expected_status": [
+        200
+      ],
+      "actual_status": 200,
+      "passed": true,
+      "duration_ms": 9.38,
+      "error_detail": null,
+      "code_changed": null
+    },
+    {
+      "test_id": "AUTH_RESET_PWD",
+      "category": "POSITIVE",
+      "method": "POST",
+      "path": "/auth/reset-password",
+      "description": "Reset user password with valid token payload",
+      "actor": "anonymous",
+      "request_summary": "body={\"token\": \"reset_token_sample\", \"new_password\": \"TestPassword@1234\"}",
+      "expected_status": [
+        200
+      ],
+      "actual_status": 200,
+      "passed": true,
+      "duration_ms": 8.16,
+      "error_detail": null,
+      "code_changed": null
+    },
+    {
+      "test_id": "AUTH_ME_OK",
+      "category": "POSITIVE",
+      "method": "GET",
+      "path": "/auth/me",
+      "description": "Get authenticated user profile details",
+      "actor": "customer",
+      "request_summary": "no_body",
+      "expected_status": [
+        200
+      ],
+      "actual_status": 200,
+      "passed": true,
+      "duration_ms": 36.93,
+      "error_detail": null,
+      "code_changed": null
+    },
+    {
+      "test_id": "AUTH_ME_NO_TOKEN",
+      "category": "AUTH_401",
+      "method": "GET",
+      "path": "/auth/me",
+      "description": "Access /auth/me without token",
+      "actor": "anonymous",
+      "request_summary": "no_body",
+      "expected_status": [
+        401,
+        403
+      ],
+      "actual_status": 403,
+      "passed": true,
+      "duration_ms": 7.66,
+      "error_detail": null,
+      "code_changed": null
+    },
+    {
+      "test_id": "CUST_PROF_GET",
+      "category": "POSITIVE",
+      "method": "GET",
+      "path": "/customer/profile",
+      "description": "Get customer profile with addresses",
+      "actor": "customer",
+      "request_summary": "no_body",
+      "expected_status": [
+        200
+      ],
+      "actual_status": 200,
+      "passed": true,
+      "duration_ms": 32.6,
+      "error_detail": null,
+      "code_changed": null
+    },
+    {
+      "test_id": "CUST_PROF_PUT",
+      "category": "POSITIVE",
+      "method": "PUT",
+      "path": "/customer/profile",
+      "description": "Update customer profile data",
+      "actor": "customer",
+      "request_summary": "body={\"full_name\": \"Audited Customer\", \"city\": \"Bengaluru\", \"state\": \"Karnataka\", \"po",
+      "expected_status": [
+        200
+      ],
+      "actual_status": 200,
+      "passed": true,
+      "duration_ms": 29.2,
+      "error_detail": null,
+      "code_changed": null
+    },
+    {
+      "test_id": "CUST_IMG_UPLOAD",
+      "category": "POSITIVE",
+      "method": "POST",
+      "path": "/customer/profile/image",
+      "description": "Upload customer profile avatar",
+      "actor": "customer",
+      "request_summary": "no_body",
+      "expected_status": [
+        200
+      ],
+      "actual_status": 200,
+      "passed": true,
+      "duration_ms": 13.84,
+      "error_detail": null,
+      "code_changed": null
+    },
+    {
+      "test_id": "CUST_ADDR_CREATE_1",
+      "category": "POSITIVE",
+      "method": "POST",
+      "path": "/customer/addresses",
+      "description": "Create primary default address",
+      "actor": "customer",
+      "request_summary": "body={\"full_name\": \"Audited Customer\", \"phone\": \"9876543210\", \"house_no\": \"101\", \"bui",
+      "expected_status": [
+        201
+      ],
+      "actual_status": 201,
+      "passed": true,
+      "duration_ms": 18.18,
+      "error_detail": null,
+      "code_changed": null
+    },
+    {
+      "test_id": "CUST_ADDR_CREATE_2",
+      "category": "POSITIVE",
+      "method": "POST",
+      "path": "/customer/addresses",
+      "description": "Create secondary non-default address",
+      "actor": "customer",
+      "request_summary": "body={\"full_name\": \"Office Address\", \"phone\": \"9876543210\", \"house_no\": \"502\", \"build",
+      "expected_status": [
+        201
+      ],
+      "actual_status": 201,
+      "passed": true,
+      "duration_ms": 13.63,
+      "error_detail": null,
+      "code_changed": null
+    },
+    {
+      "test_id": "CUST_ADDR_LIST",
+      "category": "POSITIVE",
+      "method": "GET",
+      "path": "/customer/addresses",
+      "description": "List customer addresses",
+      "actor": "customer",
+      "request_summary": "no_body",
+      "expected_status": [
+        200
+      ],
+      "actual_status": 200,
+      "passed": true,
+      "duration_ms": 9.52,
+      "error_detail": null,
+      "code_changed": null
+    },
+    {
+      "test_id": "CUST_ADDR_GET_ID",
+      "category": "POSITIVE",
+      "method": "GET",
+      "path": "/customer/addresses/88",
+      "description": "Get single address by ID",
+      "actor": "customer",
+      "request_summary": "no_body",
+      "expected_status": [
+        200
+      ],
+      "actual_status": 200,
+      "passed": true,
+      "duration_ms": 9.72,
+      "error_detail": null,
+      "code_changed": null
+    },
+    {
+      "test_id": "CUST_ADDR_NOT_FOUND",
+      "category": "NOT_FOUND_404",
+      "method": "GET",
+      "path": "/customer/addresses/999999",
+      "description": "Get non-existent customer address ID",
+      "actor": "customer",
+      "request_summary": "no_body",
+      "expected_status": [
+        404
+      ],
+      "actual_status": 404,
+      "passed": true,
+      "duration_ms": 8.89,
+      "error_detail": null,
+      "code_changed": null
+    },
+    {
+      "test_id": "CUST_ADDR_UPDATE",
+      "category": "POSITIVE",
+      "method": "PUT",
+      "path": "/customer/addresses/88",
+      "description": "Update existing customer address",
+      "actor": "customer",
+      "request_summary": "body={\"landmark\": \"Opposite Metro Pillar 45\"}",
+      "expected_status": [
+        200
+      ],
+      "actual_status": 200,
+      "passed": true,
+      "duration_ms": 17.67,
+      "error_detail": null,
+      "code_changed": null
+    },
+    {
+      "test_id": "CUST_ADDR_SET_DEFAULT",
+      "category": "POSITIVE",
+      "method": "PUT",
+      "path": "/customer/addresses/89/default",
+      "description": "Set secondary address as default",
+      "actor": "customer",
+      "request_summary": "no_body",
+      "expected_status": [
+        200
+      ],
+      "actual_status": 200,
+      "passed": true,
+      "duration_ms": 14.22,
+      "error_detail": null,
+      "code_changed": null
+    },
+    {
+      "test_id": "CUST_ADDR_DELETE",
+      "category": "POSITIVE",
+      "method": "DELETE",
+      "path": "/customer/addresses/89",
+      "description": "Delete secondary address",
+      "actor": "customer",
+      "request_summary": "no_body",
+      "expected_status": [
+        200
+      ],
+      "actual_status": 200,
+      "passed": true,
+      "duration_ms": 18.49,
+      "error_detail": null,
+      "code_changed": null
+    },
+    {
+      "test_id": "CUST_DASHBOARD",
+      "category": "POSITIVE",
+      "method": "GET",
+      "path": "/customer/dashboard",
+      "description": "Get customer stats and recent activity",
+      "actor": "customer",
+      "request_summary": "no_body",
+      "expected_status": [
+        200
+      ],
+      "actual_status": 200,
+      "passed": true,
+      "duration_ms": 62.57,
+      "error_detail": null,
+      "code_changed": null
+    },
+    {
+      "test_id": "CUST_ROLE_GUARD_TECH",
+      "category": "ROLE_403",
+      "method": "GET",
+      "path": "/customer/profile",
+      "description": "Technician role attempting customer profile",
+      "actor": "technician",
+      "request_summary": "no_body",
+      "expected_status": [
+        403
+      ],
+      "actual_status": 403,
+      "passed": true,
+      "duration_ms": 9.22,
+      "error_detail": null,
+      "code_changed": null
+    },
+    {
+      "test_id": "TECH_PROF_GET",
+      "category": "POSITIVE",
+      "method": "GET",
+      "path": "/technician/profile",
+      "description": "Get technician profile details",
+      "actor": "technician",
+      "request_summary": "no_body",
+      "expected_status": [
+        200
+      ],
+      "actual_status": 200,
+      "passed": true,
+      "duration_ms": 40.68,
+      "error_detail": null,
+      "code_changed": null
+    },
+    {
+      "test_id": "TECH_PROF_UPDATE",
+      "category": "POSITIVE",
+      "method": "PUT",
+      "path": "/technician/profile",
+      "description": "Update technician specialization and skills",
+      "actor": "technician",
+      "request_summary": "body={\"specialization\": \"HVAC & Electrical\", \"experience_years\": 5, \"skills\": [\"Split",
+      "expected_status": [
+        200
+      ],
+      "actual_status": 200,
+      "passed": true,
+      "duration_ms": 36.52,
+      "error_detail": null,
+      "code_changed": null
+    },
+    {
+      "test_id": "TECH_IMG_UPLOAD",
+      "category": "POSITIVE",
+      "method": "POST",
+      "path": "/technician/profile/image",
+      "description": "Upload technician profile photo",
+      "actor": "technician",
+      "request_summary": "no_body",
+      "expected_status": [
+        200
+      ],
+      "actual_status": 200,
+      "passed": true,
+      "duration_ms": 21.42,
+      "error_detail": null,
+      "code_changed": null
+    },
+    {
+      "test_id": "TECH_GOVT_ID_UPLOAD",
+      "category": "POSITIVE",
+      "method": "POST",
+      "path": "/technician/profile/government-id",
+      "description": "Upload technician government ID image",
+      "actor": "technician",
+      "request_summary": "no_body",
+      "expected_status": [
+        200
+      ],
+      "actual_status": 200,
+      "passed": true,
+      "duration_ms": 24.0,
+      "error_detail": null,
+      "code_changed": null
+    },
+    {
+      "test_id": "TECH_SET_ONLINE",
+      "category": "POSITIVE",
+      "method": "PATCH",
+      "path": "/technician/online",
+      "description": "Mark technician online",
+      "actor": "technician",
+      "request_summary": "no_body",
+      "expected_status": [
+        200
+      ],
+      "actual_status": 200,
+      "passed": true,
+      "duration_ms": 26.56,
+      "error_detail": null,
+      "code_changed": null
+    },
+    {
+      "test_id": "TECH_SET_OFFLINE",
+      "category": "POSITIVE",
+      "method": "PATCH",
+      "path": "/technician/offline",
+      "description": "Mark technician offline",
+      "actor": "technician",
+      "request_summary": "no_body",
+      "expected_status": [
+        200
+      ],
+      "actual_status": 200,
+      "passed": true,
+      "duration_ms": 17.34,
+      "error_detail": null,
+      "code_changed": null
+    },
+    {
+      "test_id": "TECH_SET_AVAIL",
+      "category": "POSITIVE",
+      "method": "PUT",
+      "path": "/technician/availability",
+      "description": "Update availability & online flags",
+      "actor": "technician",
+      "request_summary": "body={\"availability\": true, \"is_online\": true}",
+      "expected_status": [
+        200
+      ],
+      "actual_status": 200,
+      "passed": true,
+      "duration_ms": 18.93,
+      "error_detail": null,
+      "code_changed": null
+    },
+    {
+      "test_id": "TECH_LIST_PUBLIC",
+      "category": "POSITIVE",
+      "method": "GET",
+      "path": "/technician/?specialization=HVAC%20%26%20Electrical",
+      "description": "Public search/list technicians",
+      "actor": "anonymous",
+      "request_summary": "no_body",
+      "expected_status": [
+        200
+      ],
+      "actual_status": 200,
+      "passed": true,
+      "duration_ms": 17.66,
+      "error_detail": null,
+      "code_changed": null
+    },
+    {
+      "test_id": "TECH_MY_JOBS",
+      "category": "POSITIVE",
+      "method": "GET",
+      "path": "/technician/jobs",
+      "description": "Get assigned jobs for technician",
+      "actor": "technician",
+      "request_summary": "no_body",
+      "expected_status": [
+        200
+      ],
+      "actual_status": 200,
+      "passed": true,
+      "duration_ms": 34.68,
+      "error_detail": null,
+      "code_changed": null
+    },
+    {
+      "test_id": "TECH_BOOKINGS",
+      "category": "POSITIVE",
+      "method": "GET",
+      "path": "/technician/bookings",
+      "description": "Get technician bookings",
+      "actor": "technician",
+      "request_summary": "no_body",
+      "expected_status": [
+        200
+      ],
+      "actual_status": 200,
+      "passed": true,
+      "duration_ms": 24.05,
+      "error_detail": null,
+      "code_changed": null
+    },
+    {
+      "test_id": "TECH_ACTIVE_BOOKINGS",
+      "category": "POSITIVE",
+      "method": "GET",
+      "path": "/technician/bookings/active",
+      "description": "Get in-flight bookings for technician",
+      "actor": "technician",
+      "request_summary": "no_body",
+      "expected_status": [
+        200
+      ],
+      "actual_status": 200,
+      "passed": true,
+      "duration_ms": 29.38,
+      "error_detail": null,
+      "code_changed": null
+    },
+    {
+      "test_id": "TECH_HISTORY",
+      "category": "POSITIVE",
+      "method": "GET",
+      "path": "/technician/history",
+      "description": "Get past booking history for technician",
+      "actor": "technician",
+      "request_summary": "no_body",
+      "expected_status": [
+        200
+      ],
+      "actual_status": 200,
+      "passed": true,
+      "duration_ms": 18.37,
+      "error_detail": null,
+      "code_changed": null
+    },
+    {
+      "test_id": "TECH_EARNINGS",
+      "category": "POSITIVE",
+      "method": "GET",
+      "path": "/technician/earnings",
+      "description": "Get earnings summary for technician",
+      "actor": "technician",
+      "request_summary": "no_body",
+      "expected_status": [
+        200
+      ],
+      "actual_status": 200,
+      "passed": true,
+      "duration_ms": 20.41,
+      "error_detail": null,
+      "code_changed": null
+    },
+    {
+      "test_id": "TECH_DASHBOARD",
+      "category": "POSITIVE",
+      "method": "GET",
+      "path": "/technician/dashboard",
+      "description": "Get technician dashboard metrics",
+      "actor": "technician",
+      "request_summary": "no_body",
+      "expected_status": [
+        200
+      ],
+      "actual_status": 200,
+      "passed": true,
+      "duration_ms": 42.27,
+      "error_detail": null,
+      "code_changed": null
+    },
+    {
+      "test_id": "TECH_DOC_UPLOAD",
+      "category": "POSITIVE",
+      "method": "POST",
+      "path": "/technician/documents",
+      "description": "Upload trade certification document",
+      "actor": "technician",
+      "request_summary": "no_body",
+      "expected_status": [
+        201
+      ],
+      "actual_status": 201,
+      "passed": true,
+      "duration_ms": 17.99,
+      "error_detail": null,
+      "code_changed": null
+    },
+    {
+      "test_id": "TECH_DOC_LIST",
+      "category": "POSITIVE",
+      "method": "GET",
+      "path": "/technician/documents",
+      "description": "List uploaded verification documents",
+      "actor": "technician",
+      "request_summary": "no_body",
+      "expected_status": [
+        200
+      ],
+      "actual_status": 200,
+      "passed": true,
+      "duration_ms": 9.73,
+      "error_detail": null,
+      "code_changed": null
+    },
+    {
+      "test_id": "TECH_ROLE_GUARD_CUST",
+      "category": "ROLE_403",
+      "method": "GET",
+      "path": "/technician/profile",
+      "description": "Customer role attempting technician profile",
+      "actor": "customer",
+      "request_summary": "no_body",
+      "expected_status": [
+        403
+      ],
+      "actual_status": 403,
+      "passed": true,
+      "duration_ms": 7.85,
+      "error_detail": null,
+      "code_changed": null
+    },
+    {
+      "test_id": "COMP_PROF_GET",
+      "category": "POSITIVE",
+      "method": "GET",
+      "path": "/company/profile",
+      "description": "Get company profile",
+      "actor": "company",
+      "request_summary": "no_body",
+      "expected_status": [
+        200
+      ],
+      "actual_status": 200,
+      "passed": true,
+      "duration_ms": 29.04,
+      "error_detail": null,
+      "code_changed": null
+    },
+    {
+      "test_id": "COMP_PROF_UPDATE",
+      "category": "POSITIVE",
+      "method": "PUT",
+      "path": "/company/profile",
+      "description": "Update company profile metadata",
+      "actor": "company",
+      "request_summary": "body={\"company_name\": \"Premier Facility Solutions\", \"industry\": \"Commercial & Residen",
+      "expected_status": [
+        200
+      ],
+      "actual_status": 200,
+      "passed": true,
+      "duration_ms": 24.01,
+      "error_detail": null,
+      "code_changed": null
+    },
+    {
+      "test_id": "COMP_LIST_PUBLIC",
+      "category": "POSITIVE",
+      "method": "GET",
+      "path": "/company/",
+      "description": "List registered companies publicly",
+      "actor": "anonymous",
+      "request_summary": "no_body",
+      "expected_status": [
+        200
+      ],
+      "actual_status": 200,
+      "passed": true,
+      "duration_ms": 37.08,
+      "error_detail": null,
+      "code_changed": null
+    },
+    {
+      "test_id": "COMP_ROLE_GUARD_TECH",
+      "category": "ROLE_403",
+      "method": "GET",
+      "path": "/company/profile",
+      "description": "Technician role attempting company profile",
+      "actor": "technician",
+      "request_summary": "no_body",
+      "expected_status": [
+        403
+      ],
+      "actual_status": 403,
+      "passed": true,
+      "duration_ms": 12.02,
+      "error_detail": null,
+      "code_changed": null
+    },
+    {
+      "test_id": "SVC_CAT_CREATE",
+      "category": "POSITIVE",
+      "method": "POST",
+      "path": "/services/categories",
+      "description": "Create new service category (Admin)",
+      "actor": "admin",
+      "request_summary": "body={\"name\": \"Category_cat_1af424b5\", \"description\": \"Home AC, Heating and Cooling\",",
+      "expected_status": [
+        201
+      ],
+      "actual_status": 201,
+      "passed": true,
+      "duration_ms": 43.81,
+      "error_detail": null,
+      "code_changed": null
+    },
+    {
+      "test_id": "SVC_CAT_CREATE_FORBIDDEN",
+      "category": "ROLE_403",
+      "method": "POST",
+      "path": "/services/categories",
+      "description": "Customer role attempting category creation",
+      "actor": "customer",
+      "request_summary": "body={\"name\": \"Forbidden_t_c11a066e\", \"description\": \"Test\"}",
+      "expected_status": [
+        403
+      ],
+      "actual_status": 403,
+      "passed": true,
+      "duration_ms": 10.02,
+      "error_detail": null,
+      "code_changed": null
+    },
+    {
+      "test_id": "SVC_CAT_LIST",
+      "category": "POSITIVE",
+      "method": "GET",
+      "path": "/services/categories",
+      "description": "List all service categories",
+      "actor": "anonymous",
+      "request_summary": "no_body",
+      "expected_status": [
+        200
+      ],
+      "actual_status": 200,
+      "passed": true,
+      "duration_ms": 10.56,
+      "error_detail": null,
+      "code_changed": null
+    },
+    {
+      "test_id": "SVC_CAT_GET_ID",
+      "category": "POSITIVE",
+      "method": "GET",
+      "path": "/services/categories/12",
+      "description": "Get category by unique ID",
+      "actor": "anonymous",
+      "request_summary": "no_body",
+      "expected_status": [
+        200
+      ],
+      "actual_status": 200,
+      "passed": true,
+      "duration_ms": 8.53,
+      "error_detail": null,
+      "code_changed": null
+    },
+    {
+      "test_id": "SVC_CAT_NOT_FOUND",
+      "category": "NOT_FOUND_404",
+      "method": "GET",
+      "path": "/services/categories/999999",
+      "description": "Get non-existent category ID",
+      "actor": "anonymous",
+      "request_summary": "no_body",
+      "expected_status": [
+        404
+      ],
+      "actual_status": 404,
+      "passed": true,
+      "duration_ms": 5.58,
+      "error_detail": null,
+      "code_changed": null
+    },
+    {
+      "test_id": "SVC_CAT_UPDATE",
+      "category": "POSITIVE",
+      "method": "PUT",
+      "path": "/services/categories/12",
+      "description": "Update category details",
+      "actor": "admin",
+      "request_summary": "body={\"name\": \"Category_cat_1af424b5_Renamed\", \"description\": \"Updated description\"}",
+      "expected_status": [
+        200
+      ],
+      "actual_status": 200,
+      "passed": true,
+      "duration_ms": 12.23,
+      "error_detail": null,
+      "code_changed": null
+    },
+    {
+      "test_id": "SVC_CREATE",
+      "category": "POSITIVE",
+      "method": "POST",
+      "path": "/services/",
+      "description": "Create new service under category",
+      "actor": "admin",
+      "request_summary": "body={\"name\": \"AC_Full_Service_svc_6e60f23e\", \"description\": \"Comprehensive AC deep c",
+      "expected_status": [
+        201
+      ],
+      "actual_status": 201,
+      "passed": true,
+      "duration_ms": 19.21,
+      "error_detail": null,
+      "code_changed": null
+    },
+    {
+      "test_id": "SVC_LIST_FILTER",
+      "category": "POSITIVE",
+      "method": "GET",
+      "path": "/services/?category_id=12&min_price=100&max_price=1000",
+      "description": "List services with price and category filters",
+      "actor": "anonymous",
+      "request_summary": "no_body",
+      "expected_status": [
+        200
+      ],
+      "actual_status": 200,
+      "passed": true,
+      "duration_ms": 14.65,
+      "error_detail": null,
+      "code_changed": null
+    },
+    {
+      "test_id": "SVC_GET_ID",
+      "category": "POSITIVE",
+      "method": "GET",
+      "path": "/services/29",
+      "description": "Get service by unique ID",
+      "actor": "anonymous",
+      "request_summary": "no_body",
+      "expected_status": [
+        200
+      ],
+      "actual_status": 200,
+      "passed": true,
+      "duration_ms": 12.97,
+      "error_detail": null,
+      "code_changed": null
+    },
+    {
+      "test_id": "SVC_NOT_FOUND",
+      "category": "NOT_FOUND_404",
+      "method": "GET",
+      "path": "/services/999999",
+      "description": "Get non-existent service ID",
+      "actor": "anonymous",
+      "request_summary": "no_body",
+      "expected_status": [
+        404
+      ],
+      "actual_status": 404,
+      "passed": true,
+      "duration_ms": 14.8,
+      "error_detail": null,
+      "code_changed": null
+    },
+    {
+      "test_id": "SVC_UPDATE",
+      "category": "POSITIVE",
+      "method": "PUT",
+      "path": "/services/29",
+      "description": "Update service price and duration",
+      "actor": "admin",
+      "request_summary": "body={\"price\": 649.0, \"duration_minutes\": 75}",
+      "expected_status": [
+        200
+      ],
+      "actual_status": 200,
+      "passed": true,
+      "duration_ms": 15.18,
+      "error_detail": null,
+      "code_changed": null
+    },
+    {
+      "test_id": "SVC_IMG_UPLOAD",
+      "category": "POSITIVE",
+      "method": "POST",
+      "path": "/services/29/image",
+      "description": "Upload service catalog banner image",
+      "actor": "admin",
+      "request_summary": "no_body",
+      "expected_status": [
+        200
+      ],
+      "actual_status": 200,
+      "passed": true,
+      "duration_ms": 20.66,
+      "error_detail": null,
+      "code_changed": "Made upload_service_image async in app/services/service.py"
+    },
+    {
+      "test_id": "BOOKING_PAST_DATE",
+      "category": "VALIDATION_422_400",
+      "method": "POST",
+      "path": "/bookings/",
+      "description": "Create booking with past date (should fail)",
+      "actor": "customer",
+      "request_summary": "body={\"service_id\": 29, \"address_id\": 88, \"booking_date\": \"2020-01-01\", \"preferred_ti",
+      "expected_status": [
+        422
+      ],
+      "actual_status": 422,
+      "passed": true,
+      "duration_ms": 21.2,
+      "error_detail": null,
+      "code_changed": null
+    },
+    {
+      "test_id": "BOOKING_BAD_SVC",
+      "category": "NOT_FOUND_404",
+      "method": "POST",
+      "path": "/bookings/",
+      "description": "Create booking with non-existent service ID",
+      "actor": "customer",
+      "request_summary": "body={\"service_id\": 999999, \"address_id\": 88, \"booking_date\": \"2026-08-24\", \"preferre",
+      "expected_status": [
+        404
+      ],
+      "actual_status": 404,
+      "passed": true,
+      "duration_ms": 17.09,
+      "error_detail": null,
+      "code_changed": null
+    },
+    {
+      "test_id": "BOOKING_CREATE_OK",
+      "category": "POSITIVE",
+      "method": "POST",
+      "path": "/bookings/",
+      "description": "Create booking with valid payload (status: pending)",
+      "actor": "customer",
+      "request_summary": "body={\"service_id\": 29, \"address_id\": 88, \"booking_date\": \"2026-08-23\", \"preferred_ti",
+      "expected_status": [
+        201
+      ],
+      "actual_status": 201,
+      "passed": true,
+      "duration_ms": 29.48,
+      "error_detail": null,
+      "code_changed": null
+    },
+    {
+      "test_id": "BOOKING_LIST_CUST",
+      "category": "POSITIVE",
+      "method": "GET",
+      "path": "/bookings/",
+      "description": "List bookings for authenticated customer",
+      "actor": "customer",
+      "request_summary": "no_body",
+      "expected_status": [
+        200
+      ],
+      "actual_status": 200,
+      "passed": true,
+      "duration_ms": 12.1,
+      "error_detail": null,
+      "code_changed": null
+    },
+    {
+      "test_id": "BOOKING_LIST_ADMIN",
+      "category": "POSITIVE",
+      "method": "GET",
+      "path": "/bookings/",
+      "description": "List all bookings for platform admin",
+      "actor": "admin",
+      "request_summary": "no_body",
+      "expected_status": [
+        200
+      ],
+      "actual_status": 200,
+      "passed": true,
+      "duration_ms": 30.16,
+      "error_detail": null,
+      "code_changed": null
+    },
+    {
+      "test_id": "BOOKING_GET_ID",
+      "category": "POSITIVE",
+      "method": "GET",
+      "path": "/bookings/98",
+      "description": "Get booking details by ID",
+      "actor": "customer",
+      "request_summary": "no_body",
+      "expected_status": [
+        200
+      ],
+      "actual_status": 200,
+      "passed": true,
+      "duration_ms": 18.49,
+      "error_detail": null,
+      "code_changed": null
+    },
+    {
+      "test_id": "BOOKING_UPDATE",
+      "category": "POSITIVE",
+      "method": "PUT",
+      "path": "/bookings/98",
+      "description": "Update customer booking note",
+      "actor": "customer",
+      "request_summary": "body={\"customer_note\": \"Updated customer instructions.\"}",
+      "expected_status": [
+        200
+      ],
+      "actual_status": 200,
+      "passed": true,
+      "duration_ms": 31.96,
+      "error_detail": null,
+      "code_changed": null
+    },
+    {
+      "test_id": "BOOKING_ASSIGN_FORBIDDEN",
+      "category": "ROLE_403",
+      "method": "PUT",
+      "path": "/bookings/98/assign",
+      "description": "Customer role attempting technician assignment",
+      "actor": "customer",
+      "request_summary": "body={\"technician_id\": 97}",
+      "expected_status": [
+        403
+      ],
+      "actual_status": 403,
+      "passed": true,
+      "duration_ms": 9.77,
+      "error_detail": null,
+      "code_changed": null
+    },
+    {
+      "test_id": "BOOKING_ADMIN_ASSIGN",
+      "category": "POSITIVE",
+      "method": "PUT",
+      "path": "/bookings/98/assign",
+      "description": "Admin assigns technician to booking (status: assigned)",
+      "actor": "admin",
+      "request_summary": "body={\"technician_id\": 97}",
+      "expected_status": [
+        200
+      ],
+      "actual_status": 200,
+      "passed": true,
+      "duration_ms": 94.44,
+      "error_detail": null,
+      "code_changed": null
+    },
+    {
+      "test_id": "BOOKING_RESCHEDULE",
+      "category": "POSITIVE",
+      "method": "PUT",
+      "path": "/bookings/98/reschedule",
+      "description": "Customer reschedules assigned booking",
+      "actor": "customer",
+      "request_summary": "body={\"booking_date\": \"2026-08-25\", \"preferred_time\": \"15:00:00\"}",
+      "expected_status": [
+        200
+      ],
+      "actual_status": 200,
+      "passed": true,
+      "duration_ms": 27.19,
+      "error_detail": null,
+      "code_changed": null
+    },
+    {
+      "test_id": "BOOKING_TECH_ACCEPT",
+      "category": "POSITIVE",
+      "method": "POST",
+      "path": "/bookings/98/accept",
+      "description": "Technician accepts assigned booking (status: accepted)",
+      "actor": "technician",
+      "request_summary": "body={\"reason\": \"Accepting job\"}",
+      "expected_status": [
+        200
+      ],
+      "actual_status": 200,
+      "passed": true,
+      "duration_ms": 49.37,
+      "error_detail": null,
+      "code_changed": null
+    },
+    {
+      "test_id": "BOOKING_DUP_ACCEPT",
+      "category": "STATE_409",
+      "method": "POST",
+      "path": "/bookings/98/accept",
+      "description": "Technician duplicate accept on already accepted booking",
+      "actor": "technician",
+      "request_summary": "body={\"reason\": \"Duplicate accept\"}",
+      "expected_status": [
+        409
+      ],
+      "actual_status": 409,
+      "passed": true,
+      "duration_ms": 11.48,
+      "error_detail": null,
+      "code_changed": null
+    },
+    {
+      "test_id": "BOOKING_START_TRIP",
+      "category": "POSITIVE",
+      "method": "POST",
+      "path": "/bookings/98/start-trip",
+      "description": "Technician starts trip to customer location (status: on_the_way)",
+      "actor": "technician",
+      "request_summary": "body={\"reason\": \"En route\"}",
+      "expected_status": [
+        200
+      ],
+      "actual_status": 200,
+      "passed": true,
+      "duration_ms": 36.45,
+      "error_detail": null,
+      "code_changed": null
+    },
+    {
+      "test_id": "BOOKING_INVALID_STATE_JUMP",
+      "category": "STATE_409",
+      "method": "POST",
+      "path": "/bookings/98/complete",
+      "description": "Attempt complete when booking is on_the_way (invalid state transition)",
+      "actor": "technician",
+      "request_summary": "body={\"reason\": \"Premature completion\"}",
+      "expected_status": [
+        409
+      ],
+      "actual_status": 409,
+      "passed": true,
+      "duration_ms": 12.43,
+      "error_detail": null,
+      "code_changed": null
+    },
+    {
+      "test_id": "TRACK_UPDATE_POST",
+      "category": "POSITIVE",
+      "method": "POST",
+      "path": "/location/update",
+      "description": "Update live technician GPS coordinates",
+      "actor": "technician",
+      "request_summary": "body={\"booking_id\": 98, \"latitude\": 12.9716, \"longitude\": 77.5946, \"speed\": 25.0, \"he",
+      "expected_status": [
+        200
+      ],
+      "actual_status": 200,
+      "passed": true,
+      "duration_ms": 29.07,
+      "error_detail": null,
+      "code_changed": null
+    },
+    {
+      "test_id": "TRACK_GET_CURRENT",
+      "category": "POSITIVE",
+      "method": "GET",
+      "path": "/location/current",
+      "description": "Get current tracked location for authenticated technician",
+      "actor": "technician",
+      "request_summary": "no_body",
+      "expected_status": [
+        200
+      ],
+      "actual_status": 200,
+      "passed": true,
+      "duration_ms": 14.74,
+      "error_detail": null,
+      "code_changed": null
+    },
+    {
+      "test_id": "TRACK_GET_BOOKING_LOC",
+      "category": "POSITIVE",
+      "method": "GET",
+      "path": "/location/booking/98",
+      "description": "Get live technician location & driving ETA for booking",
+      "actor": "customer",
+      "request_summary": "no_body",
+      "expected_status": [
+        200
+      ],
+      "actual_status": 200,
+      "passed": true,
+      "duration_ms": 14.69,
+      "error_detail": null,
+      "code_changed": null
+    },
+    {
+      "test_id": "TRACK_GET_TECH_LOC",
+      "category": "POSITIVE",
+      "method": "GET",
+      "path": "/location/technician/97",
+      "description": "Get live location for specific technician",
+      "actor": "customer",
+      "request_summary": "no_body",
+      "expected_status": [
+        200
+      ],
+      "actual_status": 200,
+      "passed": true,
+      "duration_ms": 10.87,
+      "error_detail": null,
+      "code_changed": null
+    },
+    {
+      "test_id": "TRACK_LEGACY_ME",
+      "category": "POSITIVE",
+      "method": "GET",
+      "path": "/tracking/me/location",
+      "description": "Legacy get technician current location",
+      "actor": "technician",
+      "request_summary": "no_body",
+      "expected_status": [
+        200
+      ],
+      "actual_status": 200,
+      "passed": true,
+      "duration_ms": 11.13,
+      "error_detail": null,
+      "code_changed": "Reordered tracking routes in app/api/tracking/router.py"
+    },
+    {
+      "test_id": "TRACK_LEGACY_PUT",
+      "category": "POSITIVE",
+      "method": "PUT",
+      "path": "/tracking/98/location",
+      "description": "Legacy update technician location",
+      "actor": "technician",
+      "request_summary": "body={\"latitude\": 12.972, \"longitude\": 77.595}",
+      "expected_status": [
+        200
+      ],
+      "actual_status": 200,
+      "passed": true,
+      "duration_ms": 23.97,
+      "error_detail": null,
+      "code_changed": null
+    },
+    {
+      "test_id": "TRACK_LEGACY_GET",
+      "category": "POSITIVE",
+      "method": "GET",
+      "path": "/tracking/98/location",
+      "description": "Legacy get latest location for booking",
+      "actor": "customer",
+      "request_summary": "no_body",
+      "expected_status": [
+        200
+      ],
+      "actual_status": 200,
+      "passed": true,
+      "duration_ms": 26.41,
+      "error_detail": null,
+      "code_changed": null
+    },
+    {
+      "test_id": "TRACK_LEGACY_HIST",
+      "category": "POSITIVE",
+      "method": "GET",
+      "path": "/tracking/98/history",
+      "description": "Legacy get tracking history log",
+      "actor": "customer",
+      "request_summary": "no_body",
+      "expected_status": [
+        200
+      ],
+      "actual_status": 200,
+      "passed": true,
+      "duration_ms": 26.15,
+      "error_detail": null,
+      "code_changed": null
+    },
+    {
+      "test_id": "BOOKING_ARRIVED",
+      "category": "POSITIVE",
+      "method": "POST",
+      "path": "/bookings/98/arrived",
+      "description": "Technician marks arrival at job site (status: arrived)",
+      "actor": "technician",
+      "request_summary": "body={\"reason\": \"Arrived at location\"}",
+      "expected_status": [
+        200
+      ],
+      "actual_status": 200,
+      "passed": true,
+      "duration_ms": 30.95,
+      "error_detail": null,
+      "code_changed": null
+    },
+    {
+      "test_id": "SMARTVERIFY_GEN_QR",
+      "category": "POSITIVE",
+      "method": "POST",
+      "path": "/bookings/98/generate-qr",
+      "description": "Customer generates encrypted verification QR code",
+      "actor": "customer",
+      "request_summary": "no_body",
+      "expected_status": [
+        200,
+        201
+      ],
+      "actual_status": 201,
+      "passed": true,
+      "duration_ms": 51.56,
+      "error_detail": null,
+      "code_changed": null
+    },
+    {
+      "test_id": "SMARTVERIFY_GET_QR",
+      "category": "POSITIVE",
+      "method": "GET",
+      "path": "/bookings/98/qr",
+      "description": "Retrieve active verification QR token",
+      "actor": "customer",
+      "request_summary": "no_body",
+      "expected_status": [
+        200
+      ],
+      "actual_status": 200,
+      "passed": true,
+      "duration_ms": 10.73,
+      "error_detail": null,
+      "code_changed": null
+    },
+    {
+      "test_id": "SMARTVERIFY_SCAN_QR",
+      "category": "POSITIVE",
+      "method": "POST",
+      "path": "/bookings/98/scan-qr",
+      "description": "Technician scans customer QR code (status: qr_verified)",
+      "actor": "technician",
+      "request_summary": "body={\"verification_token\": \"SMARTVERIFY_98_6b04c6d8e2751fcbc9030c8d1282c2ad\"}",
+      "expected_status": [
+        200
+      ],
+      "actual_status": 200,
+      "passed": true,
+      "duration_ms": 31.97,
+      "error_detail": null,
+      "code_changed": null
+    },
+    {
+      "test_id": "SMARTVERIFY_GEN_OTP",
+      "category": "POSITIVE",
+      "method": "POST",
+      "path": "/bookings/98/generate-otp",
+      "description": "Generate service start verification OTP",
+      "actor": "customer",
+      "request_summary": "no_body",
+      "expected_status": [
+        200
+      ],
+      "actual_status": 200,
+      "passed": true,
+      "duration_ms": 16.27,
+      "error_detail": null,
+      "code_changed": null
+    },
+    {
+      "test_id": "SMARTVERIFY_VERIFY_OTP",
+      "category": "POSITIVE",
+      "method": "POST",
+      "path": "/bookings/98/verify-otp",
+      "description": "Customer verifies OTP and starts service work (status: in_progress)",
+      "actor": "customer",
+      "request_summary": "body={\"otp_code\": \"244734\"}",
+      "expected_status": [
+        200
+      ],
+      "actual_status": 200,
+      "passed": true,
+      "duration_ms": 23.29,
+      "error_detail": null,
+      "code_changed": null
+    },
+    {
+      "test_id": "SMARTVERIFY_STATUS",
+      "category": "POSITIVE",
+      "method": "GET",
+      "path": "/bookings/98/verification-status",
+      "description": "Check current SmartVerify verification step status",
+      "actor": "customer",
+      "request_summary": "no_body",
+      "expected_status": [
+        200
+      ],
+      "actual_status": 200,
+      "passed": true,
+      "duration_ms": 12.88,
+      "error_detail": null,
+      "code_changed": null
+    },
+    {
+      "test_id": "BOOKING_COMPLETE",
+      "category": "POSITIVE",
+      "method": "POST",
+      "path": "/bookings/98/complete",
+      "description": "Technician completes service job (status: completed)",
+      "actor": "technician",
+      "request_summary": "body={\"reason\": \"Service completed and tested\"}",
+      "expected_status": [
+        200
+      ],
+      "actual_status": 200,
+      "passed": true,
+      "duration_ms": 65.7,
+      "error_detail": null,
+      "code_changed": null
+    },
+    {
+      "test_id": "BOOKING_CANCEL_COMPLETED_CONFLICT",
+      "category": "STATE_409",
+      "method": "POST",
+      "path": "/bookings/98/cancel",
+      "description": "Attempt to cancel a completed booking (terminal state conflict)",
+      "actor": "customer",
+      "request_summary": "body={\"reason\": \"Cancel completed\"}",
+      "expected_status": [
+        409
+      ],
+      "actual_status": 409,
+      "passed": true,
+      "duration_ms": 19.4,
+      "error_detail": null,
+      "code_changed": null
+    },
+    {
+      "test_id": "BOOKING_TRACK",
+      "category": "POSITIVE",
+      "method": "GET",
+      "path": "/bookings/98/track",
+      "description": "Track booking status & technician details",
+      "actor": "customer",
+      "request_summary": "no_body",
+      "expected_status": [
+        200
+      ],
+      "actual_status": 200,
+      "passed": true,
+      "duration_ms": 15.93,
+      "error_detail": null,
+      "code_changed": null
+    },
+    {
+      "test_id": "BOOKING_HISTORY",
+      "category": "POSITIVE",
+      "method": "GET",
+      "path": "/bookings/98/history",
+      "description": "Get complete status change audit trail",
+      "actor": "customer",
+      "request_summary": "no_body",
+      "expected_status": [
+        200
+      ],
+      "actual_status": 200,
+      "passed": true,
+      "duration_ms": 17.12,
+      "error_detail": null,
+      "code_changed": null
+    },
+    {
+      "test_id": "BOOKING_TECH_DETAILS",
+      "category": "POSITIVE",
+      "method": "GET",
+      "path": "/bookings/98/technician",
+      "description": "View assigned technician information",
+      "actor": "customer",
+      "request_summary": "no_body",
+      "expected_status": [
+        200
+      ],
+      "actual_status": 200,
+      "passed": true,
+      "duration_ms": 15.3,
+      "error_detail": null,
+      "code_changed": null
+    },
+    {
+      "test_id": "TECH_PATCH_ACCEPT",
+      "category": "POSITIVE",
+      "method": "PATCH",
+      "path": "/technician/bookings/99/accept",
+      "description": "Technician accepts booking via PATCH route",
+      "actor": "technician",
+      "request_summary": "no_body",
+      "expected_status": [
+        200
+      ],
+      "actual_status": 200,
+      "passed": true,
+      "duration_ms": 59.99,
+      "error_detail": null,
+      "code_changed": null
+    },
+    {
+      "test_id": "TECH_PATCH_START_TRIP",
+      "category": "POSITIVE",
+      "method": "PATCH",
+      "path": "/technician/bookings/99/start-trip",
+      "description": "Technician starts trip via PATCH route",
+      "actor": "technician",
+      "request_summary": "no_body",
+      "expected_status": [
+        200
+      ],
+      "actual_status": 200,
+      "passed": true,
+      "duration_ms": 62.22,
+      "error_detail": null,
+      "code_changed": null
+    },
+    {
+      "test_id": "TECH_PATCH_ARRIVED",
+      "category": "POSITIVE",
+      "method": "PATCH",
+      "path": "/technician/bookings/99/arrived",
+      "description": "Technician arrives via PATCH route",
+      "actor": "technician",
+      "request_summary": "no_body",
+      "expected_status": [
+        200
+      ],
+      "actual_status": 200,
+      "passed": true,
+      "duration_ms": 77.26,
+      "error_detail": null,
+      "code_changed": null
+    },
+    {
+      "test_id": "TECH_PATCH_START_SVC",
+      "category": "POSITIVE",
+      "method": "PATCH",
+      "path": "/technician/bookings/99/start-service",
+      "description": "Technician starts service work via PATCH route",
+      "actor": "technician",
+      "request_summary": "no_body",
+      "expected_status": [
+        200
+      ],
+      "actual_status": 200,
+      "passed": true,
+      "duration_ms": 58.19,
+      "error_detail": null,
+      "code_changed": null
+    },
+    {
+      "test_id": "TECH_PATCH_COMPLETE",
+      "category": "POSITIVE",
+      "method": "PATCH",
+      "path": "/technician/bookings/99/complete",
+      "description": "Technician completes service via PATCH route",
+      "actor": "technician",
+      "request_summary": "no_body",
+      "expected_status": [
+        200
+      ],
+      "actual_status": 200,
+      "passed": true,
+      "duration_ms": 47.54,
+      "error_detail": null,
+      "code_changed": null
+    },
+    {
+      "test_id": "ADM_PATCH_ASSIGN",
+      "category": "POSITIVE",
+      "method": "PATCH",
+      "path": "/admin/bookings/100/assign",
+      "description": "Admin assigns tech via PATCH route",
+      "actor": "admin",
+      "request_summary": "body={\"technician_id\": 97}",
+      "expected_status": [
+        200
+      ],
+      "actual_status": 200,
+      "passed": true,
+      "duration_ms": 50.65,
+      "error_detail": null,
+      "code_changed": null
+    },
+    {
+      "test_id": "ADM_PUT_REASSIGN",
+      "category": "POSITIVE",
+      "method": "PUT",
+      "path": "/admin/bookings/100/reassign",
+      "description": "Admin reassigns tech via PUT route",
+      "actor": "admin",
+      "request_summary": "body={\"technician_id\": 98}",
+      "expected_status": [
+        200
+      ],
+      "actual_status": 200,
+      "passed": true,
+      "duration_ms": 37.33,
+      "error_detail": null,
+      "code_changed": null
+    },
+    {
+      "test_id": "ADM_PATCH_REASSIGN",
+      "category": "POSITIVE",
+      "method": "PATCH",
+      "path": "/admin/bookings/100/reassign",
+      "description": "Admin reassigns tech via PATCH route",
+      "actor": "admin",
+      "request_summary": "body={\"technician_id\": 97}",
+      "expected_status": [
+        200
+      ],
+      "actual_status": 200,
+      "passed": true,
+      "duration_ms": 27.14,
+      "error_detail": null,
+      "code_changed": null
+    },
+    {
+      "test_id": "ADM_PUT_STATUS",
+      "category": "POSITIVE",
+      "method": "PUT",
+      "path": "/admin/bookings/100/status",
+      "description": "Admin updates booking status directly",
+      "actor": "admin",
+      "request_summary": "body={\"status\": \"accepted\", \"admin_note\": \"Admin manual accepted state update.\"}",
+      "expected_status": [
+        200
+      ],
+      "actual_status": 200,
+      "passed": true,
+      "duration_ms": 56.0,
+      "error_detail": null,
+      "code_changed": null
+    },
+    {
+      "test_id": "ADM_PUT_OVERRIDE",
+      "category": "POSITIVE",
+      "method": "PUT",
+      "path": "/admin/bookings/100/override-status",
+      "description": "Admin overrides status bypassing state machine (PUT)",
+      "actor": "admin",
+      "request_summary": "body={\"status\": \"in_progress\", \"admin_note\": \"Bypass to in_progress.\"}",
+      "expected_status": [
+        200
+      ],
+      "actual_status": 200,
+      "passed": true,
+      "duration_ms": 47.65,
+      "error_detail": null,
+      "code_changed": null
+    },
+    {
+      "test_id": "ADM_PATCH_OVERRIDE",
+      "category": "POSITIVE",
+      "method": "PATCH",
+      "path": "/admin/bookings/100/override-status",
+      "description": "Admin overrides status bypassing state machine (PATCH)",
+      "actor": "admin",
+      "request_summary": "body={\"status\": \"assigned\", \"admin_note\": \"Bypass back to assigned.\"}",
+      "expected_status": [
+        200
+      ],
+      "actual_status": 200,
+      "passed": true,
+      "duration_ms": 53.16,
+      "error_detail": null,
+      "code_changed": null
+    },
+    {
+      "test_id": "ADM_FORCE_CANCEL",
+      "category": "POSITIVE",
+      "method": "POST",
+      "path": "/admin/bookings/100/force-cancel",
+      "description": "Admin force cancels booking",
+      "actor": "admin",
+      "request_summary": "body={\"reason\": \"Customer requested cancellation via call center.\"}",
+      "expected_status": [
+        200
+      ],
+      "actual_status": 200,
+      "passed": true,
+      "duration_ms": 37.45,
+      "error_detail": null,
+      "code_changed": null
+    },
+    {
+      "test_id": "PAY_CREATE_ORDER",
+      "category": "POSITIVE",
+      "method": "POST",
+      "path": "/payments/create-order",
+      "description": "Create Razorpay order for booking",
+      "actor": "customer",
+      "request_summary": "body={\"booking_id\": 98}",
+      "expected_status": [
+        200
+      ],
+      "actual_status": 200,
+      "passed": true,
+      "duration_ms": 739.13,
+      "error_detail": null,
+      "code_changed": null
+    },
+    {
+      "test_id": "PAY_LIST_CUST",
+      "category": "POSITIVE",
+      "method": "GET",
+      "path": "/payments/",
+      "description": "List payments for customer",
+      "actor": "customer",
+      "request_summary": "no_body",
+      "expected_status": [
+        200
+      ],
+      "actual_status": 200,
+      "passed": true,
+      "duration_ms": 18.24,
+      "error_detail": null,
+      "code_changed": null
+    },
+    {
+      "test_id": "PAY_LIST_ADMIN",
+      "category": "POSITIVE",
+      "method": "GET",
+      "path": "/payments/",
+      "description": "List all platform payments for admin",
+      "actor": "admin",
+      "request_summary": "no_body",
+      "expected_status": [
+        200
+      ],
+      "actual_status": 200,
+      "passed": true,
+      "duration_ms": 15.12,
+      "error_detail": null,
+      "code_changed": null
+    },
+    {
+      "test_id": "PAY_GET_ID",
+      "category": "POSITIVE",
+      "method": "GET",
+      "path": "/payments/30",
+      "description": "Get payment details by ID",
+      "actor": "customer",
+      "request_summary": "no_body",
+      "expected_status": [
+        200
+      ],
+      "actual_status": 200,
+      "passed": true,
+      "duration_ms": 19.08,
+      "error_detail": null,
+      "code_changed": null
+    },
+    {
+      "test_id": "PAY_HISTORY",
+      "category": "POSITIVE",
+      "method": "GET",
+      "path": "/payments/history",
+      "description": "Get user transaction history",
+      "actor": "customer",
+      "request_summary": "no_body",
+      "expected_status": [
+        200
+      ],
+      "actual_status": 200,
+      "passed": true,
+      "duration_ms": 18.45,
+      "error_detail": null,
+      "code_changed": null
+    },
+    {
+      "test_id": "PAY_VERIFY_INVALID_SIG",
+      "category": "VALIDATION_422_400",
+      "method": "POST",
+      "path": "/payments/verify",
+      "description": "Verify payment with forged signature (should fail)",
+      "actor": "customer",
+      "request_summary": "body={\"razorpay_order_id\": \"order_TRLuDv29vCDDS4\", \"razorpay_payment_id\": \"pay_test_7",
+      "expected_status": [
+        400
+      ],
+      "actual_status": 400,
+      "passed": true,
+      "duration_ms": 15.05,
+      "error_detail": null,
+      "code_changed": null
+    },
+    {
+      "test_id": "PAY_WEBHOOK_HANDLER",
+      "category": "POSITIVE",
+      "method": "POST",
+      "path": "/payments/webhook",
+      "description": "Simulate Razorpay captured webhook event",
+      "actor": "anonymous",
+      "request_summary": "body={\"event\": \"payment.captured\", \"payload\": {\"payment\": {\"entity\": {\"id\": \"pay_live",
+      "expected_status": [
+        200
+      ],
+      "actual_status": 200,
+      "passed": true,
+      "duration_ms": 593.12,
+      "error_detail": null,
+      "code_changed": "Used PaymentMethod.UNKNOWN in app/services/payment.py"
+    },
+    {
+      "test_id": "PAY_GET_INVOICE",
+      "category": "POSITIVE",
+      "method": "GET",
+      "path": "/payments/invoice/30",
+      "description": "Get payment invoice breakdown",
+      "actor": "customer",
+      "request_summary": "no_body",
+      "expected_status": [
+        200
+      ],
+      "actual_status": 200,
+      "passed": true,
+      "duration_ms": 20.62,
+      "error_detail": null,
+      "code_changed": null
+    },
+    {
+      "test_id": "PAY_REFUND_ADMIN",
+      "category": "POSITIVE",
+      "method": "POST",
+      "path": "/payments/30/refund",
+      "description": "Admin initiates refund for payment ID",
+      "actor": "admin",
+      "request_summary": "no_body",
+      "expected_status": [
+        200,
+        400
+      ],
+      "actual_status": 200,
+      "passed": true,
+      "duration_ms": 74.15,
+      "error_detail": null,
+      "code_changed": null
+    },
+    {
+      "test_id": "COUPON_CREATE",
+      "category": "POSITIVE",
+      "method": "POST",
+      "path": "/coupons/",
+      "description": "Create new discount coupon (Admin)",
+      "actor": "admin",
+      "request_summary": "body={\"code\": \"HOMIQ_CP_1EEA68BE\", \"discount_type\": \"percentage\", \"discount_value\": 2",
+      "expected_status": [
+        201
+      ],
+      "actual_status": 201,
+      "passed": true,
+      "duration_ms": 34.37,
+      "error_detail": null,
+      "code_changed": null
+    },
+    {
+      "test_id": "COUPON_LIST",
+      "category": "POSITIVE",
+      "method": "GET",
+      "path": "/coupons/",
+      "description": "List coupons (Admin)",
+      "actor": "admin",
+      "request_summary": "no_body",
+      "expected_status": [
+        200
+      ],
+      "actual_status": 200,
+      "passed": true,
+      "duration_ms": 16.58,
+      "error_detail": null,
+      "code_changed": null
+    },
+    {
+      "test_id": "COUPON_GET_ID",
+      "category": "POSITIVE",
+      "method": "GET",
+      "path": "/coupons/5",
+      "description": "Get coupon by ID",
+      "actor": "customer",
+      "request_summary": "no_body",
+      "expected_status": [
+        200
+      ],
+      "actual_status": 200,
+      "passed": true,
+      "duration_ms": 11.28,
+      "error_detail": null,
+      "code_changed": null
+    },
+    {
+      "test_id": "COUPON_GET_CODE",
+      "category": "POSITIVE",
+      "method": "GET",
+      "path": "/coupons/code/HOMIQ_CP_1EEA68BE",
+      "description": "Get coupon by promo code",
+      "actor": "customer",
+      "request_summary": "no_body",
+      "expected_status": [
+        200
+      ],
+      "actual_status": 200,
+      "passed": true,
+      "duration_ms": 10.83,
+      "error_detail": null,
+      "code_changed": null
+    },
+    {
+      "test_id": "COUPON_VALIDATE",
+      "category": "POSITIVE",
+      "method": "POST",
+      "path": "/coupons/validate",
+      "description": "Validate coupon code against order value",
+      "actor": "customer",
+      "request_summary": "body={\"code\": \"HOMIQ_CP_1EEA68BE\", \"amount\": 649.0, \"booking_id\": 98}",
+      "expected_status": [
+        200
+      ],
+      "actual_status": 200,
+      "passed": true,
+      "duration_ms": 22.01,
+      "error_detail": null,
+      "code_changed": null
+    },
+    {
+      "test_id": "COUPON_APPLY",
+      "category": "POSITIVE",
+      "method": "POST",
+      "path": "/coupons/apply",
+      "description": "Apply coupon code to booking",
+      "actor": "customer",
+      "request_summary": "body={\"code\": \"HOMIQ_CP_1EEA68BE\", \"booking_id\": 98, \"amount\": 649.0}",
+      "expected_status": [
+        200
+      ],
+      "actual_status": 200,
+      "passed": true,
+      "duration_ms": 36.62,
+      "error_detail": null,
+      "code_changed": null
+    },
+    {
+      "test_id": "COUPON_UPDATE",
+      "category": "POSITIVE",
+      "method": "PUT",
+      "path": "/coupons/5",
+      "description": "Update coupon discount value",
+      "actor": "admin",
+      "request_summary": "body={\"discount_value\": 25.0}",
+      "expected_status": [
+        200
+      ],
+      "actual_status": 200,
+      "passed": true,
+      "duration_ms": 19.72,
+      "error_detail": null,
+      "code_changed": null
+    },
+    {
+      "test_id": "COUPON_DELETE",
+      "category": "POSITIVE",
+      "method": "DELETE",
+      "path": "/coupons/5",
+      "description": "Delete coupon by ID",
+      "actor": "admin",
+      "request_summary": "no_body",
+      "expected_status": [
+        200
+      ],
+      "actual_status": 200,
+      "passed": true,
+      "duration_ms": 14.33,
+      "error_detail": null,
+      "code_changed": null
+    },
+    {
+      "test_id": "INVOICE_CREATE_FORBIDDEN",
+      "category": "ROLE_403",
+      "method": "POST",
+      "path": "/invoices/",
+      "description": "Customer role attempting invoice creation",
+      "actor": "customer",
+      "request_summary": "body={\"booking_id\": 101, \"subtotal\": 800.0, \"total_amount\": 944.0}",
+      "expected_status": [
+        403
+      ],
+      "actual_status": 403,
+      "passed": true,
+      "duration_ms": 9.94,
+      "error_detail": null,
+      "code_changed": null
+    },
+    {
+      "test_id": "INVOICE_CREATE",
+      "category": "POSITIVE",
+      "method": "POST",
+      "path": "/invoices/",
+      "description": "Create tax invoice for booking",
+      "actor": "admin",
+      "request_summary": "body={\"booking_id\": 101, \"subtotal\": 800.0, \"discount_amount\": 50.0, \"tax_percentage\"",
+      "expected_status": [
+        201
+      ],
+      "actual_status": 201,
+      "passed": true,
+      "duration_ms": 27.81,
+      "error_detail": null,
+      "code_changed": "Made generate_invoice_number loop-safe against unique key collisions in app/crud/invoice.py"
+    },
+    {
+      "test_id": "INVOICE_LIST_CUST",
+      "category": "POSITIVE",
+      "method": "GET",
+      "path": "/invoices/",
+      "description": "List invoices for customer",
+      "actor": "customer",
+      "request_summary": "no_body",
+      "expected_status": [
+        200
+      ],
+      "actual_status": 200,
+      "passed": true,
+      "duration_ms": 15.03,
+      "error_detail": null,
+      "code_changed": null
+    },
+    {
+      "test_id": "INVOICE_LIST_ADMIN",
+      "category": "POSITIVE",
+      "method": "GET",
+      "path": "/invoices/",
+      "description": "List all invoices for admin",
+      "actor": "admin",
+      "request_summary": "no_body",
+      "expected_status": [
+        200
+      ],
+      "actual_status": 200,
+      "passed": true,
+      "duration_ms": 14.28,
+      "error_detail": null,
+      "code_changed": null
+    },
+    {
+      "test_id": "INVOICE_GET_ID",
+      "category": "POSITIVE",
+      "method": "GET",
+      "path": "/invoices/19",
+      "description": "Get invoice details by ID",
+      "actor": "admin",
+      "request_summary": "no_body",
+      "expected_status": [
+        200
+      ],
+      "actual_status": 200,
+      "passed": true,
+      "duration_ms": 17.5,
+      "error_detail": null,
+      "code_changed": null
+    },
+    {
+      "test_id": "INVOICE_GET_NUM",
+      "category": "POSITIVE",
+      "method": "GET",
+      "path": "/invoices/number/INV-20260818-00004",
+      "description": "Get invoice details by invoice number",
+      "actor": "admin",
+      "request_summary": "no_body",
+      "expected_status": [
+        200
+      ],
+      "actual_status": 200,
+      "passed": true,
+      "duration_ms": 11.22,
+      "error_detail": null,
+      "code_changed": null
+    },
+    {
+      "test_id": "INVOICE_UPDATE",
+      "category": "POSITIVE",
+      "method": "PUT",
+      "path": "/invoices/19",
+      "description": "Update invoice notes & payment status",
+      "actor": "admin",
+      "request_summary": "body={\"notes\": \"Final approved invoice.\"}",
+      "expected_status": [
+        200
+      ],
+      "actual_status": 200,
+      "passed": true,
+      "duration_ms": 15.67,
+      "error_detail": null,
+      "code_changed": null
+    },
+    {
+      "test_id": "INVOICE_ISSUE",
+      "category": "POSITIVE",
+      "method": "POST",
+      "path": "/invoices/19/issue",
+      "description": "Transition invoice status to issued",
+      "actor": "admin",
+      "request_summary": "no_body",
+      "expected_status": [
+        200
+      ],
+      "actual_status": 200,
+      "passed": true,
+      "duration_ms": 15.33,
+      "error_detail": null,
+      "code_changed": null
+    },
+    {
+      "test_id": "REVIEW_CREATE",
+      "category": "POSITIVE",
+      "method": "POST",
+      "path": "/reviews/",
+      "description": "Create verified review for completed booking",
+      "actor": "customer",
+      "request_summary": "body={\"booking_id\": 98, \"technician_id\": 97, \"rating\": 5, \"comment\": \"Outstanding tec",
+      "expected_status": [
+        201
+      ],
+      "actual_status": 201,
+      "passed": true,
+      "duration_ms": 36.72,
+      "error_detail": null,
+      "code_changed": null
+    },
+    {
+      "test_id": "REVIEW_LIST_PUBLIC",
+      "category": "POSITIVE",
+      "method": "GET",
+      "path": "/reviews/",
+      "description": "List reviews publicly with pagination",
+      "actor": "anonymous",
+      "request_summary": "no_body",
+      "expected_status": [
+        200
+      ],
+      "actual_status": 200,
+      "passed": true,
+      "duration_ms": 10.8,
+      "error_detail": null,
+      "code_changed": null
+    },
+    {
+      "test_id": "REVIEW_GET_ID",
+      "category": "POSITIVE",
+      "method": "GET",
+      "path": "/reviews/11",
+      "description": "Get review details by ID",
+      "actor": "anonymous",
+      "request_summary": "no_body",
+      "expected_status": [
+        200
+      ],
+      "actual_status": 200,
+      "passed": true,
+      "duration_ms": 17.53,
+      "error_detail": null,
+      "code_changed": null
+    },
+    {
+      "test_id": "REVIEW_PATCH",
+      "category": "POSITIVE",
+      "method": "PATCH",
+      "path": "/reviews/11",
+      "description": "Patch review comment",
+      "actor": "customer",
+      "request_summary": "body={\"comment\": \"Outstanding technical expertise, strongly recommended!\"}",
+      "expected_status": [
+        200
+      ],
+      "actual_status": 200,
+      "passed": true,
+      "duration_ms": 21.52,
+      "error_detail": null,
+      "code_changed": null
+    },
+    {
+      "test_id": "REVIEW_PUT",
+      "category": "POSITIVE",
+      "method": "PUT",
+      "path": "/reviews/11",
+      "description": "Update rating and full review content",
+      "actor": "customer",
+      "request_summary": "body={\"rating\": 5, \"comment\": \"Fully resolved my problem in under 1 hour.\"}",
+      "expected_status": [
+        200
+      ],
+      "actual_status": 200,
+      "passed": true,
+      "duration_ms": 24.91,
+      "error_detail": null,
+      "code_changed": null
+    },
+    {
+      "test_id": "REVIEW_TECH_LIST",
+      "category": "POSITIVE",
+      "method": "GET",
+      "path": "/reviews/technician/97",
+      "description": "Get all reviews for technician",
+      "actor": "anonymous",
+      "request_summary": "no_body",
+      "expected_status": [
+        200
+      ],
+      "actual_status": 200,
+      "passed": true,
+      "duration_ms": 15.78,
+      "error_detail": null,
+      "code_changed": null
+    },
+    {
+      "test_id": "REVIEW_TECH_SUMMARY",
+      "category": "POSITIVE",
+      "method": "GET",
+      "path": "/reviews/technician/97/summary",
+      "description": "Get star rating distribution for technician",
+      "actor": "anonymous",
+      "request_summary": "no_body",
+      "expected_status": [
+        200
+      ],
+      "actual_status": 200,
+      "passed": true,
+      "duration_ms": 14.07,
+      "error_detail": null,
+      "code_changed": null
+    },
+    {
+      "test_id": "NOTIF_CREATE",
+      "category": "POSITIVE",
+      "method": "POST",
+      "path": "/notifications/",
+      "description": "Create user notification (Admin/System)",
+      "actor": "admin",
+      "request_summary": "body={\"user_id\": 277, \"title\": \"Service Completed\", \"message\": \"Your booking has been",
+      "expected_status": [
+        201
+      ],
+      "actual_status": 201,
+      "passed": true,
+      "duration_ms": 20.55,
+      "error_detail": null,
+      "code_changed": null
+    },
+    {
+      "test_id": "NOTIF_LIST",
+      "category": "POSITIVE",
+      "method": "GET",
+      "path": "/notifications/",
+      "description": "List user notifications",
+      "actor": "customer",
+      "request_summary": "no_body",
+      "expected_status": [
+        200
+      ],
+      "actual_status": 200,
+      "passed": true,
+      "duration_ms": 14.32,
+      "error_detail": null,
+      "code_changed": null
+    },
+    {
+      "test_id": "NOTIF_UNREAD",
+      "category": "POSITIVE",
+      "method": "GET",
+      "path": "/notifications/unread",
+      "description": "Get unread notifications and badge count",
+      "actor": "customer",
+      "request_summary": "no_body",
+      "expected_status": [
+        200
+      ],
+      "actual_status": 200,
+      "passed": true,
+      "duration_ms": 11.81,
+      "error_detail": null,
+      "code_changed": null
+    },
+    {
+      "test_id": "NOTIF_MARK_READ_PATCH",
+      "category": "POSITIVE",
+      "method": "PATCH",
+      "path": "/notifications/48/read",
+      "description": "Mark single notification read via PATCH",
+      "actor": "customer",
+      "request_summary": "no_body",
+      "expected_status": [
+        200
+      ],
+      "actual_status": 200,
+      "passed": true,
+      "duration_ms": 11.95,
+      "error_detail": null,
+      "code_changed": null
+    },
+    {
+      "test_id": "NOTIF_MARK_READ_PUT",
+      "category": "POSITIVE",
+      "method": "PUT",
+      "path": "/notifications/48/read",
+      "description": "Mark single notification read via PUT",
+      "actor": "customer",
+      "request_summary": "no_body",
+      "expected_status": [
+        200
+      ],
+      "actual_status": 200,
+      "passed": true,
+      "duration_ms": 9.19,
+      "error_detail": null,
+      "code_changed": null
+    },
+    {
+      "test_id": "NOTIF_READ_MULTIPLE",
+      "category": "POSITIVE",
+      "method": "POST",
+      "path": "/notifications/read-multiple",
+      "description": "Mark list of notification IDs as read",
+      "actor": "customer",
+      "request_summary": "body={\"notification_ids\": [48]}",
+      "expected_status": [
+        200
+      ],
+      "actual_status": 200,
+      "passed": true,
+      "duration_ms": 16.23,
+      "error_detail": null,
+      "code_changed": null
+    },
+    {
+      "test_id": "NOTIF_READ_ALL_PUT",
+      "category": "POSITIVE",
+      "method": "PUT",
+      "path": "/notifications/read-all",
+      "description": "Mark all user notifications as read via PUT",
+      "actor": "customer",
+      "request_summary": "no_body",
+      "expected_status": [
+        200
+      ],
+      "actual_status": 200,
+      "passed": true,
+      "duration_ms": 27.51,
+      "error_detail": null,
+      "code_changed": null
+    },
+    {
+      "test_id": "NOTIF_READ_ALL_PATCH",
+      "category": "POSITIVE",
+      "method": "PATCH",
+      "path": "/notifications/read-all",
+      "description": "Mark all user notifications as read via PATCH",
+      "actor": "customer",
+      "request_summary": "no_body",
+      "expected_status": [
+        200
+      ],
+      "actual_status": 200,
+      "passed": true,
+      "duration_ms": 21.09,
+      "error_detail": null,
+      "code_changed": null
+    },
+    {
+      "test_id": "NOTIF_DISPATCH_MULTI",
+      "category": "POSITIVE",
+      "method": "POST",
+      "path": "/notifications/dispatch",
+      "description": "Dispatch multi-channel (In-App, Email, SMS, Push)",
+      "actor": "admin",
+      "request_summary": "body={\"user_id\": 277, \"title\": \"Payment Received\", \"message\": \"Thank you for your pay",
+      "expected_status": [
+        200
+      ],
+      "actual_status": 200,
+      "passed": true,
+      "duration_ms": 20.46,
+      "error_detail": null,
+      "code_changed": null
+    },
+    {
+      "test_id": "NOTIF_DELETE",
+      "category": "POSITIVE",
+      "method": "DELETE",
+      "path": "/notifications/48",
+      "description": "Delete single notification by ID",
+      "actor": "customer",
+      "request_summary": "no_body",
+      "expected_status": [
+        200
+      ],
+      "actual_status": 200,
+      "passed": true,
+      "duration_ms": 70.8,
+      "error_detail": null,
+      "code_changed": null
+    },
+    {
+      "test_id": "MAPS_GEOCODE",
+      "category": "POSITIVE",
+      "method": "GET",
+      "path": "/maps/geocode?address=Indiranagar%2C%20Bengaluru",
+      "description": "Geocode street address to lat/lng coordinates",
+      "actor": "customer",
+      "request_summary": "no_body",
+      "expected_status": [
+        200
+      ],
+      "actual_status": 200,
+      "passed": true,
+      "duration_ms": 6.28,
+      "error_detail": null,
+      "code_changed": null
+    },
+    {
+      "test_id": "MAPS_REV_GEOCODE",
+      "category": "POSITIVE",
+      "method": "GET",
+      "path": "/maps/reverse-geocode?latitude=12.9716&longitude=77.5946",
+      "description": "Reverse geocode coordinates to human-readable address",
+      "actor": "customer",
+      "request_summary": "no_body",
+      "expected_status": [
+        200
+      ],
+      "actual_status": 200,
+      "passed": true,
+      "duration_ms": 7.36,
+      "error_detail": null,
+      "code_changed": null
+    },
+    {
+      "test_id": "MAPS_ETA",
+      "category": "POSITIVE",
+      "method": "GET",
+      "path": "/maps/eta?origin_lat=12.9716&origin_lng=77.5946&dest_lat=12.9800&dest_lng=77.6000",
+      "description": "Calculate driving distance & ETA between coordinates",
+      "actor": "customer",
+      "request_summary": "no_body",
+      "expected_status": [
+        200
+      ],
+      "actual_status": 200,
+      "passed": true,
+      "duration_ms": 6.04,
+      "error_detail": null,
+      "code_changed": null
+    },
+    {
+      "test_id": "MAPS_NEARBY_TECHS",
+      "category": "POSITIVE",
+      "method": "GET",
+      "path": "/maps/nearby-technicians?latitude=12.9716&longitude=77.5946&radius_km=30",
+      "description": "Find online technicians in proximity",
+      "actor": "customer",
+      "request_summary": "no_body",
+      "expected_status": [
+        200
+      ],
+      "actual_status": 200,
+      "passed": true,
+      "duration_ms": 16.97,
+      "error_detail": null,
+      "code_changed": null
+    },
+    {
+      "test_id": "JOB_CREATE",
+      "category": "POSITIVE",
+      "method": "POST",
+      "path": "/jobs/",
+      "description": "Company creates hiring job posting",
+      "actor": "company",
+      "request_summary": "body={\"title\": \"Lead HVAC Specialist\", \"description\": \"Full-time residential maintena",
+      "expected_status": [
+        201
+      ],
+      "actual_status": 201,
+      "passed": true,
+      "duration_ms": 51.97,
+      "error_detail": null,
+      "code_changed": null
+    },
+    {
+      "test_id": "JOB_CREATE_FORBIDDEN",
+      "category": "ROLE_403",
+      "method": "POST",
+      "path": "/jobs/",
+      "description": "Customer role attempting job creation",
+      "actor": "customer",
+      "request_summary": "body={\"title\": \"Unauthorized Job\"}",
+      "expected_status": [
+        403
+      ],
+      "actual_status": 403,
+      "passed": true,
+      "duration_ms": 20.05,
+      "error_detail": null,
+      "code_changed": null
+    },
+    {
+      "test_id": "JOB_LIST_ACTIVE",
+      "category": "POSITIVE",
+      "method": "GET",
+      "path": "/jobs/",
+      "description": "Technicians list available open jobs",
+      "actor": "technician",
+      "request_summary": "no_body",
+      "expected_status": [
+        200
+      ],
+      "actual_status": 200,
+      "passed": true,
+      "duration_ms": 32.96,
+      "error_detail": null,
+      "code_changed": null
+    },
+    {
+      "test_id": "JOB_LIST_MY_COMP",
+      "category": "POSITIVE",
+      "method": "GET",
+      "path": "/jobs/my",
+      "description": "Company lists their own job postings",
+      "actor": "company",
+      "request_summary": "no_body",
+      "expected_status": [
+        200
+      ],
+      "actual_status": 200,
+      "passed": true,
+      "duration_ms": 30.5,
+      "error_detail": null,
+      "code_changed": null
+    },
+    {
+      "test_id": "JOB_GET_ID",
+      "category": "POSITIVE",
+      "method": "GET",
+      "path": "/jobs/12",
+      "description": "Get job posting details by ID",
+      "actor": "technician",
+      "request_summary": "no_body",
+      "expected_status": [
+        200
+      ],
+      "actual_status": 200,
+      "passed": true,
+      "duration_ms": 18.87,
+      "error_detail": null,
+      "code_changed": null
+    },
+    {
+      "test_id": "JOB_APPLY",
+      "category": "POSITIVE",
+      "method": "POST",
+      "path": "/jobs/12/apply",
+      "description": "Technician submits application for job post",
+      "actor": "technician",
+      "request_summary": "body={\"cover_letter\": \"I have 5+ years of verified HVAC experience in Bengaluru.\"}",
+      "expected_status": [
+        201
+      ],
+      "actual_status": 201,
+      "passed": true,
+      "duration_ms": 43.99,
+      "error_detail": null,
+      "code_changed": null
+    },
+    {
+      "test_id": "JOB_APPLY_DUPLICATE",
+      "category": "VALIDATION_422_400",
+      "method": "POST",
+      "path": "/jobs/12/apply",
+      "description": "Technician duplicate application on same job",
+      "actor": "technician",
+      "request_summary": "body={\"cover_letter\": \"Duplicate\"}",
+      "expected_status": [
+        400
+      ],
+      "actual_status": 400,
+      "passed": true,
+      "duration_ms": 23.83,
+      "error_detail": null,
+      "code_changed": null
+    },
+    {
+      "test_id": "JOB_LIST_APPLICANTS",
+      "category": "POSITIVE",
+      "method": "GET",
+      "path": "/jobs/12/applications",
+      "description": "Company reviews candidate applications",
+      "actor": "company",
+      "request_summary": "no_body",
+      "expected_status": [
+        200
+      ],
+      "actual_status": 200,
+      "passed": true,
+      "duration_ms": 39.64,
+      "error_detail": null,
+      "code_changed": null
+    },
+    {
+      "test_id": "JOB_UPDATE_APP_STATUS",
+      "category": "POSITIVE",
+      "method": "PUT",
+      "path": "/jobs/applications/11/status",
+      "description": "Company shortlists candidate application",
+      "actor": "company",
+      "request_summary": "body={\"status\": \"shortlisted\"}",
+      "expected_status": [
+        200
+      ],
+      "actual_status": 200,
+      "passed": true,
+      "duration_ms": 33.64,
+      "error_detail": null,
+      "code_changed": null
+    },
+    {
+      "test_id": "JOB_TECH_MY_APPS",
+      "category": "POSITIVE",
+      "method": "GET",
+      "path": "/jobs/applications/my",
+      "description": "Technician views submitted applications",
+      "actor": "technician",
+      "request_summary": "no_body",
+      "expected_status": [
+        200
+      ],
+      "actual_status": 200,
+      "passed": true,
+      "duration_ms": 23.67,
+      "error_detail": null,
+      "code_changed": null
+    },
+    {
+      "test_id": "JOB_UPDATE",
+      "category": "POSITIVE",
+      "method": "PUT",
+      "path": "/jobs/12",
+      "description": "Company updates job post details",
+      "actor": "company",
+      "request_summary": "body={\"title\": \"Senior Lead HVAC Specialist\", \"is_active\": true}",
+      "expected_status": [
+        200
+      ],
+      "actual_status": 200,
+      "passed": true,
+      "duration_ms": 20.91,
+      "error_detail": null,
+      "code_changed": null
+    },
+    {
+      "test_id": "MEDIA_UPLOAD",
+      "category": "POSITIVE",
+      "method": "POST",
+      "path": "/media/upload",
+      "description": "Upload image file to Cloudinary media store",
+      "actor": "customer",
+      "request_summary": "no_body",
+      "expected_status": [
+        201
+      ],
+      "actual_status": 201,
+      "passed": true,
+      "duration_ms": 14.53,
+      "error_detail": null,
+      "code_changed": null
+    },
+    {
+      "test_id": "MEDIA_GET_DETAILS",
+      "category": "POSITIVE",
+      "method": "GET",
+      "path": "/media/homiq/audits/a8e741601813",
+      "description": "Get Cloudinary optimized URLs and thumbnail",
+      "actor": "anonymous",
+      "request_summary": "no_body",
+      "expected_status": [
+        200
+      ],
+      "actual_status": 200,
+      "passed": true,
+      "duration_ms": 18.24,
+      "error_detail": null,
+      "code_changed": null
+    },
+    {
+      "test_id": "MEDIA_DELETE",
+      "category": "POSITIVE",
+      "method": "DELETE",
+      "path": "/media/homiq/audits/a8e741601813",
+      "description": "Delete media asset from Cloudinary",
+      "actor": "customer",
+      "request_summary": "no_body",
+      "expected_status": [
+        200
+      ],
+      "actual_status": 200,
+      "passed": true,
+      "duration_ms": 27.64,
+      "error_detail": null,
+      "code_changed": null
+    },
+    {
+      "test_id": "ANALYTICS_ADMIN",
+      "category": "POSITIVE",
+      "method": "GET",
+      "path": "/analytics/admin",
+      "description": "Get full platform analytics suite",
+      "actor": "admin",
+      "request_summary": "no_body",
+      "expected_status": [
+        200
+      ],
+      "actual_status": 200,
+      "passed": true,
+      "duration_ms": 78.87,
+      "error_detail": null,
+      "code_changed": null
+    },
+    {
+      "test_id": "ANALYTICS_CUST",
+      "category": "POSITIVE",
+      "method": "GET",
+      "path": "/analytics/customer",
+      "description": "Get customer personal booking and spend analytics",
+      "actor": "customer",
+      "request_summary": "no_body",
+      "expected_status": [
+        200
+      ],
+      "actual_status": 200,
+      "passed": true,
+      "duration_ms": 16.02,
+      "error_detail": null,
+      "code_changed": null
+    },
+    {
+      "test_id": "ANALYTICS_TECH",
+      "category": "POSITIVE",
+      "method": "GET",
+      "path": "/analytics/technician",
+      "description": "Get technician personal earnings & completion metrics",
+      "actor": "technician",
+      "request_summary": "no_body",
+      "expected_status": [
+        200
+      ],
+      "actual_status": 200,
+      "passed": true,
+      "duration_ms": 18.72,
+      "error_detail": null,
+      "code_changed": null
+    },
+    {
+      "test_id": "REPORT_DAILY",
+      "category": "POSITIVE",
+      "method": "GET",
+      "path": "/reports/daily",
+      "description": "Get daily business report",
+      "actor": "admin",
+      "request_summary": "no_body",
+      "expected_status": [
+        200
+      ],
+      "actual_status": 200,
+      "passed": true,
+      "duration_ms": 20.39,
+      "error_detail": null,
+      "code_changed": null
+    },
+    {
+      "test_id": "REPORT_WEEKLY",
+      "category": "POSITIVE",
+      "method": "GET",
+      "path": "/reports/weekly",
+      "description": "Get weekly business report",
+      "actor": "admin",
+      "request_summary": "no_body",
+      "expected_status": [
+        200
+      ],
+      "actual_status": 200,
+      "passed": true,
+      "duration_ms": 14.85,
+      "error_detail": null,
+      "code_changed": null
+    },
+    {
+      "test_id": "REPORT_MONTHLY",
+      "category": "POSITIVE",
+      "method": "GET",
+      "path": "/reports/monthly",
+      "description": "Get monthly business report",
+      "actor": "admin",
+      "request_summary": "no_body",
+      "expected_status": [
+        200
+      ],
+      "actual_status": 200,
+      "passed": true,
+      "duration_ms": 13.52,
+      "error_detail": null,
+      "code_changed": null
+    },
+    {
+      "test_id": "REPORT_YEARLY",
+      "category": "POSITIVE",
+      "method": "GET",
+      "path": "/reports/yearly",
+      "description": "Get yearly business report",
+      "actor": "admin",
+      "request_summary": "no_body",
+      "expected_status": [
+        200
+      ],
+      "actual_status": 200,
+      "passed": true,
+      "duration_ms": 12.27,
+      "error_detail": null,
+      "code_changed": null
+    },
+    {
+      "test_id": "REPORT_EXPORT_CSV",
+      "category": "POSITIVE",
+      "method": "GET",
+      "path": "/reports/export?format=csv&period=monthly",
+      "description": "Export financial/booking reports as CSV",
+      "actor": "admin",
+      "request_summary": "no_body",
+      "expected_status": [
+        200
+      ],
+      "actual_status": 200,
+      "passed": true,
+      "duration_ms": 14.58,
+      "error_detail": null,
+      "code_changed": null
+    },
+    {
+      "test_id": "SEARCH_GLOBAL",
+      "category": "POSITIVE",
+      "method": "GET",
+      "path": "/search?q=cleaning&limit=10",
+      "description": "Global unified platform search",
+      "actor": "anonymous",
+      "request_summary": "no_body",
+      "expected_status": [
+        200
+      ],
+      "actual_status": 200,
+      "passed": true,
+      "duration_ms": 29.43,
+      "error_detail": null,
+      "code_changed": null
+    },
+    {
+      "test_id": "SEARCH_SERVICES",
+      "category": "POSITIVE",
+      "method": "GET",
+      "path": "/search/services?q=AC&sort_by=popular",
+      "description": "Search service catalog with filters",
+      "actor": "anonymous",
+      "request_summary": "no_body",
+      "expected_status": [
+        200
+      ],
+      "actual_status": 200,
+      "passed": true,
+      "duration_ms": 23.86,
+      "error_detail": null,
+      "code_changed": null
+    },
+    {
+      "test_id": "SEARCH_TECHS",
+      "category": "POSITIVE",
+      "method": "GET",
+      "path": "/search/technicians?city=Bengaluru&sort_by=rating_desc",
+      "description": "Search technicians by city and rating",
+      "actor": "anonymous",
+      "request_summary": "no_body",
+      "expected_status": [
+        200
+      ],
+      "actual_status": 200,
+      "passed": true,
+      "duration_ms": 9.69,
+      "error_detail": null,
+      "code_changed": null
+    },
+    {
+      "test_id": "SEARCH_BOOKINGS",
+      "category": "POSITIVE",
+      "method": "GET",
+      "path": "/search/bookings",
+      "description": "Search user bookings by keyword/status",
+      "actor": "customer",
+      "request_summary": "no_body",
+      "expected_status": [
+        200
+      ],
+      "actual_status": 200,
+      "passed": true,
+      "duration_ms": 13.63,
+      "error_detail": null,
+      "code_changed": "Fixed total_amount in search_bookings in app/services/search.py"
+    },
+    {
+      "test_id": "SEARCH_SUGGESTIONS",
+      "category": "POSITIVE",
+      "method": "GET",
+      "path": "/search/suggestions?q=cle",
+      "description": "Live autocomplete prefix search",
+      "actor": "anonymous",
+      "request_summary": "no_body",
+      "expected_status": [
+        200
+      ],
+      "actual_status": 200,
+      "passed": true,
+      "duration_ms": 11.32,
+      "error_detail": null,
+      "code_changed": null
+    },
+    {
+      "test_id": "SEARCH_RECENT",
+      "category": "POSITIVE",
+      "method": "GET",
+      "path": "/search/recent",
+      "description": "Get recent user search history",
+      "actor": "customer",
+      "request_summary": "no_body",
+      "expected_status": [
+        200
+      ],
+      "actual_status": 200,
+      "passed": true,
+      "duration_ms": 9.5,
+      "error_detail": null,
+      "code_changed": null
+    },
+    {
+      "test_id": "RECOM_UNIFIED",
+      "category": "POSITIVE",
+      "method": "GET",
+      "path": "/recommendations",
+      "description": "Get AI/heuristic unified recommendations",
+      "actor": "customer",
+      "request_summary": "no_body",
+      "expected_status": [
+        200
+      ],
+      "actual_status": 200,
+      "passed": true,
+      "duration_ms": 10.97,
+      "error_detail": null,
+      "code_changed": null
+    },
+    {
+      "test_id": "RECOM_SERVICES",
+      "category": "POSITIVE",
+      "method": "GET",
+      "path": "/recommendations/services",
+      "description": "Get trending & popular service recommendations",
+      "actor": "customer",
+      "request_summary": "no_body",
+      "expected_status": [
+        200
+      ],
+      "actual_status": 200,
+      "passed": true,
+      "duration_ms": 9.36,
+      "error_detail": null,
+      "code_changed": null
+    },
+    {
+      "test_id": "RECOM_TECHS",
+      "category": "POSITIVE",
+      "method": "GET",
+      "path": "/recommendations/technicians",
+      "description": "Get top-rated technician recommendations",
+      "actor": "customer",
+      "request_summary": "no_body",
+      "expected_status": [
+        200
+      ],
+      "actual_status": 200,
+      "passed": true,
+      "duration_ms": 12.12,
+      "error_detail": null,
+      "code_changed": null
+    },
+    {
+      "test_id": "SEC_SESSIONS_GET",
+      "category": "POSITIVE",
+      "method": "GET",
+      "path": "/security/sessions",
+      "description": "List active user device sessions",
+      "actor": "customer",
+      "request_summary": "no_body",
+      "expected_status": [
+        200
+      ],
+      "actual_status": 200,
+      "passed": true,
+      "duration_ms": 4083.48,
+      "error_detail": null,
+      "code_changed": null
+    },
+    {
+      "test_id": "SEC_LOGOUT_ALL",
+      "category": "POSITIVE",
+      "method": "DELETE",
+      "path": "/security/logout-all",
+      "description": "Revoke all active device sessions",
+      "actor": "customer",
+      "request_summary": "no_body",
+      "expected_status": [
+        200
+      ],
+      "actual_status": 200,
+      "passed": true,
+      "duration_ms": 4093.86,
+      "error_detail": null,
+      "code_changed": null
+    },
+    {
+      "test_id": "SEC_AUDIT_LOGS",
+      "category": "POSITIVE",
+      "method": "GET",
+      "path": "/security/audit-logs?limit=25",
+      "description": "Query security and login audit trail",
+      "actor": "admin",
+      "request_summary": "no_body",
+      "expected_status": [
+        200
+      ],
+      "actual_status": 200,
+      "passed": true,
+      "duration_ms": 28.96,
+      "error_detail": null,
+      "code_changed": null
+    },
+    {
+      "test_id": "TASK_GET_STATUS",
+      "category": "POSITIVE",
+      "method": "GET",
+      "path": "/tasks/status/mock_audit_task_id",
+      "description": "Get async background task execution status",
+      "actor": "admin",
+      "request_summary": "no_body",
+      "expected_status": [
+        200
+      ],
+      "actual_status": 200,
+      "passed": true,
+      "duration_ms": 4157.98,
+      "error_detail": null,
+      "code_changed": "Safeguarded Celery AsyncResult fallback in app/api/tasks/router.py"
+    },
+    {
+      "test_id": "TASK_RETRY",
+      "category": "POSITIVE",
+      "method": "POST",
+      "path": "/tasks/retry/mock_audit_task_id",
+      "description": "Re-queue or retry background task",
+      "actor": "admin",
+      "request_summary": "no_body",
+      "expected_status": [
+        200
+      ],
+      "actual_status": 200,
+      "passed": true,
+      "duration_ms": 16.81,
+      "error_detail": null,
+      "code_changed": null
+    },
+    {
+      "test_id": "TASK_SCHEDULER_JOBS",
+      "category": "POSITIVE",
+      "method": "GET",
+      "path": "/scheduler/jobs",
+      "description": "List active Celery Beat cron tasks",
+      "actor": "admin",
+      "request_summary": "no_body",
+      "expected_status": [
+        200
+      ],
+      "actual_status": 200,
+      "passed": true,
+      "duration_ms": 15.47,
+      "error_detail": null,
+      "code_changed": null
+    },
+    {
+      "test_id": "HEALTH_BASIC",
+      "category": "POSITIVE",
+      "method": "GET",
+      "path": "/health",
+      "description": "Basic liveness probe",
+      "actor": "anonymous",
+      "request_summary": "no_body",
+      "expected_status": [
+        200
+      ],
+      "actual_status": 200,
+      "passed": true,
+      "duration_ms": 12.0,
+      "error_detail": null,
+      "code_changed": null
+    },
+    {
+      "test_id": "HEALTH_DETAIL",
+      "category": "POSITIVE",
+      "method": "GET",
+      "path": "/health/detail",
+      "description": "Database, Redis, and WebSocket connectivity health check",
+      "actor": "anonymous",
+      "request_summary": "no_body",
+      "expected_status": [
+        200,
+        503
+      ],
+      "actual_status": 200,
+      "passed": true,
+      "duration_ms": 4102.46,
+      "error_detail": null,
+      "code_changed": null
+    },
+    {
+      "test_id": "METRICS_PROMETHEUS",
+      "category": "POSITIVE",
+      "method": "GET",
+      "path": "/metrics",
+      "description": "Prometheus text format metrics export",
+      "actor": "anonymous",
+      "request_summary": "no_body",
+      "expected_status": [
+        200
+      ],
+      "actual_status": 200,
+      "passed": true,
+      "duration_ms": 27.66,
+      "error_detail": null,
+      "code_changed": null
+    },
+    {
+      "test_id": "DASHBOARD_ROOT_CUST",
+      "category": "POSITIVE",
+      "method": "GET",
+      "path": "/dashboard",
+      "description": "Role-aware root dashboard (Customer view)",
+      "actor": "customer",
+      "request_summary": "no_body",
+      "expected_status": [
+        200
+      ],
+      "actual_status": 200,
+      "passed": true,
+      "duration_ms": 51.41,
+      "error_detail": null,
+      "code_changed": null
+    },
+    {
+      "test_id": "DASHBOARD_ROOT_ADMIN",
+      "category": "POSITIVE",
+      "method": "GET",
+      "path": "/dashboard",
+      "description": "Role-aware root dashboard (Admin view)",
+      "actor": "admin",
+      "request_summary": "no_body",
+      "expected_status": [
+        200
+      ],
+      "actual_status": 200,
+      "passed": true,
+      "duration_ms": 94.46,
+      "error_detail": null,
+      "code_changed": null
+    },
+    {
+      "test_id": "ADM_DASHBOARD",
+      "category": "POSITIVE",
+      "method": "GET",
+      "path": "/admin/dashboard",
+      "description": "Admin control center summary statistics",
+      "actor": "admin",
+      "request_summary": "no_body",
+      "expected_status": [
+        200
+      ],
+      "actual_status": 200,
+      "passed": true,
+      "duration_ms": 76.57,
+      "error_detail": null,
+      "code_changed": null
+    },
+    {
+      "test_id": "ADM_USER_LIST",
+      "category": "POSITIVE",
+      "method": "GET",
+      "path": "/admin/users",
+      "description": "List all platform users with role filters",
+      "actor": "admin",
+      "request_summary": "no_body",
+      "expected_status": [
+        200
+      ],
+      "actual_status": 200,
+      "passed": true,
+      "duration_ms": 28.38,
+      "error_detail": null,
+      "code_changed": null
+    },
+    {
+      "test_id": "ADM_USER_GET",
+      "category": "POSITIVE",
+      "method": "GET",
+      "path": "/admin/users/277",
+      "description": "Get deep user profile and booking history",
+      "actor": "admin",
+      "request_summary": "no_body",
+      "expected_status": [
+        200
+      ],
+      "actual_status": 200,
+      "passed": true,
+      "duration_ms": 23.58,
+      "error_detail": null,
+      "code_changed": null
+    },
+    {
+      "test_id": "ADM_USER_SUSPEND",
+      "category": "POSITIVE",
+      "method": "PATCH",
+      "path": "/admin/users/277/suspend",
+      "description": "Admin temporarily suspends customer account",
+      "actor": "admin",
+      "request_summary": "no_body",
+      "expected_status": [
+        200
+      ],
+      "actual_status": 200,
+      "passed": true,
+      "duration_ms": 22.13,
+      "error_detail": null,
+      "code_changed": null
+    },
+    {
+      "test_id": "ADM_USER_ACTIVATE",
+      "category": "POSITIVE",
+      "method": "PATCH",
+      "path": "/admin/users/277/activate",
+      "description": "Admin reactivates customer account",
+      "actor": "admin",
+      "request_summary": "no_body",
+      "expected_status": [
+        200
+      ],
+      "actual_status": 200,
+      "passed": true,
+      "duration_ms": 11.5,
+      "error_detail": null,
+      "code_changed": null
+    },
+    {
+      "test_id": "ADM_TECH_LIST",
+      "category": "POSITIVE",
+      "method": "GET",
+      "path": "/admin/technicians",
+      "description": "List technicians for administrative management",
+      "actor": "admin",
+      "request_summary": "no_body",
+      "expected_status": [
+        200
+      ],
+      "actual_status": 200,
+      "passed": true,
+      "duration_ms": 96.62,
+      "error_detail": null,
+      "code_changed": null
+    },
+    {
+      "test_id": "ADM_TECH_DOCS",
+      "category": "POSITIVE",
+      "method": "GET",
+      "path": "/admin/technicians/97/documents",
+      "description": "List verification documents for technician",
+      "actor": "admin",
+      "request_summary": "no_body",
+      "expected_status": [
+        200
+      ],
+      "actual_status": 200,
+      "passed": true,
+      "duration_ms": 9.73,
+      "error_detail": null,
+      "code_changed": null
+    },
+    {
+      "test_id": "ADM_DOC_APPROVE",
+      "category": "POSITIVE",
+      "method": "PATCH",
+      "path": "/admin/documents/doc_b424cd11/approve",
+      "description": "Admin approves technician document",
+      "actor": "admin",
+      "request_summary": "no_body",
+      "expected_status": [
+        200
+      ],
+      "actual_status": 200,
+      "passed": true,
+      "duration_ms": 7.18,
+      "error_detail": null,
+      "code_changed": null
+    },
+    {
+      "test_id": "ADM_TECH_APPROVE",
+      "category": "POSITIVE",
+      "method": "PATCH",
+      "path": "/admin/technicians/97/approve",
+      "description": "Admin verifies and approves technician profile",
+      "actor": "admin",
+      "request_summary": "no_body",
+      "expected_status": [
+        200
+      ],
+      "actual_status": 200,
+      "passed": true,
+      "duration_ms": 22.05,
+      "error_detail": null,
+      "code_changed": null
+    },
+    {
+      "test_id": "ADM_TECH_SUSPEND",
+      "category": "POSITIVE",
+      "method": "PATCH",
+      "path": "/admin/technicians/97/suspend",
+      "description": "Admin sets technician availability to false",
+      "actor": "admin",
+      "request_summary": "no_body",
+      "expected_status": [
+        200
+      ],
+      "actual_status": 200,
+      "passed": true,
+      "duration_ms": 19.58,
+      "error_detail": null,
+      "code_changed": null
+    },
+    {
+      "test_id": "ADM_TECH_ACTIVATE",
+      "category": "POSITIVE",
+      "method": "PATCH",
+      "path": "/admin/technicians/97/activate",
+      "description": "Admin sets technician availability to true",
+      "actor": "admin",
+      "request_summary": "no_body",
+      "expected_status": [
+        200
+      ],
+      "actual_status": 200,
+      "passed": true,
+      "duration_ms": 15.97,
+      "error_detail": null,
+      "code_changed": null
+    },
+    {
+      "test_id": "ADM_BOOKING_LIST",
+      "category": "POSITIVE",
+      "method": "GET",
+      "path": "/admin/bookings",
+      "description": "List all bookings with status filters",
+      "actor": "admin",
+      "request_summary": "no_body",
+      "expected_status": [
+        200
+      ],
+      "actual_status": 200,
+      "passed": true,
+      "duration_ms": 29.63,
+      "error_detail": null,
+      "code_changed": null
+    },
+    {
+      "test_id": "ADM_BOOKING_GET",
+      "category": "POSITIVE",
+      "method": "GET",
+      "path": "/admin/bookings/98",
+      "description": "Get booking details (Admin override)",
+      "actor": "admin",
+      "request_summary": "no_body",
+      "expected_status": [
+        200
+      ],
+      "actual_status": 200,
+      "passed": true,
+      "duration_ms": 17.99,
+      "error_detail": null,
+      "code_changed": null
+    },
+    {
+      "test_id": "ADM_BOOKING_LOGS",
+      "category": "POSITIVE",
+      "method": "GET",
+      "path": "/admin/bookings/98/logs",
+      "description": "Get booking lifecycle audit log entries",
+      "actor": "admin",
+      "request_summary": "no_body",
+      "expected_status": [
+        200
+      ],
+      "actual_status": 200,
+      "passed": true,
+      "duration_ms": 16.91,
+      "error_detail": null,
+      "code_changed": "Added get_booking_history_logs to BookingService in app/services/booking.py"
+    },
+    {
+      "test_id": "ADM_CAT_LIST",
+      "category": "POSITIVE",
+      "method": "GET",
+      "path": "/admin/categories",
+      "description": "Admin category management listing",
+      "actor": "admin",
+      "request_summary": "no_body",
+      "expected_status": [
+        200
+      ],
+      "actual_status": 200,
+      "passed": true,
+      "duration_ms": 10.57,
+      "error_detail": null,
+      "code_changed": null
+    },
+    {
+      "test_id": "ADM_CAT_DISABLE",
+      "category": "POSITIVE",
+      "method": "PATCH",
+      "path": "/admin/categories/12/disable",
+      "description": "Admin disables category",
+      "actor": "admin",
+      "request_summary": "no_body",
+      "expected_status": [
+        200
+      ],
+      "actual_status": 200,
+      "passed": true,
+      "duration_ms": 11.43,
+      "error_detail": null,
+      "code_changed": null
+    },
+    {
+      "test_id": "ADM_CAT_ENABLE",
+      "category": "POSITIVE",
+      "method": "PATCH",
+      "path": "/admin/categories/12/enable",
+      "description": "Admin enables category",
+      "actor": "admin",
+      "request_summary": "no_body",
+      "expected_status": [
+        200
+      ],
+      "actual_status": 200,
+      "passed": true,
+      "duration_ms": 13.79,
+      "error_detail": null,
+      "code_changed": null
+    },
+    {
+      "test_id": "ADM_SVC_DISABLE",
+      "category": "POSITIVE",
+      "method": "PATCH",
+      "path": "/admin/services/29/disable",
+      "description": "Admin disables service",
+      "actor": "admin",
+      "request_summary": "no_body",
+      "expected_status": [
+        200
+      ],
+      "actual_status": 200,
+      "passed": true,
+      "duration_ms": 16.71,
+      "error_detail": null,
+      "code_changed": null
+    },
+    {
+      "test_id": "ADM_SVC_ENABLE",
+      "category": "POSITIVE",
+      "method": "PATCH",
+      "path": "/admin/services/29/enable",
+      "description": "Admin enables service",
+      "actor": "admin",
+      "request_summary": "no_body",
+      "expected_status": [
+        200
+      ],
+      "actual_status": 200,
+      "passed": true,
+      "duration_ms": 13.81,
+      "error_detail": null,
+      "code_changed": null
+    },
+    {
+      "test_id": "ADM_COUPON_LIST",
+      "category": "POSITIVE",
+      "method": "GET",
+      "path": "/admin/coupons",
+      "description": "Admin coupon management listing",
+      "actor": "admin",
+      "request_summary": "no_body",
+      "expected_status": [
+        200
+      ],
+      "actual_status": 200,
+      "passed": true,
+      "duration_ms": 9.81,
+      "error_detail": null,
+      "code_changed": null
+    },
+    {
+      "test_id": "ADM_INVOICE_LIST",
+      "category": "POSITIVE",
+      "method": "GET",
+      "path": "/admin/invoices",
+      "description": "Admin invoice management listing",
+      "actor": "admin",
+      "request_summary": "no_body",
+      "expected_status": [
+        200
+      ],
+      "actual_status": 200,
+      "passed": true,
+      "duration_ms": 13.42,
+      "error_detail": null,
+      "code_changed": null
+    },
+    {
+      "test_id": "ADM_REVIEW_LIST",
+      "category": "POSITIVE",
+      "method": "GET",
+      "path": "/admin/reviews",
+      "description": "Admin review moderation listing",
+      "actor": "admin",
+      "request_summary": "no_body",
+      "expected_status": [
+        200
+      ],
+      "actual_status": 200,
+      "passed": true,
+      "duration_ms": 10.52,
+      "error_detail": null,
+      "code_changed": null
+    },
+    {
+      "test_id": "ADM_REP_OVERVIEW",
+      "category": "POSITIVE",
+      "method": "GET",
+      "path": "/admin/reports",
+      "description": "Admin report overview summary",
+      "actor": "admin",
+      "request_summary": "no_body",
+      "expected_status": [
+        200
+      ],
+      "actual_status": 200,
+      "passed": true,
+      "duration_ms": 147.01,
+      "error_detail": null,
+      "code_changed": null
+    },
+    {
+      "test_id": "ADM_REP_REV",
+      "category": "POSITIVE",
+      "method": "GET",
+      "path": "/admin/reports/revenue",
+      "description": "Admin revenue report",
+      "actor": "admin",
+      "request_summary": "no_body",
+      "expected_status": [
+        200
+      ],
+      "actual_status": 200,
+      "passed": true,
+      "duration_ms": 62.52,
+      "error_detail": null,
+      "code_changed": null
+    },
+    {
+      "test_id": "ADM_REP_BOOK",
+      "category": "POSITIVE",
+      "method": "GET",
+      "path": "/admin/reports/bookings",
+      "description": "Admin bookings report",
+      "actor": "admin",
+      "request_summary": "no_body",
+      "expected_status": [
+        200
+      ],
+      "actual_status": 200,
+      "passed": true,
+      "duration_ms": 57.21,
+      "error_detail": null,
+      "code_changed": null
+    },
+    {
+      "test_id": "ADM_REP_TECH",
+      "category": "POSITIVE",
+      "method": "GET",
+      "path": "/admin/reports/technicians",
+      "description": "Admin technician report",
+      "actor": "admin",
+      "request_summary": "no_body",
+      "expected_status": [
+        200
+      ],
+      "actual_status": 200,
+      "passed": true,
+      "duration_ms": 361.68,
+      "error_detail": null,
+      "code_changed": null
+    },
+    {
+      "test_id": "ADM_ANALYTICS_OVERVIEW",
+      "category": "POSITIVE",
+      "method": "GET",
+      "path": "/admin/analytics/overview",
+      "description": "Admin analytics overview metrics",
+      "actor": "admin",
+      "request_summary": "no_body",
+      "expected_status": [
+        200
+      ],
+      "actual_status": 200,
+      "passed": true,
+      "duration_ms": 18.45,
+      "error_detail": null,
+      "code_changed": null
+    },
+    {
+      "test_id": "ADM_ANALYTICS_GROWTH",
+      "category": "POSITIVE",
+      "method": "GET",
+      "path": "/admin/analytics/growth",
+      "description": "Admin platform growth metrics",
+      "actor": "admin",
+      "request_summary": "no_body",
+      "expected_status": [
+        200
+      ],
+      "actual_status": 200,
+      "passed": true,
+      "duration_ms": 16.14,
+      "error_detail": null,
+      "code_changed": null
+    },
+    {
+      "test_id": "ADM_ANALYTICS_CUST",
+      "category": "POSITIVE",
+      "method": "GET",
+      "path": "/admin/analytics/customers",
+      "description": "Admin customer analytics",
+      "actor": "admin",
+      "request_summary": "no_body",
+      "expected_status": [
+        200
+      ],
+      "actual_status": 200,
+      "passed": true,
+      "duration_ms": 24.81,
+      "error_detail": null,
+      "code_changed": null
+    },
+    {
+      "test_id": "ADM_ANALYTICS_BOOK",
+      "category": "POSITIVE",
+      "method": "GET",
+      "path": "/admin/analytics/bookings",
+      "description": "Admin booking analytics",
+      "actor": "admin",
+      "request_summary": "no_body",
+      "expected_status": [
+        200
+      ],
+      "actual_status": 200,
+      "passed": true,
+      "duration_ms": 34.11,
+      "error_detail": null,
+      "code_changed": null
+    },
+    {
+      "test_id": "ADM_ANALYTICS_SVC",
+      "category": "POSITIVE",
+      "method": "GET",
+      "path": "/admin/analytics/service",
+      "description": "Admin service analytics",
+      "actor": "admin",
+      "request_summary": "no_body",
+      "expected_status": [
+        200
+      ],
+      "actual_status": 200,
+      "passed": true,
+      "duration_ms": 30.35,
+      "error_detail": null,
+      "code_changed": null
+    },
+    {
+      "test_id": "ADM_ANALYTICS_TECH",
+      "category": "POSITIVE",
+      "method": "GET",
+      "path": "/admin/analytics/technician",
+      "description": "Admin technician analytics",
+      "actor": "admin",
+      "request_summary": "no_body",
+      "expected_status": [
+        200
+      ],
+      "actual_status": 200,
+      "passed": true,
+      "duration_ms": 356.41,
+      "error_detail": null,
+      "code_changed": null
+    },
+    {
+      "test_id": "ADM_ANALYTICS_REV",
+      "category": "POSITIVE",
+      "method": "GET",
+      "path": "/admin/analytics/revenue",
+      "description": "Admin revenue analytics",
+      "actor": "admin",
+      "request_summary": "no_body",
+      "expected_status": [
+        200
+      ],
+      "actual_status": 200,
+      "passed": true,
+      "duration_ms": 36.25,
+      "error_detail": null,
+      "code_changed": null
+    },
+    {
+      "test_id": "ADM_SETTINGS_GET",
+      "category": "POSITIVE",
+      "method": "GET",
+      "path": "/admin/settings",
+      "description": "Get global platform business settings",
+      "actor": "admin",
+      "request_summary": "no_body",
+      "expected_status": [
+        200
+      ],
+      "actual_status": 200,
+      "passed": true,
+      "duration_ms": 7.92,
+      "error_detail": null,
+      "code_changed": null
+    },
+    {
+      "test_id": "ADM_SETTINGS_PUT",
+      "category": "POSITIVE",
+      "method": "PUT",
+      "path": "/admin/settings",
+      "description": "Update platform commission and tax settings",
+      "actor": "admin",
+      "request_summary": "body={\"commission_percentage\": 15.0, \"tax_percentage\": 18.0}",
+      "expected_status": [
+        200
+      ],
+      "actual_status": 200,
+      "passed": true,
+      "duration_ms": 11.19,
+      "error_detail": null,
+      "code_changed": null
+    },
+    {
+      "test_id": "CHAT_HISTORY_GET",
+      "category": "POSITIVE",
+      "method": "GET",
+      "path": "/chat/98/history",
+      "description": "Get stored chat conversation history for booking",
+      "actor": "customer",
+      "request_summary": "no_body",
+      "expected_status": [
+        200
+      ],
+      "actual_status": 200,
+      "passed": true,
+      "duration_ms": 9.41,
+      "error_detail": null,
+      "code_changed": null
+    }
+  ]
+}

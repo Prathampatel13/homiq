@@ -184,5 +184,9 @@ class InvoiceCRUD:
             )
         ) or 0
         seq = int(count) + 1
-        return f"INV-{today.strftime('%Y%m%d')}-{seq:05d}"
+        candidate = f"INV-{today.strftime('%Y%m%d')}-{seq:05d}"
+        while self.get_by_invoice_number(candidate):
+            seq += 1
+            candidate = f"INV-{today.strftime('%Y%m%d')}-{seq:05d}"
+        return candidate
 
