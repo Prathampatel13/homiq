@@ -1,14 +1,46 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { ShieldCheck, User, LogOut, ChevronDown, Menu, X, PlusCircle, LayoutDashboard, Bell } from 'lucide-react';
+import { 
+  User, 
+  LogOut, 
+  ChevronDown, 
+  Menu, 
+  X, 
+  PlusCircle, 
+  LayoutDashboard, 
+  Briefcase, 
+  Layers,
+  Moon,
+  Sun
+} from 'lucide-react';
 import { useAuthStore } from '../../store/useAuthStore';
 import { UserRole } from '../../types';
-import { Button } from '../ui/Button';
+import { HomiQLogo } from '../brand/HomiQLogo';
 
 export const Navbar: React.FC = () => {
   const { user, isAuthenticated, logout, getEffectiveRole } = useAuthStore();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
+  const [isDarkMode, setIsDarkMode] = useState(() => {
+    return localStorage.getItem('theme') !== 'light';
+  });
+
+  useEffect(() => {
+    if (isDarkMode) {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+  }, [isDarkMode]);
+
+  const toggleTheme = () => {
+    setIsDarkMode((prev) => {
+      const newTheme = !prev;
+      localStorage.setItem('theme', newTheme ? 'dark' : 'light');
+      return newTheme;
+    });
+  };
+
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -39,47 +71,43 @@ export const Navbar: React.FC = () => {
   return (
     <nav className="surface-navbar">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-16">
-          {/* Logo */}
-          <Link to="/" className="flex items-center gap-2.5 group">
-            <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-brand-600 to-brand-400 flex items-center justify-center text-white shadow-accent">
-              <ShieldCheck className="w-5 h-5" />
-            </div>
-            <div className="flex items-center gap-1.5">
-              <span className="text-lg font-bold tracking-tight text-white font-mono">HomiQ</span>
-              <span className="text-[10px] font-semibold tracking-widest uppercase px-1.5 py-0.5 rounded bg-dark-800 text-slate-400 border border-dark-700">
-                PRO
-              </span>
-            </div>
+        <div className="flex items-center justify-between h-20">
+          {/* Official HomiQ Logo */}
+          <Link to="/" className="flex items-center gap-2 group">
+            <HomiQLogo variant="horizontal" size="md" />
           </Link>
 
           {/* Desktop Nav Links */}
-          <div className="hidden md:flex items-center gap-7 text-sm font-medium">
+          <div className="hidden md:flex items-center gap-8 text-sm font-medium">
             <Link
               to="/services"
-              className={`transition-colors ${
-                isCurrent('/services') ? 'text-brand-400 font-semibold' : 'text-slate-300 hover:text-white'
+              className={`transition-colors duration-150 flex items-center gap-1.5 ${
+                isCurrent('/services') ? 'text-sage-400 font-semibold' : 'text-slate-300 hover:text-white'
               }`}
             >
-              Services
+              <Layers className="w-4 h-4" />
+              <span>Services</span>
             </Link>
+            
             <Link
               to="/jobs"
-              className={`transition-colors ${
-                isCurrent('/jobs') ? 'text-brand-400 font-semibold' : 'text-slate-300 hover:text-white'
+              className={`transition-colors duration-150 flex items-center gap-1.5 ${
+                isCurrent('/jobs') ? 'text-sage-400 font-semibold' : 'text-slate-300 hover:text-white'
               }`}
             >
-              Recruitment
+              <Briefcase className="w-4 h-4" />
+              <span>Recruitment</span>
             </Link>
+
             {isAuthenticated && (
               <Link
                 to={getDashboardPath()}
-                className={`flex items-center gap-1.5 transition-colors ${
-                  location.pathname.includes('dashboard') ? 'text-brand-400 font-semibold' : 'text-slate-300 hover:text-white'
+                className={`flex items-center gap-1.5 transition-colors duration-150 ${
+                  location.pathname.includes('dashboard') ? 'text-sage-400 font-semibold' : 'text-slate-300 hover:text-white'
                 }`}
               >
                 <LayoutDashboard className="w-4 h-4" />
-                <span>Dashboard</span>
+                <span>Command Center</span>
               </Link>
             )}
           </div>
@@ -88,84 +116,114 @@ export const Navbar: React.FC = () => {
           <div className="hidden md:flex items-center gap-3">
             {isAuthenticated && user ? (
               <div className="flex items-center gap-3">
+                {/* Theme Toggle */}
+                <button
+                  onClick={toggleTheme}
+                  className="p-2 rounded-xl bg-dark-850 hover:bg-dark-800 border border-dark-750 text-slate-300 hover:text-white transition-colors flex items-center justify-center"
+                  aria-label="Toggle theme"
+                >
+                  {isDarkMode ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+                </button>
+
                 {role === UserRole.CUSTOMER && (
-                  <Button
-                    variant="primary"
-                    size="sm"
-                    leftIcon={PlusCircle}
+                  <button
                     onClick={() => navigate('/booking/new')}
+                    className="btn-primary flex items-center gap-1.5"
                   >
-                    Book Service
-                  </Button>
+                    <PlusCircle className="w-4 h-4" />
+                    <span>Book Service</span>
+                  </button>
                 )}
 
-                {/* Profile menu */}
+                {/* Profile dropdown */}
                 <div className="relative">
                   <button
                     onClick={() => setIsProfileOpen(!isProfileOpen)}
-                    className="flex items-center gap-2.5 p-1.5 pr-3 rounded-xl bg-dark-850 border border-dark-700 hover:border-dark-750 text-slate-200 transition-all text-xs font-medium"
+                    className="flex items-center gap-2.5 p-1.5 pr-3 rounded-xl bg-dark-850 hover:bg-dark-800 border border-dark-750 transition-colors"
                   >
-                    <div className="w-7 h-7 rounded-lg bg-dark-750 flex items-center justify-center font-bold text-brand-400">
+                    <div className="w-8 h-8 rounded-lg bg-sage-400/15 border border-sage-400/30 flex items-center justify-center text-sage-400 text-xs font-bold">
                       {user.full_name?.charAt(0).toUpperCase() || 'U'}
                     </div>
-                    <span className="max-w-[120px] truncate text-slate-200 font-medium">{user.full_name}</span>
-                    <ChevronDown className="w-3.5 h-3.5 text-slate-400" />
+                    <div className="text-left">
+                      <p className="text-xs font-semibold text-white leading-none">{user.full_name || 'User'}</p>
+                      <span className="text-[10px] font-mono text-sage-400">
+                        {role.replace('ROLE_', '')}
+                      </span>
+                    </div>
+                    <ChevronDown className="w-3.5 h-3.5 text-slate-400 ml-1" />
                   </button>
 
-                  {/* Dropdown */}
                   {isProfileOpen && (
-                    <div className="absolute right-0 mt-2 w-56 bg-dark-900 border border-dark-700/90 rounded-2xl shadow-modal p-1.5 z-50 text-left">
-                      <div className="px-3 py-2.5 border-b border-dark-800">
-                        <p className="text-xs font-semibold text-white truncate">{user.full_name}</p>
-                        <p className="text-[11px] text-slate-400 truncate mt-0.5">{user.email}</p>
-                        <div className="mt-1.5">
-                          <span className="inline-block px-2 py-0.5 text-[10px] uppercase font-mono font-semibold rounded bg-brand-500/10 text-brand-400 border border-brand-500/20">
-                            {role.replace('ROLE_', '')}
-                          </span>
-                        </div>
+                    <div 
+                      className="absolute right-0 mt-2 w-56 rounded-2xl bg-dark-900 border border-dark-750 p-2 shadow-modal z-50 animate-in fade-in zoom-in-95 duration-100"
+                      onMouseLeave={() => setIsProfileOpen(false)}
+                    >
+                      <div className="px-3 py-2 border-b border-dark-750 mb-1">
+                        <p className="text-xs font-semibold text-white">{user.full_name}</p>
+                        <p className="text-[11px] text-slate-400 truncate">{user.email}</p>
                       </div>
 
-                      <div className="py-1">
-                        <Link
-                          to={getDashboardPath()}
-                          onClick={() => setIsProfileOpen(false)}
-                          className="flex items-center gap-2 px-3 py-2 text-xs text-slate-300 hover:text-white hover:bg-dark-850 rounded-xl transition-colors"
-                        >
-                          <LayoutDashboard className="w-4 h-4 text-slate-400" />
-                          <span>Dashboard</span>
-                        </Link>
-                      </div>
+                      <button
+                        onClick={() => {
+                          setIsProfileOpen(false);
+                          navigate(getDashboardPath());
+                        }}
+                        className="w-full flex items-center gap-2 px-3 py-2 text-xs font-medium text-slate-300 hover:text-white hover:bg-dark-850 rounded-xl transition-colors text-left"
+                      >
+                        <LayoutDashboard className="w-4 h-4 text-sage-400" />
+                        <span>Dashboard</span>
+                      </button>
 
-                      <div className="pt-1 border-t border-dark-800">
-                        <button
-                          onClick={handleLogout}
-                          className="flex items-center gap-2 w-full px-3 py-2 text-xs text-rose-400 hover:bg-rose-500/10 rounded-xl transition-colors"
-                        >
-                          <LogOut className="w-4 h-4" />
-                          <span>Sign Out</span>
-                        </button>
-                      </div>
+                      <button
+                        onClick={handleLogout}
+                        className="w-full flex items-center gap-2 px-3 py-2 text-xs font-medium text-rose-400 hover:bg-rose-500/10 rounded-xl transition-colors text-left mt-1"
+                      >
+                        <LogOut className="w-4 h-4" />
+                        <span>Sign Out</span>
+                      </button>
                     </div>
                   )}
                 </div>
               </div>
             ) : (
               <div className="flex items-center gap-2.5">
-                <Button variant="ghost" size="sm" onClick={() => navigate('/login')}>
+                <button
+                  onClick={toggleTheme}
+                  className="p-2 rounded-xl bg-dark-850 hover:bg-dark-800 border border-dark-750 text-slate-300 hover:text-white transition-colors flex items-center justify-center"
+                  aria-label="Toggle theme"
+                >
+                  {isDarkMode ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+                </button>
+                <Link
+                  to="/login"
+                  className="btn-secondary text-xs px-4 py-2"
+                >
                   Sign In
-                </Button>
-                <Button variant="primary" size="sm" onClick={() => navigate('/register')}>
+                </Link>
+                <Link
+                  to="/register"
+                  className="btn-primary text-xs px-4 py-2"
+                >
                   Get Started
-                </Button>
+                </Link>
               </div>
             )}
           </div>
 
-          {/* Mobile Menu Button */}
-          <div className="flex md:hidden items-center gap-2">
+          {/* Mobile menu button */}
+          <div className="md:hidden flex items-center gap-2">
+            {isAuthenticated && (
+              <button
+                onClick={() => navigate(getDashboardPath())}
+                className="p-2 rounded-xl bg-dark-850 border border-dark-750 text-slate-300"
+              >
+                <LayoutDashboard className="w-4 h-4" />
+              </button>
+            )}
             <button
               onClick={() => setIsMenuOpen(!isMenuOpen)}
-              className="p-2 rounded-xl text-slate-400 hover:text-white bg-dark-850 border border-dark-700"
+              className="p-2 rounded-xl bg-dark-850 border border-dark-750 text-slate-300 hover:text-white"
+              aria-label="Toggle Navigation"
             >
               {isMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
             </button>
@@ -173,53 +231,61 @@ export const Navbar: React.FC = () => {
         </div>
       </div>
 
-      {/* Mobile Drawer */}
+      {/* Mobile dropdown drawer */}
       {isMenuOpen && (
-        <div className="md:hidden bg-dark-900 border-b border-dark-700/80 px-4 py-4 space-y-3">
+        <div className="md:hidden border-t border-dark-750 bg-dark-950/95 backdrop-blur-2xl px-4 pt-3 pb-6 space-y-2">
           <Link
             to="/services"
             onClick={() => setIsMenuOpen(false)}
-            className="block px-3 py-2 text-sm text-slate-300 hover:text-white hover:bg-dark-850 rounded-xl"
+            className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-slate-200 hover:bg-dark-850"
           >
-            Services Catalog
+            <Layers className="w-4 h-4 text-sage-400" />
+            <span>Services</span>
           </Link>
           <Link
             to="/jobs"
             onClick={() => setIsMenuOpen(false)}
-            className="block px-3 py-2 text-sm text-slate-300 hover:text-white hover:bg-dark-850 rounded-xl"
+            className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-slate-200 hover:bg-dark-850"
           >
-            Recruitment
+            <Briefcase className="w-4 h-4 text-sage-400" />
+            <span>Recruitment</span>
           </Link>
-          {isAuthenticated && (
-            <Link
-              to={getDashboardPath()}
-              onClick={() => setIsMenuOpen(false)}
-              className="block px-3 py-2 text-sm text-slate-300 hover:text-white hover:bg-dark-850 rounded-xl"
-            >
-              Dashboard
-            </Link>
-          )}
-
-          <div className="pt-3 border-t border-dark-800">
-            {isAuthenticated ? (
+          {isAuthenticated ? (
+            <>
+              <Link
+                to={getDashboardPath()}
+                onClick={() => setIsMenuOpen(false)}
+                className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-slate-200 hover:bg-dark-850"
+              >
+                <LayoutDashboard className="w-4 h-4 text-sage-400" />
+                <span>Command Center</span>
+              </Link>
               <button
                 onClick={handleLogout}
-                className="flex items-center gap-2 w-full px-3 py-2 text-sm text-rose-400 hover:bg-rose-500/10 rounded-xl"
+                className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-rose-400 hover:bg-rose-500/10 text-left"
               >
                 <LogOut className="w-4 h-4" />
                 <span>Sign Out</span>
               </button>
-            ) : (
-              <div className="flex flex-col gap-2">
-                <Button variant="outline" size="sm" onClick={() => { setIsMenuOpen(false); navigate('/login'); }}>
-                  Sign In
-                </Button>
-                <Button variant="primary" size="sm" onClick={() => { setIsMenuOpen(false); navigate('/register'); }}>
-                  Create Account
-                </Button>
-              </div>
-            )}
-          </div>
+            </>
+          ) : (
+            <div className="pt-3 flex flex-col gap-2 border-t border-dark-750">
+              <Link
+                to="/login"
+                onClick={() => setIsMenuOpen(false)}
+                className="btn-secondary text-center text-xs py-2.5"
+              >
+                Sign In
+              </Link>
+              <Link
+                to="/register"
+                onClick={() => setIsMenuOpen(false)}
+                className="btn-primary text-center text-xs py-2.5"
+              >
+                Get Started
+              </Link>
+            </div>
+          )}
         </div>
       )}
     </nav>

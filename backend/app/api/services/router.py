@@ -1,3 +1,4 @@
+from typing import Any
 from fastapi import APIRouter, Depends, File, UploadFile, status
 from sqlalchemy.orm import Session
 
@@ -189,3 +190,56 @@ async def upload_service_image(
         service_id,
         file,
     )
+
+
+# ── Service Gallery Endpoints ────────────────────────────────────────────
+
+from app.schemas.media import MediaAssetResponse, StandardMediaResponse
+from app.services.media import MediaService
+
+
+@router.post(
+    "/{service_id}/gallery",
+    response_model=StandardMediaResponse,
+    status_code=status.HTTP_201_CREATED,
+    summary="Upload service gallery image",
+    description="Uploads a photo to a service's public gallery (Admin or Company only).",
+)
+def upload_service_gallery_image(
+    service_id: int,
+    file: UploadFile = File(..., description="Gallery image (JPEG, PNG, WebP)"),
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> Any:
+    """Upload service gallery image."""
+    return MediaService(db).upload_service_gallery(current_user, service_id, file)
+
+
+@router.get(
+    "/{service_id}/gallery",
+    response_model=list[MediaAssetResponse],
+    summary="List service gallery images",
+    description="Returns all gallery photos for a given service.",
+)
+def list_service_gallery_images(
+    service_id: int,
+    db: Session = Depends(get_db),
+) -> Any:
+    """List service gallery photos."""
+    return MediaService(db).list_service_gallery(service_id)
+
+
+@router.delete(
+    "/{service_id}/gallery/{asset_id}",
+    response_model=StandardMediaResponse,
+    summary="Delete service gallery image",
+    description="Deletes an image from a service gallery (Admin only).",
+)
+def delete_service_gallery_image(
+    service_id: int,
+    asset_id: int,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> Any:
+    """Delete service gallery photo."""
+    return MediaService(db).delete_service_gallery(current_user, service_id, asset_id)

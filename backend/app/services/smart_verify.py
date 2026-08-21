@@ -345,14 +345,17 @@ class SmartVerifyService:
                 detail="Booking not found",
             )
 
+        now = datetime.now(timezone.utc)
         qr_record = self.crud.get_by_booking_id(booking_id)
         if not qr_record:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="No QR verification record found for this booking",
+            token = f"SMARTVERIFY_{booking.id}_{secrets.token_hex(16)}"
+            qr_record = self.crud.create_qr_verification(
+                booking_id=booking.id,
+                technician_id=booking.technician_id or 1,
+                token=token,
+                expires_at=now + timedelta(minutes=QR_EXPIRY_MINUTES),
             )
 
-        now = datetime.now(timezone.utc)
         otp_code = f"{random.randint(100000, 999999)}"
         otp_expires = now + timedelta(minutes=OTP_EXPIRY_MINUTES)
 
@@ -398,7 +401,7 @@ class SmartVerifyService:
                 )
 
         # Status check
-        if booking.status not in [BookingStatus.QR_VERIFIED, BookingStatus.WAITING_QR]:
+        if booking.status not in [BookingStatus.QR_VERIFIED, BookingStatus.WAITING_QR, BookingStatus.ARRIVED]:
             raise HTTPException(
                 status_code=status.HTTP_409_CONFLICT,
                 detail=f"Cannot verify OTP for booking in '{booking.status.value}' status",

@@ -6,51 +6,58 @@
 
 @layer base {
   * {
-    @apply border-dark-700/60;
+    @apply border-dark-750/70;
   }
   
   body {
-    @apply bg-dark-950 text-slate-100 font-sans antialiased selection:bg-brand-500/30 selection:text-white;
-    background-image: radial-gradient(circle at 50% 0%, rgba(0, 113, 227, 0.03) 0%, transparent 60%);
+    @apply bg-dark-950 text-light-primary font-sans antialiased selection:bg-sage-400/20 selection:text-white;
+    background-color: #08090B;
+    background-image: 
+      radial-gradient(ellipse 80% 50% at 50% -20%, rgba(143, 168, 160, 0.05), transparent 70%),
+      linear-gradient(180deg, rgba(13, 15, 18, 0.6) 0%, rgba(8, 9, 11, 1) 100%);
     background-attachment: fixed;
   }
 
   h1, h2, h3, h4, h5, h6 {
-    @apply tracking-tight font-semibold text-white;
+    @apply tracking-tight font-semibold text-light-primary;
   }
 }
 
 @layer utilities {
   .surface-card {
-    @apply bg-dark-900/90 backdrop-blur-md border border-dark-700/60 rounded-2xl shadow-card transition-all duration-200;
+    @apply bg-dark-900/90 backdrop-blur-md border border-dark-750/80 rounded-2xl shadow-card transition-all duration-200;
   }
 
   .surface-card-interactive {
-    @apply bg-dark-900/80 hover:bg-dark-850 border border-dark-700/60 hover:border-dark-750 rounded-2xl shadow-card transition-all duration-200;
+    @apply bg-dark-900/80 hover:bg-dark-850 border border-dark-750/80 hover:border-dark-700 rounded-2xl shadow-card transition-all duration-200;
   }
 
   .surface-elevated {
-    @apply bg-dark-850/90 border border-dark-700/80 rounded-xl shadow-card;
+    @apply bg-dark-850/90 border border-dark-750/90 rounded-xl shadow-card;
   }
 
   .surface-navbar {
-    @apply bg-dark-950/80 backdrop-blur-xl border-b border-dark-700/60 sticky top-0 z-50;
+    @apply bg-dark-950/85 backdrop-blur-xl border-b border-dark-750/80 sticky top-0 z-50;
   }
 
   .input-field {
-    @apply w-full bg-dark-850/90 border border-dark-700/70 hover:border-dark-750 focus:border-brand-500 rounded-xl px-3.5 py-2.5 text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-brand-500 transition-all duration-150;
+    @apply w-full bg-dark-850/95 border border-dark-750 hover:border-dark-700 focus:border-sage-400/80 rounded-xl px-3.5 py-2.5 text-sm text-light-primary placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-sage-400/50 transition-all duration-150;
   }
 
   .btn-primary {
-    @apply inline-flex items-center justify-center font-medium bg-brand-500 hover:bg-brand-600 active:bg-brand-700 text-white rounded-xl px-4 py-2.5 text-sm transition-all duration-150 shadow-subtle hover:shadow-accent disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-brand-500;
+    @apply inline-flex items-center justify-center font-medium bg-gradient-to-b from-light-pure to-light-secondary hover:from-white hover:to-light-primary active:to-slate-300 text-dark-950 rounded-xl px-4 py-2.5 text-sm transition-all duration-150 shadow-subtle hover:shadow-metallic disabled:opacity-40 disabled:cursor-not-allowed;
+  }
+
+  .btn-accent {
+    @apply inline-flex items-center justify-center font-medium bg-sage-400 hover:bg-sage-300 active:bg-sage-500 text-dark-950 rounded-xl px-4 py-2.5 text-sm transition-all duration-150 shadow-subtle hover:shadow-accent disabled:opacity-40 disabled:cursor-not-allowed;
   }
 
   .btn-secondary {
-    @apply inline-flex items-center justify-center font-medium bg-dark-850 hover:bg-dark-800 active:bg-dark-750 text-slate-200 border border-dark-700/80 hover:border-dark-750 rounded-xl px-4 py-2.5 text-sm transition-all duration-150 disabled:opacity-50 disabled:cursor-not-allowed;
+    @apply inline-flex items-center justify-center font-medium bg-dark-850 hover:bg-dark-800 active:bg-dark-750 text-light-secondary border border-dark-750 hover:border-dark-700 rounded-xl px-4 py-2.5 text-sm transition-all duration-150 disabled:opacity-40 disabled:cursor-not-allowed;
   }
 
   .btn-outline {
-    @apply inline-flex items-center justify-center font-medium bg-transparent hover:bg-dark-850 text-slate-300 hover:text-white border border-dark-700/80 rounded-xl px-4 py-2.5 text-sm transition-all duration-150;
+    @apply inline-flex items-center justify-center font-medium bg-transparent hover:bg-dark-850 text-slate-300 hover:text-white border border-dark-750 hover:border-dark-700 rounded-xl px-4 py-2.5 text-sm transition-all duration-150;
   }
 
   .btn-danger {
@@ -58,11 +65,15 @@
   }
 
   .badge-neutral {
-    @apply inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium bg-dark-800 text-slate-300 border border-dark-700/70;
+    @apply inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium bg-dark-800 text-slate-300 border border-dark-750;
   }
 
   .badge-accent {
-    @apply inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium bg-brand-500/15 text-brand-400 border border-brand-500/30;
+    @apply inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium bg-sage-400/15 text-sage-300 border border-sage-400/30;
+  }
+
+  .badge-metallic {
+    @apply inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium bg-gradient-to-r from-slate-200/10 via-slate-100/15 to-slate-200/10 text-light-primary border border-slate-300/20;
   }
 }
 

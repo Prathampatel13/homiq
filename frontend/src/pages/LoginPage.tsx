@@ -1,127 +1,151 @@
 import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { ShieldCheck, Mail, Lock, ArrowRight, Eye, EyeOff } from 'lucide-react';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
+import { Lock, Mail, AlertCircle, Loader2, ArrowRight } from 'lucide-react';
 import { authApi } from '../api/auth';
 import { useAuthStore } from '../store/useAuthStore';
-import { Button } from '../components/ui/Button';
-import { Input } from '../components/ui/Input';
-import { Card } from '../components/ui/Card';
-import { useToast } from '../components/ui/Toast';
-import { extractErrorMessage } from '../api/axios';
-import { UserRole } from '../types';
+import { HomiQLogo } from '../components/brand/HomiQLogo';
 
 export const LoginPage: React.FC = () => {
   const navigate = useNavigate();
-  const toast = useToast();
+  const location = useLocation();
   const { login } = useAuthStore();
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [showPassword, setShowPassword] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!email.trim() || !password) {
-      toast.error('Required Fields', 'Please enter your email and password.');
+    if (!email.trim() || !password.trim()) {
+      setError('Please enter both your email address and password.');
       return;
     }
 
-    setIsLoading(true);
     try {
-      const data = await authApi.login({ email: email.trim(), password });
-      login(data.access_token, data.refresh_token, data.user);
-      toast.success('Welcome Back!', `Signed in as ${data.user.full_name}.`);
+      setLoading(true);
+      setError(null);
+      const res = await authApi.login({ email, password });
+      
+      // Save tokens and user in store
+      login(res.access_token, res.refresh_token, res.user);
 
-      // Role-based redirect
-      const role = String(data.user.role).toUpperCase();
-      if (role.includes('ADMIN') || data.user.is_superuser) {
-        navigate('/admin/dashboard');
-      } else if (role.includes('TECH')) {
-        navigate('/provider/dashboard');
-      } else if (role.includes('COMP')) {
-        navigate('/company/dashboard');
+      // Redirect based on role or search query
+      const params = new URLSearchParams(location.search);
+      const redirect = params.get('redirect');
+
+      if (redirect) {
+        navigate(redirect);
       } else {
-        navigate('/customer/dashboard');
+        const role = String(res.user.role || '').toUpperCase();
+        if (role.includes('ADMIN') || res.user.is_superuser) {
+          navigate('/admin/dashboard');
+        } else if (role.includes('TECH')) {
+          navigate('/provider/dashboard');
+        } else if (role.includes('COMP')) {
+          navigate('/company/dashboard');
+        } else {
+          navigate('/customer/dashboard');
+        }
       }
-    } catch (err) {
-      toast.error('Authentication Failed', extractErrorMessage(err, 'Invalid email or password.'));
+    } catch (err: any) {
+      console.error('Login error:', err);
+      const detail = err?.response?.data?.detail;
+      if (typeof detail === 'string') {
+        setError(detail);
+      } else if (Array.isArray(detail)) {
+        setError(detail.map((d: any) => d.msg || 'Invalid field').join(', '));
+      } else {
+        setError('Invalid credentials or account suspended. Please try again.');
+      }
     } finally {
-      setIsLoading(false);
+      setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-[85vh] flex items-center justify-center px-4 py-12">
-      <div className="w-full max-w-md space-y-6 text-center">
-        {/* Logo Badge */}
-        <div className="inline-flex items-center justify-center w-12 h-12 rounded-2xl bg-gradient-to-tr from-brand-600 to-brand-400 text-white shadow-accent mx-auto">
-          <ShieldCheck className="w-7 h-7" />
-        </div>
+    <div className="min-h-screen bg-dark-950 flex flex-col justify-center py-12 sm:px-6 lg:px-8 text-white relative">
+      <div className="sm:mx-auto sm:w-full sm:max-w-md text-center space-y-4">
+        <HomiQLogo variant="stacked" size="lg" showTagline className="mx-auto" />
+        <h2 className="text-xl sm:text-2xl font-bold tracking-tight text-white mt-4">
+          Sign In to Your Workspace
+        </h2>
+        <p className="text-xs text-slate-400">
+          Enter your registered credentials to access your home or fleet console.
+        </p>
+      </div>
 
-        <div>
-          <h1 className="text-2xl font-bold text-white tracking-tight">Sign in to HomiQ</h1>
-          <p className="text-xs text-slate-400 mt-1.5">
-            Access your customer bookings, technician portal, or management console.
-          </p>
-        </div>
-
-        <Card className="p-6 text-left shadow-card">
+      <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md px-4 sm:px-0">
+        <div className="p-6 sm:p-8 rounded-3xl bg-dark-900 border border-dark-750 shadow-modal space-y-6">
           <form onSubmit={handleSubmit} className="space-y-4">
-            <Input
-              label="Email Address"
-              type="email"
-              placeholder="name@example.com"
-              leftIcon={Mail}
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-              autoFocus
-            />
-
-            <div className="space-y-1.5">
-              <Input
-                label="Password"
-                type={showPassword ? 'text' : 'password'}
-                placeholder="••••••••"
-                leftIcon={Lock}
-                rightIcon={showPassword ? EyeOff : Eye}
-                onRightIconClick={() => setShowPassword(!showPassword)}
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-              />
-              <div className="flex justify-end">
-                <Link
-                  to="/forgot-password"
-                  className="text-[11px] text-brand-400 hover:text-brand-300 transition-colors"
-                >
-                  Forgot password?
-                </Link>
+            <div>
+              <label className="block text-xs font-semibold text-slate-300 mb-1.5">Email Address</label>
+              <div className="relative">
+                <Mail className="w-4 h-4 text-slate-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                <input
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="name@example.com"
+                  className="input-field pl-10"
+                  required
+                />
               </div>
             </div>
 
-            <div className="pt-2">
-              <Button
-                variant="primary"
-                size="md"
-                className="w-full"
-                type="submit"
-                isLoading={isLoading}
-                rightIcon={ArrowRight}
-              >
-                Sign In
-              </Button>
+            <div>
+              <div className="flex items-center justify-between mb-1.5">
+                <label className="block text-xs font-semibold text-slate-300">Password</label>
+                <Link to="/forgot-password" className="text-[11px] text-sage-400 hover:underline">
+                  Forgot Password?
+                </Link>
+              </div>
+              <div className="relative">
+                <Lock className="w-4 h-4 text-slate-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                <input
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="••••••••"
+                  className="input-field pl-10"
+                  required
+                />
+              </div>
             </div>
+
+            {error && (
+              <div className="p-3 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-400 text-xs flex items-center gap-2">
+                <AlertCircle className="w-4 h-4 shrink-0" />
+                <span>{error}</span>
+              </div>
+            )}
+
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full btn-primary text-xs py-3 font-semibold flex items-center justify-center gap-1.5 shadow-subtle hover:shadow-metallic disabled:opacity-40"
+            >
+              {loading ? (
+                <>
+                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                  <span>Authenticating...</span>
+                </>
+              ) : (
+                <>
+                  <span>Sign In</span>
+                  <ArrowRight className="w-3.5 h-3.5" />
+                </>
+              )}
+            </button>
           </form>
 
-          <div className="mt-6 pt-4 border-t border-dark-800 text-center text-xs text-slate-400">
-            <span>Don't have an account? </span>
-            <Link to="/register" className="text-brand-400 hover:text-brand-300 font-semibold">
-              Create an account
+          <div className="pt-4 border-t border-dark-750 text-center text-xs text-slate-400">
+            Don't have a HomiQ account yet?{' '}
+            <Link to="/register" className="text-sage-300 hover:text-white font-semibold">
+              Create Account
             </Link>
           </div>
-        </Card>
+        </div>
       </div>
     </div>
   );

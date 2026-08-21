@@ -8,30 +8,50 @@ export default {
   theme: {
     extend: {
       colors: {
+        sage: {
+          50: '#F4F7F6',
+          100: '#E5EBE9',
+          200: '#CAD7D3',
+          300: '#AEC3BC',
+          400: '#8FA8A0', // Official HomiQ Sage Accent
+          500: '#759088',
+          600: '#5C746D',
+          700: '#465954',
+          800: '#32403C',
+          900: '#202A27',
+          950: '#101715',
+        },
         brand: {
-          50: '#F5F9FF',
-          100: '#EBF3FE',
-          200: '#CEE2FD',
-          300: '#A1CBFC',
-          400: '#68ACFA',
-          500: '#0071E3', // Apple/Linear refined royal electric accent
-          600: '#0062C4',
-          700: '#0050A3',
-          800: '#003F82',
-          900: '#002B59',
-          950: '#001937',
+          50: '#F4F7F6',
+          100: '#E5EBE9',
+          200: '#CAD7D3',
+          300: '#AEC3BC',
+          400: '#8FA8A0', // Muted sage accent
+          500: '#8FA8A0', // Primary accent
+          600: '#7B948D',
+          700: '#647A73',
+          800: '#4E5F5A',
+          900: '#36433F',
+          950: '#1F2825',
         },
         dark: {
-          950: '#08090C', // Root deep canvas
-          900: '#0D0F14', // Primary card/surface
-          850: '#12151D', // Elevated surface
-          800: '#181C26', // Interactive element
-          750: '#222836', // Hover border / active
-          700: '#2B3244', // Static subtle border
+          950: '#08090B', // Primary root canvas
+          900: '#0D0F12', // Panel / card surface
+          850: '#12151A', // Elevated surface
+          800: '#181C22', // Interactive / input surface
+          750: '#22272F', // Active / border
+          700: '#2A303A', // Static border
+          600: '#3D4653',
+        },
+        light: {
+          primary: '#F5F5F2',
+          secondary: '#E8E9E7',
+          pure: '#FFFFFF',
         }
       },
       fontFamily: {
-        sans: ['Inter', 'Plus Jakarta Sans', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'sans-serif'],
+        sans: ['Inter', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'sans-serif'],
+        mono: ['JetBrains Mono', 'Fira Code', 'monospace'],
       },
       borderRadius: {
         'xl': '12px',
@@ -39,10 +59,11 @@ export default {
         '3xl': '22px',
       },
       boxShadow: {
-        'subtle': '0 1px 2px 0 rgba(0, 0, 0, 0.25)',
-        'card': '0 4px 20px -2px rgba(0, 0, 0, 0.4)',
-        'modal': '0 20px 40px -15px rgba(0, 0, 0, 0.7)',
-        'accent': '0 0 15px -3px rgba(0, 113, 227, 0.25)',
+        'subtle': '0 1px 2px 0 rgba(0, 0, 0, 0.4)',
+        'card': '0 4px 24px -2px rgba(0, 0, 0, 0.5)',
+        'modal': '0 24px 48px -12px rgba(0, 0, 0, 0.8)',
+        'accent': '0 0 20px -5px rgba(143, 168, 160, 0.25)',
+        'metallic': '0 0 25px -5px rgba(232, 233, 231, 0.15)',
       },
     },
   },

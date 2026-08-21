@@ -1,542 +1,580 @@
-import React, { useState, useEffect } from 'react';
-import { useSearchParams, useNavigate } from 'react-router-dom';
-import {
-  Calendar as CalendarIcon,
-  Clock,
-  MapPin,
-  Plus,
-  Tag,
-  ShieldCheck,
+import React, { useEffect, useState } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
+import { 
+  Check, 
+  ChevronRight, 
+  ChevronLeft, 
+  Layers, 
+  MapPin, 
+  Calendar, 
+  Clock, 
+  CreditCard, 
+  ShieldCheck, 
+  PlusCircle, 
+  AlertCircle, 
+  Loader2, 
   CheckCircle2,
-  ChevronRight,
-  ChevronLeft,
-  ArrowRight,
+  Tag
 } from 'lucide-react';
 import { servicesApi } from '../api/services';
 import { customerApi } from '../api/customer';
 import { bookingsApi } from '../api/bookings';
 import { couponsApi } from '../api/coupons';
-import { Service, CustomerAddress } from '../types';
-import { Button } from '../components/ui/Button';
-import { Card } from '../components/ui/Card';
-import { Input } from '../components/ui/Input';
-import { Textarea } from '../components/ui/Textarea';
+import { paymentsApi } from '../api/payments';
+import { useAuthStore } from '../store/useAuthStore';
+import { Service, ServiceCategory, CustomerAddress, Booking } from '../types';
 import { AddressModal } from '../components/modals/AddressModal';
-import { useToast } from '../components/ui/Toast';
-import { extractErrorMessage } from '../api/axios';
 import { LoadingState } from '../components/ui/LoadingState';
 
+const STEPS = [
+  { id: 1, name: 'Service' },
+  { id: 2, name: 'Address' },
+  { id: 3, name: 'Schedule' },
+  { id: 4, name: 'Review & Pay' },
+];
+
 export const BookingPage: React.FC = () => {
-  const [searchParams] = useSearchParams();
   const navigate = useNavigate();
-  const toast = useToast();
+  const [searchParams] = useSearchParams();
+  const { isAuthenticated } = useAuthStore();
 
-  const [step, setStep] = useState<number>(1);
+  const [currentStep, setCurrentStep] = useState(1);
   const [services, setServices] = useState<Service[]>([]);
-  const [selectedService, setSelectedService] = useState<Service | null>(null);
-
+  const [categories, setCategories] = useState<ServiceCategory[]>([]);
   const [addresses, setAddresses] = useState<CustomerAddress[]>([]);
-  const [selectedAddressId, setSelectedAddressId] = useState<number | null>(null);
-  const [isAddressModalOpen, setIsAddressModalOpen] = useState(false);
+  const [loading, setLoading] = useState(true);
 
-  // Date & Time
-  const tomorrow = new Date();
-  tomorrow.setDate(tomorrow.getDate() + 1);
-  const defaultDate = tomorrow.toISOString().split('T')[0];
-
-  const [bookingDate, setBookingDate] = useState<string>(defaultDate);
-  const [preferredTime, setPreferredTime] = useState<string>('10:00:00');
-  const [customerNote, setCustomerNote] = useState<string>('');
-
-  // Coupon
+  // Form State
+  const [selectedService, setSelectedService] = useState<Service | null>(null);
+  const [selectedAddress, setSelectedAddress] = useState<CustomerAddress | null>(null);
+  const [bookingDate, setBookingDate] = useState<string>('');
+  const [preferredTime, setPreferredTime] = useState<string>('10:00 AM');
+  const [customerNotes, setCustomerNotes] = useState<string>('');
   const [couponCode, setCouponCode] = useState<string>('');
-  const [discountAmount, setDiscountAmount] = useState<number>(0);
-  const [isApplyingCoupon, setIsApplyingCoupon] = useState<boolean>(false);
+  const [appliedCoupon, setAppliedCoupon] = useState<any>(null);
+  const [couponError, setCouponError] = useState<string | null>(null);
 
-  const [isLoading, setIsLoading] = useState<boolean>(true);
-  const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
+  const [addressModalOpen, setAddressModalOpen] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
+  const [confirmedBooking, setConfirmedBooking] = useState<Booking | null>(null);
 
-  const timeSlots = [
-    { label: '09:00 AM - 11:00 AM', value: '09:00:00' },
-    { label: '11:00 AM - 01:00 PM', value: '11:00:00' },
-    { label: '02:00 PM - 04:00 PM', value: '14:00:00' },
-    { label: '04:00 PM - 06:00 PM', value: '16:00:00' },
-    { label: '06:00 PM - 08:00 PM', value: '18:00:00' },
-  ];
+  // Default booking date to tomorrow in YYYY-MM-DD
+  useEffect(() => {
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    setBookingDate(tomorrow.toISOString().split('T')[0]);
+  }, []);
 
   useEffect(() => {
-    const init = async () => {
-      setIsLoading(true);
+    const loadBookingRequirements = async () => {
       try {
-        const [servicesData, addressData] = await Promise.all([
-          servicesApi.getServices(),
-          customerApi.getAddresses().catch(() => []),
+        setLoading(true);
+        const [servsRes, catsRes, addrsRes] = await Promise.allSettled([
+          servicesApi.getServices({}),
+          servicesApi.getCategories(),
+          isAuthenticated ? customerApi.getAddresses() : Promise.resolve([]),
         ]);
 
-        setServices(servicesData);
-        setAddresses(addressData);
+        let allServices: Service[] = [];
+        if (servsRes.status === 'fulfilled') {
+          allServices = Array.isArray(servsRes.value) ? servsRes.value : (servsRes.value as any)?.items || [];
+          setServices(allServices);
+        }
+        if (catsRes.status === 'fulfilled' && Array.isArray(catsRes.value)) {
+          setCategories(catsRes.value);
+        }
+        if (addrsRes.status === 'fulfilled' && Array.isArray(addrsRes.value)) {
+          setAddresses(addrsRes.value);
+          const defaultAddr = addrsRes.value.find((a) => a.is_default) || addrsRes.value[0];
+          if (defaultAddr) setSelectedAddress(defaultAddr);
+        }
 
-        const initialServiceId = searchParams.get('service_id');
-        if (initialServiceId) {
-          const match = servicesData.find((s) => s.id === Number(initialServiceId));
-          if (match) {
-            setSelectedService(match);
-            setStep(2); // Jump straight to address selection if service passed in URL
+        // Check if pre-selected service in query
+        const preselectedId = searchParams.get('service_id');
+        if (preselectedId && allServices.length > 0) {
+          const found = allServices.find((s) => s.id === Number(preselectedId));
+          if (found) {
+            setSelectedService(found);
+            setCurrentStep(2); // Jump to address
           }
         }
-
-        if (addressData.length > 0) {
-          const defaultAddr = addressData.find((a) => a.is_default) || addressData[0];
-          setSelectedAddressId(defaultAddr.id);
-        }
       } catch (err) {
-        toast.error('Failed to load booking prerequisites', extractErrorMessage(err));
+        console.error('Failed to initialize booking flow:', err);
       } finally {
-        setIsLoading(false);
+        setLoading(false);
       }
     };
-    init();
-  }, [searchParams]);
+
+    loadBookingRequirements();
+  }, [isAuthenticated, searchParams]);
 
   const handleApplyCoupon = async () => {
     if (!couponCode.trim() || !selectedService) return;
-    setIsApplyingCoupon(true);
     try {
-      const res = await couponsApi.validateCoupon(
-        couponCode.trim().toUpperCase(),
-        selectedService.price || selectedService.base_price || 499
-      );
-      if (res.is_valid) {
-        setDiscountAmount(res.discount_amount);
-        toast.success('Coupon Applied!', `You saved ₹${res.discount_amount}`);
-      } else {
-        toast.error('Invalid Promo Code', res.message || 'Coupon criteria not met.');
-      }
-    } catch (err) {
-      toast.error('Coupon Error', extractErrorMessage(err));
-    } finally {
-      setIsApplyingCoupon(false);
+      setCouponError(null);
+      const res = await couponsApi.validateCoupon(couponCode, selectedService.price || selectedService.base_price || 0);
+      setAppliedCoupon(res);
+    } catch (err: any) {
+      setCouponError(err?.response?.data?.detail || 'Invalid or expired coupon code.');
+      setAppliedCoupon(null);
     }
   };
 
-  const handleCreateBooking = async () => {
-    if (!selectedService) {
-      toast.error('Service Required', 'Please choose a service to book.');
-      setStep(1);
+  const calculateFinalPrice = () => {
+    if (!selectedService) return 0;
+    const base = selectedService.price || selectedService.base_price || 0;
+    if (appliedCoupon?.discount_amount) {
+      return Math.max(0, base - appliedCoupon.discount_amount);
+    }
+    return base;
+  };
+
+  const handleConfirmAndPay = async () => {
+    if (!isAuthenticated) {
+      navigate('/login?redirect=/booking/new');
       return;
     }
-    if (!selectedAddressId) {
-      toast.error('Address Required', 'Please select or add a delivery address.');
-      setStep(2);
-      return;
-    }
-    if (!bookingDate || !preferredTime) {
-      toast.error('Schedule Required', 'Please select a date and time slot.');
-      setStep(3);
+    if (!selectedService || !selectedAddress || !bookingDate) {
+      setSubmitError('Please complete all required fields.');
       return;
     }
 
-    setIsSubmitting(true);
     try {
-      const estimatedPrice = Math.max(
-        0,
-        (selectedService.price || selectedService.base_price || 499) - discountAmount
-      );
+      setSubmitting(true);
+      setSubmitError(null);
 
-      const booking = await bookingsApi.createBooking({
+      // Create booking payload conforming to backend schema
+      const payload = {
         service_id: selectedService.id,
-        address_id: selectedAddressId,
+        address_id: selectedAddress.id,
         booking_date: bookingDate,
         preferred_time: preferredTime,
-        estimated_price: estimatedPrice,
-        customer_note: customerNote.trim() || undefined,
-      });
+        customer_note: customerNotes || undefined,
+        estimated_price: calculateFinalPrice(),
+      };
 
-      toast.success('Service Booked Successfully!', `Booking #${booking.booking_number || booking.id} created.`);
-      navigate('/customer/dashboard');
-    } catch (err) {
-      toast.error('Booking Creation Failed', extractErrorMessage(err));
+      const newBooking = await bookingsApi.createBooking(payload);
+      setConfirmedBooking(newBooking);
+
+      // Auto-initiate payment order
+      try {
+        await paymentsApi.createOrder(newBooking.id);
+      } catch {
+        // Payment order fallback
+      }
+    } catch (err: any) {
+      console.error('Booking submission failed:', err);
+      setSubmitError(err?.response?.data?.detail || 'Failed to complete booking. Please verify your selected slot.');
     } finally {
-      setIsSubmitting(false);
+      setSubmitting(false);
     }
   };
 
-  if (isLoading) {
+  if (loading) {
+    return <LoadingState message="Configuring Booking Stepper..." />;
+  }
+
+  if (confirmedBooking) {
     return (
-      <div className="max-w-4xl mx-auto px-4 py-20">
-        <LoadingState message="Preparing booking environment..." />
+      <div className="min-h-screen bg-dark-950 py-16 text-white flex items-center justify-center">
+        <div className="max-w-lg w-full p-8 rounded-3xl bg-dark-900 border border-dark-750 text-center shadow-modal space-y-6">
+          <div className="w-16 h-16 rounded-full bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center text-emerald-400 mx-auto shadow-accent">
+            <CheckCircle2 className="w-8 h-8" />
+          </div>
+
+          <div>
+            <span className="text-xs font-mono uppercase text-sage-400 tracking-wider">ORDER CONFIRMED</span>
+            <h2 className="text-2xl font-bold text-white mt-1">Your Booking Is Scheduled</h2>
+            <p className="text-xs text-slate-400 font-mono mt-1">
+              Booking Ref: #{confirmedBooking.booking_number || confirmedBooking.id}
+            </p>
+          </div>
+
+          <div className="p-5 rounded-2xl bg-dark-850 border border-dark-750 text-left space-y-2 text-xs">
+            <div className="flex justify-between text-slate-400">
+              <span>Service</span>
+              <span className="font-bold text-white">{selectedService?.name}</span>
+            </div>
+            <div className="flex justify-between text-slate-400">
+              <span>Date & Slot</span>
+              <span className="text-slate-200">{bookingDate} • {preferredTime}</span>
+            </div>
+            <div className="flex justify-between text-slate-400">
+              <span>Dispatch Address</span>
+              <span className="text-slate-200 truncate max-w-[200px]">{selectedAddress?.house_no} {selectedAddress?.area}</span>
+            </div>
+            <div className="pt-2 border-t border-dark-750 flex justify-between font-bold text-white">
+              <span>Total Payable</span>
+              <span className="font-mono">₹{calculateFinalPrice().toFixed(2)}</span>
+            </div>
+          </div>
+
+          <div className="p-3.5 rounded-xl bg-dark-800/80 border border-dark-750 text-xs text-slate-300 flex items-center gap-2.5 text-left">
+            <ShieldCheck className="w-5 h-5 text-sage-400 shrink-0" />
+            <span>SmartVerify™ handshake will be enabled on arrival.</span>
+          </div>
+
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => navigate('/customer/dashboard')}
+              className="w-full btn-primary text-xs py-3 font-semibold"
+            >
+              Go to Command Center
+            </button>
+          </div>
+        </div>
       </div>
     );
   }
 
-  const basePrice = selectedService?.price || selectedService?.base_price || 499;
-  const finalPrice = Math.max(0, basePrice - discountAmount);
-
   return (
-    <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-8">
-      {/* Header */}
-      <div>
-        <p className="text-xs font-mono uppercase tracking-widest text-brand-400 font-semibold mb-1">
-          HomiQ Fast Checkout
-        </p>
-        <h1 className="text-3xl font-bold text-white tracking-tight">Schedule Your Service</h1>
-      </div>
-
-      {/* Stepper Indicator */}
-      <div className="grid grid-cols-4 gap-2 border-b border-dark-750 pb-4">
-        {[
-          { num: 1, label: '1. Service' },
-          { num: 2, label: '2. Address' },
-          { num: 3, label: '3. Schedule' },
-          { num: 4, label: '4. Summary' },
-        ].map((s) => (
-          <button
-            key={s.num}
-            type="button"
-            onClick={() => setStep(s.num)}
-            className={`text-left pb-2 transition-all ${
-              step === s.num
-                ? 'border-b-2 border-brand-500 text-brand-400 font-semibold'
-                : step > s.num
-                ? 'text-slate-300'
-                : 'text-slate-600'
-            }`}
-          >
-            <span className="text-xs font-mono block">{s.label}</span>
-          </button>
-        ))}
-      </div>
-
-      {/* STEP 1: SERVICE SELECTION */}
-      {step === 1 && (
-        <div className="space-y-6">
-          <h3 className="text-lg font-bold text-white">Choose a Service</h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {services.map((srv) => {
-              const isSelected = selectedService?.id === srv.id;
-              return (
-                <div
-                  key={srv.id}
-                  onClick={() => setSelectedService(srv)}
-                  className={`p-4 rounded-2xl border cursor-pointer transition-all duration-150 flex flex-col justify-between ${
-                    isSelected
-                      ? 'bg-dark-850 border-brand-500 shadow-accent'
-                      : 'bg-dark-900/80 border-dark-700/70 hover:border-dark-750 hover:bg-dark-850/50'
-                  }`}
-                >
-                  <div className="space-y-2">
-                    <div className="flex justify-between items-start">
-                      <span className="text-xs font-semibold text-brand-400">
-                        {srv.category_name || 'Home Service'}
-                      </span>
-                      <span className="text-sm font-bold text-white font-mono">
-                        ₹{(srv.price || srv.base_price || 499).toFixed(2)}
-                      </span>
-                    </div>
-                    <h4 className="text-sm font-bold text-white">{srv.name}</h4>
-                    <p className="text-xs text-slate-400 line-clamp-2">{srv.description}</p>
-                  </div>
-
-                  <div className="mt-3 pt-3 border-t border-dark-800 flex items-center justify-between text-xs text-slate-400">
-                    <span>{srv.duration_minutes || 60} mins</span>
-                    <span className={isSelected ? 'text-brand-400 font-semibold' : 'text-slate-500'}>
-                      {isSelected ? '✓ Selected' : 'Select'}
-                    </span>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-
-          <div className="flex justify-end pt-4">
-            <Button
-              variant="primary"
-              size="md"
-              disabled={!selectedService}
-              onClick={() => setStep(2)}
-              rightIcon={ArrowRight}
-            >
-              Continue to Address
-            </Button>
-          </div>
+    <div className="min-h-screen bg-dark-950 py-10 text-white selection:bg-sage-400/20 selection:text-white">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
+        {/* Header */}
+        <div className="max-w-xl">
+          <span className="text-xs font-mono text-sage-400 uppercase tracking-wider">INTELLIGENT BOOKING FLOW</span>
+          <h1 className="text-3xl font-extrabold tracking-tight text-white mt-1">Book Residence Service</h1>
         </div>
-      )}
 
-      {/* STEP 2: ADDRESS SELECTION */}
-      {step === 2 && (
-        <div className="space-y-6">
-          <div className="flex items-center justify-between">
-            <h3 className="text-lg font-bold text-white">Select Service Address</h3>
-            <Button
-              variant="outline"
-              size="sm"
-              leftIcon={Plus}
-              onClick={() => setIsAddressModalOpen(true)}
-            >
-              Add New Address
-            </Button>
-          </div>
-
-          {addresses.length > 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {addresses.map((addr) => {
-                const isSelected = selectedAddressId === addr.id;
-                return (
-                  <div
-                    key={addr.id}
-                    onClick={() => setSelectedAddressId(addr.id)}
-                    className={`p-4 rounded-2xl border cursor-pointer transition-all duration-150 space-y-2 ${
-                      isSelected
-                        ? 'bg-dark-850 border-brand-500 shadow-accent'
-                        : 'bg-dark-900/80 border-dark-700/70 hover:border-dark-750 hover:bg-dark-850/50'
-                    }`}
-                  >
-                    <div className="flex justify-between items-start">
-                      <div className="flex items-center gap-1.5 text-xs font-semibold text-white">
-                        <MapPin className="w-3.5 h-3.5 text-brand-400" />
-                        <span>{addr.full_name}</span>
-                      </div>
-                      {addr.is_default && (
-                        <span className="px-2 py-0.5 rounded text-[10px] bg-dark-800 text-slate-300 border border-dark-700">
-                          DEFAULT
-                        </span>
-                      )}
-                    </div>
-                    <p className="text-xs text-slate-300">
-                      {addr.house_no}, {addr.building ? `${addr.building}, ` : ''}{addr.area}
-                    </p>
-                    <p className="text-xs text-slate-400">
-                      {addr.city}, {addr.state} - {addr.pincode}
-                    </p>
-                    <p className="text-[11px] text-slate-500 font-mono pt-1">Phone: {addr.phone}</p>
-                  </div>
-                );
-              })}
-            </div>
-          ) : (
-            <div className="p-8 border border-dashed border-dark-700 rounded-2xl text-center space-y-3">
-              <MapPin className="w-8 h-8 text-slate-500 mx-auto" />
-              <p className="text-xs text-slate-300">No saved addresses found in your account.</p>
-              <Button
-                variant="primary"
-                size="sm"
-                onClick={() => setIsAddressModalOpen(true)}
+        {/* Stepper Header */}
+        <div className="grid grid-cols-4 gap-2 sm:gap-4 p-2 rounded-2xl bg-dark-900 border border-dark-750">
+          {STEPS.map((step) => {
+            const isCompleted = currentStep > step.id;
+            const isCurrent = currentStep === step.id;
+            return (
+              <div
+                key={step.id}
+                className={`py-2 px-3 rounded-xl flex items-center gap-2.5 transition-all ${
+                  isCurrent
+                    ? 'bg-sage-400 text-dark-950 font-bold shadow-accent'
+                    : isCompleted
+                    ? 'bg-dark-850 text-sage-300'
+                    : 'text-slate-500'
+                }`}
               >
-                Add Your Address
-              </Button>
-            </div>
-          )}
-
-          <div className="flex justify-between pt-4">
-            <Button variant="outline" size="md" onClick={() => setStep(1)} leftIcon={ChevronLeft}>
-              Back
-            </Button>
-            <Button
-              variant="primary"
-              size="md"
-              disabled={!selectedAddressId}
-              onClick={() => setStep(3)}
-              rightIcon={ArrowRight}
-            >
-              Continue to Schedule
-            </Button>
-          </div>
+                <div className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-mono ${
+                  isCurrent ? 'bg-dark-950 text-white' : isCompleted ? 'bg-sage-400/20 text-sage-300' : 'bg-dark-800 text-slate-500'
+                }`}>
+                  {isCompleted ? <Check className="w-3 h-3" /> : step.id}
+                </div>
+                <span className="text-xs font-medium hidden sm:inline">{step.name}</span>
+              </div>
+            );
+          })}
         </div>
-      )}
 
-      {/* STEP 3: SCHEDULE */}
-      {step === 3 && (
-        <div className="space-y-6">
-          <h3 className="text-lg font-bold text-white">Pick Date & Time Slot</h3>
+        {/* Main Grid: Form Left, Sticky Summary Right */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+          {/* Left Column: Current Step Content */}
+          <div className="lg:col-span-8 p-6 sm:p-8 rounded-3xl bg-dark-900 border border-dark-750 shadow-card">
+            {/* STEP 1: SERVICE SELECTION */}
+            {currentStep === 1 && (
+              <div className="space-y-6">
+                <div>
+                  <h2 className="text-base font-bold text-white">Select Service Package</h2>
+                  <p className="text-xs text-slate-400 mt-0.5">Pick the specific architectural maintenance service for your residence.</p>
+                </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="space-y-2">
-              <label className="text-xs font-semibold text-slate-300 block">Service Date</label>
-              <Input
-                type="date"
-                min={new Date().toISOString().split('T')[0]}
-                value={bookingDate}
-                onChange={(e) => setBookingDate(e.target.value)}
-                leftIcon={CalendarIcon}
-              />
-            </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {services.map((s) => {
+                    const isSelected = selectedService?.id === s.id;
+                    return (
+                      <div
+                        key={s.id}
+                        onClick={() => setSelectedService(s)}
+                        className={`p-5 rounded-2xl border transition-all cursor-pointer flex flex-col justify-between ${
+                          isSelected
+                            ? 'bg-sage-400/15 border-sage-400 text-white shadow-accent ring-1 ring-sage-400/40'
+                            : 'bg-dark-850 border-dark-750 hover:border-dark-700 text-slate-300 hover:bg-dark-800'
+                        }`}
+                      >
+                        <div>
+                          <div className="flex items-center justify-between mb-2">
+                            <span className="text-xs font-mono font-bold text-white px-2 py-0.5 rounded bg-dark-800 border border-dark-750">
+                              ₹{(s.price || s.base_price || 0).toFixed(2)}
+                            </span>
+                            <span className="text-[10px] font-mono text-slate-400">{s.duration_minutes || 60} mins</span>
+                          </div>
+                          <h3 className="text-sm font-bold text-white">{s.name}</h3>
+                          <p className="text-xs text-slate-400 mt-1 line-clamp-2">{s.description}</p>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
 
-            <div className="space-y-2">
-              <label className="text-xs font-semibold text-slate-300 block">Preferred Time Slot</label>
-              <div className="space-y-2">
-                {timeSlots.map((slot) => (
+            {/* STEP 2: ADDRESS SELECTION */}
+            {currentStep === 2 && (
+              <div className="space-y-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h2 className="text-base font-bold text-white">Service Location</h2>
+                    <p className="text-xs text-slate-400 mt-0.5">Select from your saved residence addresses or add a new location.</p>
+                  </div>
                   <button
-                    key={slot.value}
-                    type="button"
-                    onClick={() => setPreferredTime(slot.value)}
-                    className={`w-full p-3 rounded-xl border text-xs font-medium flex items-center justify-between transition-all ${
-                      preferredTime === slot.value
-                        ? 'bg-dark-850 border-brand-500 text-white shadow-accent'
-                        : 'bg-dark-900/80 border-dark-700/70 text-slate-300 hover:border-dark-750'
-                    }`}
+                    onClick={() => setAddressModalOpen(true)}
+                    className="btn-secondary text-xs px-3.5 py-1.5 flex items-center gap-1.5"
                   >
-                    <div className="flex items-center gap-2">
-                      <Clock className="w-3.5 h-3.5 text-brand-400" />
-                      <span>{slot.label}</span>
-                    </div>
-                    {preferredTime === slot.value && <CheckCircle2 className="w-4 h-4 text-brand-400" />}
+                    <PlusCircle className="w-3.5 h-3.5 text-sage-400" />
+                    <span>New Address</span>
                   </button>
-                ))}
-              </div>
-            </div>
-          </div>
-
-          <div className="space-y-2 pt-2">
-            <Textarea
-              label="Special Instructions / Entry Notes (Optional)"
-              placeholder="e.g. Ring flat 402 bell, bring spare 1.5-ton AC capacitor..."
-              rows={3}
-              value={customerNote}
-              onChange={(e) => setCustomerNote(e.target.value)}
-            />
-          </div>
-
-          <div className="flex justify-between pt-4">
-            <Button variant="outline" size="md" onClick={() => setStep(2)} leftIcon={ChevronLeft}>
-              Back
-            </Button>
-            <Button variant="primary" size="md" onClick={() => setStep(4)} rightIcon={ArrowRight}>
-              Review Booking
-            </Button>
-          </div>
-        </div>
-      )}
-
-      {/* STEP 4: SUMMARY & CONFIRMATION */}
-      {step === 4 && selectedService && (
-        <div className="space-y-6">
-          <h3 className="text-lg font-bold text-white">Review & Confirm</h3>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {/* Booking Details Summary */}
-            <div className="md:col-span-2 space-y-4">
-              <div className="p-4 bg-dark-900 border border-dark-750 rounded-2xl space-y-3">
-                <h4 className="text-xs font-semibold text-slate-400 uppercase tracking-wider">
-                  Service Selection
-                </h4>
-                <div className="flex justify-between items-center">
-                  <p className="text-sm font-bold text-white">{selectedService.name}</p>
-                  <span className="font-mono text-white font-semibold">₹{basePrice.toFixed(2)}</span>
                 </div>
-                <p className="text-xs text-slate-400">{selectedService.description}</p>
-              </div>
 
-              <div className="p-4 bg-dark-900 border border-dark-750 rounded-2xl space-y-2">
-                <h4 className="text-xs font-semibold text-slate-400 uppercase tracking-wider">
-                  Appointment Schedule
-                </h4>
-                <div className="flex items-center gap-4 text-xs text-white">
-                  <div className="flex items-center gap-1.5">
-                    <CalendarIcon className="w-3.5 h-3.5 text-brand-400" />
-                    <span>{bookingDate}</span>
+                {addresses.length > 0 ? (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    {addresses.map((addr) => {
+                      const isSelected = selectedAddress?.id === addr.id;
+                      return (
+                        <div
+                          key={addr.id}
+                          onClick={() => setSelectedAddress(addr)}
+                          className={`p-5 rounded-2xl border transition-all cursor-pointer flex flex-col justify-between ${
+                            isSelected
+                              ? 'bg-sage-400/15 border-sage-400 text-white shadow-accent ring-1 ring-sage-400/40'
+                              : 'bg-dark-850 border-dark-750 hover:border-dark-700 text-slate-300 hover:bg-dark-800'
+                          }`}
+                        >
+                          <div className="flex items-start gap-3">
+                            <MapPin className={`w-5 h-5 shrink-0 mt-0.5 ${isSelected ? 'text-sage-300' : 'text-slate-400'}`} />
+                            <div>
+                              <h4 className="text-xs font-bold text-white">{addr.city || 'Residence'}</h4>
+                              <p className="text-xs text-slate-300 mt-1 leading-relaxed">{addr.house_no} {addr.area}</p>
+                              <span className="text-[10px] font-mono text-slate-400 mt-1 block">{addr.pincode}</span>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
                   </div>
-                  <div className="flex items-center gap-1.5">
-                    <Clock className="w-3.5 h-3.5 text-brand-400" />
-                    <span>{preferredTime}</span>
+                ) : (
+                  <div className="p-8 rounded-2xl bg-dark-850 border border-dark-750 text-center space-y-3">
+                    <p className="text-xs text-slate-400">No saved addresses on file. Add your dispatch address to proceed.</p>
+                    <button
+                      onClick={() => setAddressModalOpen(true)}
+                      className="btn-primary text-xs px-4 py-2"
+                    >
+                      Add Service Address
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* STEP 3: SCHEDULE */}
+            {currentStep === 3 && (
+              <div className="space-y-6">
+                <div>
+                  <h2 className="text-base font-bold text-white">Choose Date & Arrival Slot</h2>
+                  <p className="text-xs text-slate-400 mt-0.5">Technicians arrive within a guaranteed 20-minute window of selected slot.</p>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-300 mb-1.5">Service Date *</label>
+                    <input
+                      type="date"
+                      value={bookingDate}
+                      min={new Date().toISOString().split('T')[0]}
+                      onChange={(e) => setBookingDate(e.target.value)}
+                      className="input-field"
+                      required
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-300 mb-1.5">Arrival Slot *</label>
+                    <select
+                      value={preferredTime}
+                      onChange={(e) => setPreferredTime(e.target.value)}
+                      className="input-field"
+                    >
+                      <option value="09:00 AM">09:00 AM - 11:00 AM</option>
+                      <option value="11:00 AM">11:00 AM - 01:00 PM</option>
+                      <option value="01:00 PM">01:00 PM - 03:00 PM</option>
+                      <option value="03:00 PM">03:00 PM - 05:00 PM</option>
+                      <option value="05:00 PM">05:00 PM - 07:00 PM</option>
+                    </select>
                   </div>
                 </div>
-              </div>
 
-              {/* Promo code input */}
-              <div className="p-4 bg-dark-900 border border-dark-750 rounded-2xl space-y-3">
-                <h4 className="text-xs font-semibold text-slate-400 uppercase tracking-wider">
-                  Promotional Coupon
-                </h4>
-                <div className="flex items-center gap-2">
-                  <Input
-                    placeholder="Enter Coupon Code"
-                    leftIcon={Tag}
-                    value={couponCode}
-                    onChange={(e) => setCouponCode(e.target.value)}
-                    className="uppercase"
+                <div>
+                  <label className="block text-xs font-semibold text-slate-300 mb-1.5">Special Instructions for Technician (Optional)</label>
+                  <textarea
+                    value={customerNotes}
+                    onChange={(e) => setCustomerNotes(e.target.value)}
+                    placeholder="Gate code, parking specifics, specific unit model or symptoms..."
+                    rows={3}
+                    className="input-field resize-none"
                   />
-                  <Button
-                    variant="outline"
-                    size="md"
-                    onClick={handleApplyCoupon}
-                    isLoading={isApplyingCoupon}
-                    disabled={!couponCode.trim()}
-                  >
-                    Apply
-                  </Button>
                 </div>
               </div>
-            </div>
+            )}
 
-            {/* Price Card */}
-            <div className="p-5 bg-dark-850 border border-dark-750 rounded-2xl space-y-4 h-fit">
-              <h4 className="text-xs font-semibold text-slate-400 uppercase tracking-wider">
-                Price Breakdown
-              </h4>
-
-              <div className="space-y-2 text-xs text-slate-300">
-                <div className="flex justify-between">
-                  <span>Base Fare</span>
-                  <span className="font-mono text-white">₹{basePrice.toFixed(2)}</span>
+            {/* STEP 4: REVIEW & CONFIRM */}
+            {currentStep === 4 && (
+              <div className="space-y-6">
+                <div>
+                  <h2 className="text-base font-bold text-white">Review & Escrow Authorization</h2>
+                  <p className="text-xs text-slate-400 mt-0.5">Verify your booking details and apply promotional codes.</p>
                 </div>
 
-                {discountAmount > 0 && (
-                  <div className="flex justify-between text-emerald-400">
-                    <span>Coupon Discount</span>
-                    <span className="font-mono">- ₹{discountAmount.toFixed(2)}</span>
+                {/* Coupon Input */}
+                <div className="p-4 rounded-2xl bg-dark-850 border border-dark-750 flex flex-col sm:flex-row gap-3 items-center">
+                  <div className="relative w-full">
+                    <Tag className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                    <input
+                      type="text"
+                      value={couponCode}
+                      onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
+                      placeholder="ENTER COUPON CODE"
+                      className="input-field pl-9 font-mono uppercase text-xs"
+                    />
+                  </div>
+                  <button
+                    onClick={handleApplyCoupon}
+                    className="btn-secondary text-xs px-4 py-2.5 whitespace-nowrap w-full sm:w-auto"
+                  >
+                    Apply Coupon
+                  </button>
+                </div>
+
+                {couponError && (
+                  <p className="text-xs text-rose-400">{couponError}</p>
+                )}
+
+                {appliedCoupon && (
+                  <div className="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs flex items-center justify-between">
+                    <span>Coupon applied! Discount: ₹{appliedCoupon.discount_amount}</span>
+                    <button onClick={() => setAppliedCoupon(null)} className="text-[11px] underline">Remove</button>
                   </div>
                 )}
 
-                <div className="flex justify-between text-slate-400">
-                  <span>Taxes (Included)</span>
-                  <span className="font-mono">₹0.00</span>
-                </div>
-
-                <div className="pt-3 border-t border-dark-750 flex justify-between items-center">
-                  <span className="text-sm font-bold text-white">Final Total</span>
-                  <span className="text-xl font-bold text-brand-400 font-mono">
-                    ₹{finalPrice.toFixed(2)}
-                  </span>
-                </div>
+                {submitError && (
+                  <div className="p-3 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-400 text-xs flex items-center gap-2">
+                    <AlertCircle className="w-4 h-4 shrink-0" />
+                    <span>{submitError}</span>
+                  </div>
+                )}
               </div>
+            )}
 
-              <div className="pt-2">
-                <Button
-                  variant="primary"
-                  size="md"
-                  className="w-full"
-                  onClick={handleCreateBooking}
-                  isLoading={isSubmitting}
-                  leftIcon={ShieldCheck}
+            {/* Stepper Navigation Buttons */}
+            <div className="pt-6 mt-8 border-t border-dark-750 flex items-center justify-between">
+              {currentStep > 1 ? (
+                <button
+                  onClick={() => setCurrentStep(currentStep - 1)}
+                  className="btn-secondary text-xs px-4 py-2.5 flex items-center gap-1.5"
                 >
-                  Confirm & Schedule
-                </Button>
-              </div>
+                  <ChevronLeft className="w-4 h-4" />
+                  <span>Back</span>
+                </button>
+              ) : <div />}
 
-              <div className="text-[10px] text-slate-500 text-center flex items-center justify-center gap-1">
-                <ShieldCheck className="w-3 h-3 text-emerald-400" />
-                <span>Zero Cancellation Fee up to 2 hours before</span>
-              </div>
+              {currentStep < 4 ? (
+                <button
+                  onClick={() => {
+                    if (currentStep === 1 && !selectedService) {
+                      alert('Please select a service first.');
+                      return;
+                    }
+                    if (currentStep === 2 && !selectedAddress) {
+                      alert('Please select an address first.');
+                      return;
+                    }
+                    setCurrentStep(currentStep + 1);
+                  }}
+                  className="btn-primary text-xs px-6 py-2.5 font-semibold flex items-center gap-1.5"
+                >
+                  <span>Continue</span>
+                  <ChevronRight className="w-4 h-4" />
+                </button>
+              ) : (
+                <button
+                  onClick={handleConfirmAndPay}
+                  disabled={submitting}
+                  className="btn-primary text-xs px-6 py-2.5 font-semibold flex items-center gap-1.5 shadow-subtle hover:shadow-metallic disabled:opacity-40"
+                >
+                  {submitting && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+                  <span>Confirm Booking</span>
+                </button>
+              )}
             </div>
           </div>
 
-          <div className="flex justify-start pt-4">
-            <Button variant="outline" size="md" onClick={() => setStep(3)} leftIcon={ChevronLeft}>
-              Back
-            </Button>
+          {/* Right Column: Sticky Booking Summary */}
+          <div className="lg:col-span-4 p-6 rounded-3xl bg-dark-900 border border-dark-750 shadow-card sticky top-24 space-y-4">
+            <h3 className="text-sm font-bold text-white tracking-tight pb-3 border-b border-dark-750">
+              Booking Summary
+            </h3>
+
+            <div className="space-y-3 text-xs">
+              <div className="flex justify-between text-slate-400">
+                <span>Selected Service</span>
+                <span className="font-semibold text-white">{selectedService?.name || '—'}</span>
+              </div>
+
+              <div className="flex justify-between text-slate-400">
+                <span>Address</span>
+                <span className="text-slate-200 truncate max-w-[140px]">
+                  {selectedAddress?.city ? `${selectedAddress.house_no}, ${selectedAddress.city}` : '—'}
+                </span>
+              </div>
+
+              <div className="flex justify-between text-slate-400">
+                <span>Date & Time</span>
+                <span className="text-slate-200">{bookingDate ? `${bookingDate}` : '—'}</span>
+              </div>
+
+              <div className="flex justify-between text-slate-400">
+                <span>Slot</span>
+                <span className="text-slate-200">{preferredTime}</span>
+              </div>
+
+              <div className="pt-3 border-t border-dark-750 space-y-2">
+                <div className="flex justify-between text-slate-400">
+                  <span>Base Rate</span>
+                  <span className="font-mono text-white">₹{(selectedService?.price || selectedService?.base_price || 0).toFixed(2)}</span>
+                </div>
+
+                {appliedCoupon && (
+                  <div className="flex justify-between text-emerald-400">
+                    <span>Discount ({couponCode})</span>
+                    <span className="font-mono">-₹{appliedCoupon.discount_amount}</span>
+                  </div>
+                )}
+
+                <div className="pt-2 border-t border-dark-750 flex justify-between font-bold text-sm text-white">
+                  <span>Total Amount</span>
+                  <span className="font-mono text-base text-white">₹{calculateFinalPrice().toFixed(2)}</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="p-3 rounded-xl bg-dark-850 border border-dark-750 text-[11px] text-slate-400 space-y-1">
+              <div className="flex items-center gap-1.5 text-slate-300 font-medium">
+                <ShieldCheck className="w-3.5 h-3.5 text-sage-400" />
+                <span>HomiQ Guarantee</span>
+              </div>
+              <p className="leading-snug">30-day warranty on all parts and workmanship.</p>
+            </div>
           </div>
         </div>
-      )}
+      </div>
 
-      {/* Address creation modal */}
-      <AddressModal
-        isOpen={isAddressModalOpen}
-        onClose={() => setIsAddressModalOpen(false)}
-        onSuccess={(newAddress) => {
-          setAddresses([...addresses, newAddress]);
-          setSelectedAddressId(newAddress.id);
-        }}
-      />
+      {/* Address Modal */}
+      {addressModalOpen && (
+        <AddressModal
+          isOpen={addressModalOpen}
+          onClose={() => setAddressModalOpen(false)}
+          onSaved={(newAddr) => {
+            setAddresses([...addresses, newAddr]);
+            setSelectedAddress(newAddr);
+          }}
+        />
+      )}
     </div>
   );
 };

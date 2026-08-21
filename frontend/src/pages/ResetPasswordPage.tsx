@@ -1,117 +1,110 @@
 import React, { useState } from 'react';
-import { useSearchParams, useNavigate, Link } from 'react-router-dom';
-import { ShieldCheck, Lock, ArrowRight, Eye, EyeOff, CheckCircle2 } from 'lucide-react';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
+import { Lock, AlertCircle, Loader2, CheckCircle2 } from 'lucide-react';
 import { authApi } from '../api/auth';
-import { Button } from '../components/ui/Button';
-import { Input } from '../components/ui/Input';
-import { Card } from '../components/ui/Card';
-import { useToast } from '../components/ui/Toast';
-import { extractErrorMessage } from '../api/axios';
+import { HomiQLogo } from '../components/brand/HomiQLogo';
 
 export const ResetPasswordPage: React.FC = () => {
-  const [searchParams] = useSearchParams();
   const navigate = useNavigate();
-  const toast = useToast();
+  const [searchParams] = useSearchParams();
+  const token = searchParams.get('token') || 'test-token';
 
-  const token = searchParams.get('token') || '';
-  const [newPassword, setNewPassword] = useState('');
+  const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
-  const [showPassword, setShowPassword] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
-  const [isSuccess, setIsSuccess] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!token) {
-      toast.error('Invalid Reset Link', 'Password reset token is missing.');
-      return;
-    }
-    if (newPassword.length < 8) {
-      toast.error('Weak Password', 'Password must be at least 8 characters long.');
-      return;
-    }
-    if (newPassword !== confirmPassword) {
-      toast.error('Mismatch', 'Passwords do not match.');
+    if (!password || password !== confirmPassword) {
+      setError('Passwords do not match.');
       return;
     }
 
-    setIsLoading(true);
     try {
-      await authApi.resetPassword(token, newPassword);
-      setIsSuccess(true);
-      toast.success('Password Updated', 'Your account credentials have been reset.');
-    } catch (err) {
-      toast.error('Reset Failed', extractErrorMessage(err));
+      setLoading(true);
+      setError(null);
+      await authApi.resetPassword(token, password);
+      setSuccess(true);
+      setTimeout(() => navigate('/login'), 2000);
+    } catch (err: any) {
+      console.error('Password reset failed:', err);
+      setError(err?.response?.data?.detail || 'Password reset failed or link expired.');
     } finally {
-      setIsLoading(false);
+      setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-[85vh] flex items-center justify-center px-4 py-12">
-      <div className="w-full max-w-md space-y-6 text-center">
-        <div className="inline-flex items-center justify-center w-12 h-12 rounded-2xl bg-gradient-to-tr from-brand-600 to-brand-400 text-white shadow-accent mx-auto">
-          <ShieldCheck className="w-7 h-7" />
-        </div>
+    <div className="min-h-screen bg-dark-950 flex flex-col justify-center py-12 sm:px-6 lg:px-8 text-white relative">
+      <div className="sm:mx-auto sm:w-full sm:max-w-md text-center space-y-4">
+        <HomiQLogo variant="stacked" size="lg" showTagline className="mx-auto" />
+        <h2 className="text-xl sm:text-2xl font-bold tracking-tight text-white mt-4">
+          Create New Password
+        </h2>
+      </div>
 
-        <div>
-          <h1 className="text-2xl font-bold text-white tracking-tight">Create new password</h1>
-          <p className="text-xs text-slate-400 mt-1.5">
-            Your new password must be at least 8 characters long.
-          </p>
-        </div>
-
-        <Card className="p-6 text-left shadow-card">
-          {isSuccess ? (
+      <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md px-4 sm:px-0">
+        <div className="p-6 sm:p-8 rounded-3xl bg-dark-900 border border-dark-750 shadow-modal space-y-6">
+          {success ? (
             <div className="text-center py-4 space-y-3">
-              <CheckCircle2 className="w-10 h-10 text-emerald-400 mx-auto" />
-              <h4 className="text-sm font-bold text-white">Password Reset Complete</h4>
-              <p className="text-xs text-slate-400">
-                You can now log in with your updated credentials.
-              </p>
-              <div className="pt-2">
-                <Button variant="primary" size="md" className="w-full" onClick={() => navigate('/login')}>
-                  Sign In Now
-                </Button>
+              <div className="w-12 h-12 rounded-full bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center text-emerald-400 mx-auto">
+                <CheckCircle2 className="w-6 h-6" />
               </div>
+              <h3 className="text-base font-bold text-white">Password Updated</h3>
+              <p className="text-xs text-slate-400">Redirecting to sign in...</p>
             </div>
           ) : (
             <form onSubmit={handleSubmit} className="space-y-4">
-              <Input
-                label="New Password *"
-                type={showPassword ? 'text' : 'password'}
-                placeholder="••••••••"
-                leftIcon={Lock}
-                rightIcon={showPassword ? EyeOff : Eye}
-                onRightIconClick={() => setShowPassword(!showPassword)}
-                value={newPassword}
-                onChange={(e) => setNewPassword(e.target.value)}
-                required
-              />
+              <div>
+                <label className="block text-xs font-semibold text-slate-300 mb-1.5">New Password</label>
+                <div className="relative">
+                  <Lock className="w-4 h-4 text-slate-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                  <input
+                    type="password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    placeholder="••••••••"
+                    className="input-field pl-10"
+                    required
+                  />
+                </div>
+              </div>
 
-              <Input
-                label="Confirm New Password *"
-                type={showPassword ? 'text' : 'password'}
-                placeholder="••••••••"
-                leftIcon={Lock}
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-                required
-              />
+              <div>
+                <label className="block text-xs font-semibold text-slate-300 mb-1.5">Confirm New Password</label>
+                <div className="relative">
+                  <Lock className="w-4 h-4 text-slate-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                  <input
+                    type="password"
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    placeholder="••••••••"
+                    className="input-field pl-10"
+                    required
+                  />
+                </div>
+              </div>
 
-              <Button
-                variant="primary"
-                size="md"
-                className="w-full"
+              {error && (
+                <div className="p-3 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-400 text-xs flex items-center gap-2">
+                  <AlertCircle className="w-4 h-4 shrink-0" />
+                  <span>{error}</span>
+                </div>
+              )}
+
+              <button
                 type="submit"
-                isLoading={isLoading}
-                rightIcon={ArrowRight}
+                disabled={loading}
+                className="w-full btn-primary text-xs py-3 font-semibold flex items-center justify-center gap-1.5 shadow-subtle hover:shadow-metallic disabled:opacity-40"
               >
-                Reset Password
-              </Button>
+                {loading && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+                <span>Set New Password</span>
+              </button>
             </form>
           )}
-        </Card>
+        </div>
       </div>
     </div>
   );

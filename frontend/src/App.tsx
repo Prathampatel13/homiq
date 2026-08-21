@@ -3,6 +3,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Navbar } from './components/common/Navbar';
 import { Footer } from './components/common/Footer';
+import { MobileBottomNav } from './components/common/MobileBottomNav';
 import { ToastProvider } from './components/ui/Toast';
 
 import { LandingPage } from './pages/LandingPage';
@@ -45,7 +46,7 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, allowedRoles 
   const effectiveRole = getEffectiveRole();
 
   if (allowedRoles && !allowedRoles.includes(effectiveRole)) {
-    // If admin, allow universal access
+    // If admin, allow universal oversight access
     if (effectiveRole === UserRole.ADMIN) {
       return <>{children}</>;
     }
@@ -60,7 +61,7 @@ export const App: React.FC = () => {
     <QueryClientProvider client={queryClient}>
       <ToastProvider>
         <Router>
-          <div className="min-h-screen flex flex-col justify-between bg-dark-950 text-slate-100 font-sans selection:bg-brand-500/30 selection:text-white">
+          <div className="min-h-screen flex flex-col justify-between bg-dark-950 text-light-primary font-sans selection:bg-sage-400/20 selection:text-white pb-16 md:pb-0">
             <Navbar />
             <main className="flex-1">
               <Routes>
@@ -92,7 +93,7 @@ export const App: React.FC = () => {
                   }
                 />
 
-                {/* Technician Routes */}
+                {/* Technician Workspace */}
                 <Route
                   path="/provider/dashboard"
                   element={
@@ -102,7 +103,7 @@ export const App: React.FC = () => {
                   }
                 />
 
-                {/* Company Routes */}
+                {/* Company Enterprise Workspace */}
                 <Route
                   path="/company/dashboard"
                   element={
@@ -112,7 +113,7 @@ export const App: React.FC = () => {
                   }
                 />
 
-                {/* Admin Routes */}
+                {/* Admin Operations Platform */}
                 <Route
                   path="/admin/dashboard"
                   element={
@@ -127,6 +128,7 @@ export const App: React.FC = () => {
               </Routes>
             </main>
             <Footer />
+            <MobileBottomNav />
           </div>
         </Router>
       </ToastProvider>

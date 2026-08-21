@@ -368,3 +368,143 @@ def get_technician_dashboard(
     service = TechnicianDashboardService(db)
     return service.get_dashboard(current_user)
 
+
+# ── Technician Media: Avatar, Portfolio, Certificates ────────────────────
+
+from app.schemas.media import MediaAssetResponse, StandardMediaResponse
+from app.services.media import MediaService
+
+
+@router.post(
+    "/me/avatar",
+    response_model=StandardMediaResponse,
+    summary="Upload technician avatar",
+    description="Uploads and updates avatar for the authenticated technician with atomic rollback safety.",
+)
+def upload_tech_avatar(
+    file: UploadFile = File(..., description="Avatar image"),
+    current_user: User = Depends(get_current_technician),
+    db: Session = Depends(get_db),
+) -> Any:
+    """Upload technician avatar."""
+    return MediaService(db).update_user_avatar(current_user, file)
+
+
+@router.delete(
+    "/me/avatar",
+    response_model=StandardMediaResponse,
+    summary="Delete technician avatar",
+    description="Removes avatar for the authenticated technician.",
+)
+def delete_tech_avatar(
+    current_user: User = Depends(get_current_technician),
+    db: Session = Depends(get_db),
+) -> Any:
+    """Delete technician avatar."""
+    return MediaService(db).delete_user_avatar(current_user)
+
+
+@router.post(
+    "/me/portfolio",
+    response_model=StandardMediaResponse,
+    status_code=status.HTTP_201_CREATED,
+    summary="Upload portfolio work sample",
+    description="Uploads a work sample to the technician's public portfolio.",
+)
+def upload_portfolio_work(
+    file: UploadFile = File(..., description="Portfolio image (JPEG, PNG, WebP)"),
+    current_user: User = Depends(get_current_technician),
+    db: Session = Depends(get_db),
+) -> Any:
+    """Upload portfolio work sample."""
+    return MediaService(db).upload_technician_portfolio(current_user, file)
+
+
+@router.get(
+    "/me/portfolio",
+    response_model=list[MediaAssetResponse],
+    summary="List technician portfolio work",
+    description="Returns all portfolio work samples uploaded by the authenticated technician.",
+)
+def list_my_portfolio(
+    current_user: User = Depends(get_current_technician),
+    db: Session = Depends(get_db),
+) -> Any:
+    """List portfolio items."""
+    return MediaService(db).list_technician_portfolio(current_user)
+
+
+@router.delete(
+    "/me/portfolio/{asset_id}",
+    response_model=StandardMediaResponse,
+    summary="Delete portfolio work sample",
+    description="Deletes a portfolio work sample owned by the technician.",
+)
+def delete_my_portfolio(
+    asset_id: int,
+    current_user: User = Depends(get_current_technician),
+    db: Session = Depends(get_db),
+) -> Any:
+    """Delete portfolio item."""
+    return MediaService(db).delete_technician_portfolio(current_user, asset_id)
+
+
+@router.post(
+    "/me/certificates",
+    response_model=StandardMediaResponse,
+    status_code=status.HTTP_201_CREATED,
+    summary="Upload professional certificate",
+    description="Uploads a certificate document or image (PDF, JPEG, PNG, WebP) for the authenticated technician.",
+)
+def upload_certificate_doc(
+    file: UploadFile = File(..., description="Certificate file (Image or PDF)"),
+    current_user: User = Depends(get_current_technician),
+    db: Session = Depends(get_db),
+) -> Any:
+    """Upload professional certificate."""
+    return MediaService(db).upload_technician_certificate(current_user, file)
+
+
+@router.get(
+    "/me/certificates",
+    response_model=list[MediaAssetResponse],
+    summary="List technician certificates",
+    description="Returns all certificates uploaded by the authenticated technician.",
+)
+def list_my_certificates(
+    current_user: User = Depends(get_current_technician),
+    db: Session = Depends(get_db),
+) -> Any:
+    """List certificates."""
+    return MediaService(db).list_technician_certificates(current_user)
+
+
+@router.delete(
+    "/me/certificates/{asset_id}",
+    response_model=StandardMediaResponse,
+    summary="Delete professional certificate",
+    description="Deletes a certificate owned by the technician.",
+)
+def delete_my_certificate(
+    asset_id: int,
+    current_user: User = Depends(get_current_technician),
+    db: Session = Depends(get_db),
+) -> Any:
+    """Delete certificate."""
+    return MediaService(db).delete_technician_certificate(current_user, asset_id)
+
+
+technicians_router = APIRouter(prefix="/technicians", tags=["Technicians"])
+
+technicians_router.add_api_route("/me/avatar", upload_tech_avatar, methods=["POST"], response_model=StandardMediaResponse)
+technicians_router.add_api_route("/me/avatar", delete_tech_avatar, methods=["DELETE"], response_model=StandardMediaResponse)
+technicians_router.add_api_route("/me/portfolio", upload_portfolio_work, methods=["POST"], response_model=StandardMediaResponse, status_code=status.HTTP_201_CREATED)
+technicians_router.add_api_route("/me/portfolio", list_my_portfolio, methods=["GET"], response_model=list[MediaAssetResponse])
+technicians_router.add_api_route("/me/portfolio/{asset_id}", delete_my_portfolio, methods=["DELETE"], response_model=StandardMediaResponse)
+technicians_router.add_api_route("/me/certificates", upload_certificate_doc, methods=["POST"], response_model=StandardMediaResponse, status_code=status.HTTP_201_CREATED)
+technicians_router.add_api_route("/me/certificates", list_my_certificates, methods=["GET"], response_model=list[MediaAssetResponse])
+technicians_router.add_api_route("/me/certificates/{asset_id}", delete_my_certificate, methods=["DELETE"], response_model=StandardMediaResponse)
+
+
+
+

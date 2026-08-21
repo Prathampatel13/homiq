@@ -894,18 +894,19 @@ class BookingService:
         self,
         current_user: User,
         booking_id: int,
-        payload: BookingRejectRequest,
+        payload: Optional[BookingRejectRequest] = None,
     ) -> BookingResponse:
         """Accept an assigned booking (technician or admin)."""
         booking = self._get_booking_for(current_user, booking_id)
         self._ensure_technician_role(current_user, booking)
         self._ensure_transition_change(booking, BookingStatus.ACCEPTED)
 
+        reason = payload.reason if payload else None
         updated = self._transition(
             booking,
             BookingStatus.ACCEPTED,
             current_user,
-            reason=payload.reason,
+            reason=reason,
         )
         return BookingResponse.model_validate(updated)
 
@@ -913,18 +914,19 @@ class BookingService:
         self,
         current_user: User,
         booking_id: int,
-        payload: BookingRejectRequest,
+        payload: Optional[BookingRejectRequest] = None,
     ) -> BookingResponse:
         """Reject an assigned booking (technician or admin)."""
         booking = self._get_booking_for(current_user, booking_id)
         self._ensure_technician_role(current_user, booking)
         self._ensure_transition_change(booking, BookingStatus.REJECTED)
 
+        reason = payload.reason if payload else None
         updated = self._transition(
             booking,
             BookingStatus.REJECTED,
             current_user,
-            reason=payload.reason,
+            reason=reason,
         )
         return BookingResponse.model_validate(updated)
 
@@ -934,18 +936,19 @@ class BookingService:
         self,
         current_user: User,
         booking_id: int,
-        payload: BookingRejectRequest,
+        payload: Optional[BookingRejectRequest] = None,
     ) -> BookingResponse:
         """Mark the technician as on the way (technician or admin)."""
         booking = self._get_booking_for(current_user, booking_id)
         self._ensure_technician_role(current_user, booking)
         self._ensure_transition_change(booking, BookingStatus.ON_THE_WAY)
 
+        reason = payload.reason if payload else None
         updated = self._transition(
             booking,
             BookingStatus.ON_THE_WAY,
             current_user,
-            reason=payload.reason,
+            reason=reason,
         )
         return BookingResponse.model_validate(updated)
 
@@ -953,18 +956,19 @@ class BookingService:
         self,
         current_user: User,
         booking_id: int,
-        payload: BookingRejectRequest,
+        payload: Optional[BookingRejectRequest] = None,
     ) -> BookingResponse:
         """Mark the technician as arrived (technician or admin)."""
         booking = self._get_booking_for(current_user, booking_id)
         self._ensure_technician_role(current_user, booking)
         self._ensure_transition_change(booking, BookingStatus.ARRIVED)
 
+        reason = payload.reason if payload else None
         updated = self._transition(
             booking,
             BookingStatus.ARRIVED,
             current_user,
-            reason=payload.reason,
+            reason=reason,
         )
         return BookingResponse.model_validate(updated)
 
@@ -972,18 +976,19 @@ class BookingService:
         self,
         current_user: User,
         booking_id: int,
-        payload: BookingRejectRequest,
+        payload: Optional[BookingRejectRequest] = None,
     ) -> BookingResponse:
         """Start the service for a booking (technician or admin)."""
         booking = self._get_booking_for(current_user, booking_id)
         self._ensure_technician_role(current_user, booking)
         self._ensure_transition_change(booking, BookingStatus.IN_PROGRESS)
 
+        reason = payload.reason if payload else None
         updated = self._transition(
             booking,
             BookingStatus.IN_PROGRESS,
             current_user,
-            reason=payload.reason,
+            reason=reason,
         )
         return BookingResponse.model_validate(updated)
 
@@ -991,18 +996,19 @@ class BookingService:
         self,
         current_user: User,
         booking_id: int,
-        payload: BookingRejectRequest,
+        payload: Optional[BookingRejectRequest] = None,
     ) -> BookingResponse:
         """Complete the service for a booking (technician or admin)."""
         booking = self._get_booking_for(current_user, booking_id)
         self._ensure_technician_role(current_user, booking)
         self._ensure_transition_change(booking, BookingStatus.COMPLETED)
 
+        reason = payload.reason if payload else None
         updated = self._transition(
             booking,
             BookingStatus.COMPLETED,
             current_user,
-            reason=payload.reason,
+            reason=reason,
         )
         return BookingResponse.model_validate(updated)
 

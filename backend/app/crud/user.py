@@ -152,6 +152,19 @@ class UserCRUD:
 
         return user
 
+    def update_avatar_url(
+        self,
+        user_id: int,
+        avatar_url: Optional[str],
+    ) -> Optional[User]:
+        user = self.get_by_id(user_id)
+        if user is None:
+            return None
+        user.avatar_url = avatar_url
+        self.db.commit()
+        self.db.refresh(user)
+        return user
+
     def update_last_login(self, user_id: int) -> None:
         user = self.get_by_id(user_id)
 

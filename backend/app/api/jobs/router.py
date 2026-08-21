@@ -243,3 +243,60 @@ def withdraw_application(
 ) -> dict[str, str]:
     """Withdraw an application as a technician."""
     return JobService(db).withdraw_application(current_user, application_id)
+
+
+# ─── JOB MEDIA ENDPOINTS (Resumes & Documents) ───────────────────────────
+
+from fastapi import File, UploadFile
+from app.schemas.media import MediaAssetResponse, StandardMediaResponse
+from app.services.media import MediaService
+
+
+@router.post(
+    "/{job_id}/resumes",
+    response_model=StandardMediaResponse,
+    status_code=status.HTTP_201_CREATED,
+    summary="Upload job application resume",
+    description="Uploads an applicant resume (PDF) for a job post.",
+)
+def upload_job_resume(
+    job_id: int,
+    file: UploadFile = File(..., description="Resume file (PDF)"),
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> Any:
+    """Upload resume document."""
+    return MediaService(db).upload_job_resume(current_user, job_id, file)
+
+
+@router.post(
+    "/{job_id}/documents",
+    response_model=StandardMediaResponse,
+    status_code=status.HTTP_201_CREATED,
+    summary="Upload job post document",
+    description="Uploads a job description, specification, or legal document for a job post.",
+)
+def upload_job_document(
+    job_id: int,
+    file: UploadFile = File(..., description="Job document (PDF or Image)"),
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> Any:
+    """Upload job document."""
+    return MediaService(db).upload_job_document(current_user, job_id, file)
+
+
+@router.get(
+    "/{job_id}/documents",
+    response_model=list[MediaAssetResponse],
+    summary="List job documents",
+    description="Returns all documents and resumes uploaded for a job post.",
+)
+def list_job_documents(
+    job_id: int,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> Any:
+    """List job documents."""
+    return MediaService(db).list_job_documents(current_user, job_id)
+

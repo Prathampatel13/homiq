@@ -1,167 +1,137 @@
 import React, { useState } from 'react';
-import { ShieldCheck, QrCode, KeyRound, CheckCircle2 } from 'lucide-react';
-import { Modal } from '../ui/Modal';
-import { Input } from '../ui/Input';
-import { Button } from '../ui/Button';
+import { 
+  ShieldCheck, 
+  KeyRound, 
+  X, 
+  CheckCircle2, 
+  AlertCircle, 
+  Loader2
+} from 'lucide-react';
 import { bookingsApi } from '../../api/bookings';
-import { useToast } from '../ui/Toast';
-import { extractErrorMessage } from '../../api/axios';
 import { Booking } from '../../types';
 
-interface TechnicianVerifyModalProps {
+export interface TechnicianVerifyModalProps {
+  booking: Booking;
   isOpen: boolean;
   onClose: () => void;
-  booking: Booking;
-  onSuccess: (updatedBooking: Booking) => void;
+  onVerified: () => void;
 }
 
 export const TechnicianVerifyModal: React.FC<TechnicianVerifyModalProps> = ({
+  booking,
   isOpen,
   onClose,
-  booking,
-  onSuccess,
+  onVerified,
 }) => {
-  const toast = useToast();
-  const [activeTab, setActiveTab] = useState<'qr' | 'otp'>('qr');
-  const [tokenInput, setTokenInput] = useState('');
-  const [otpInput, setOtpInput] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
+  const [otpCode, setOtpCode] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState(false);
 
-  const handleScanOrTokenSubmit = async (e: React.FormEvent) => {
+  if (!isOpen) return null;
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!tokenInput.trim()) {
-      toast.error('Required', 'Please enter or paste the QR verification token.');
+    if (otpCode.length < 4) {
+      setError('Please enter the complete passcode provided by the customer.');
       return;
     }
 
-    setIsLoading(true);
     try {
-      const updated = await bookingsApi.scanQr(booking.id, tokenInput.trim());
-      toast.success('QR Handshake Verified', 'Customer verification authenticated.');
-      onSuccess(updated);
-      onClose();
-    } catch (err) {
-      toast.error('Verification Failed', extractErrorMessage(err));
+      setLoading(true);
+      setError(null);
+      await bookingsApi.verifyOtp(booking.id, otpCode);
+      setSuccess(true);
+      setTimeout(() => {
+        onVerified();
+        onClose();
+      }, 1500);
+    } catch (err: any) {
+      console.error('OTP Verification failed:', err);
+      setError(err?.response?.data?.detail || 'Invalid verification passcode. Please check with customer.');
     } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleOtpSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!otpInput.trim() || otpInput.trim().length !== 6) {
-      toast.error('Invalid OTP', 'Please enter the valid 6-digit OTP code.');
-      return;
-    }
-
-    setIsLoading(true);
-    try {
-      const updated = await bookingsApi.verifyOtp(booking.id, otpInput.trim());
-      toast.success('OTP Verified', 'Service session started successfully.');
-      onSuccess(updated);
-      onClose();
-    } catch (err) {
-      toast.error('OTP Verification Failed', extractErrorMessage(err));
-    } finally {
-      setIsLoading(false);
+      setLoading(false);
     }
   };
 
   return (
-    <Modal
-      isOpen={isOpen}
-      onClose={onClose}
-      title="Verify Customer & Start Service"
-      description={`Authenticate Booking #${booking.booking_number || booking.id}`}
-      maxWidth="md"
-    >
-      <div className="space-y-4">
-        {/* Method switcher */}
-        <div className="grid grid-cols-2 gap-2 p-1 bg-dark-850 rounded-xl border border-dark-750">
-          <button
-            type="button"
-            onClick={() => setActiveTab('qr')}
-            className={`flex items-center justify-center gap-2 py-2 text-xs font-medium rounded-lg transition-all ${
-              activeTab === 'qr'
-                ? 'bg-dark-750 text-white shadow-subtle'
-                : 'text-slate-400 hover:text-slate-200'
-            }`}
-          >
-            <QrCode className="w-3.5 h-3.5" />
-            <span>QR Scan Token</span>
-          </button>
-          <button
-            type="button"
-            onClick={() => setActiveTab('otp')}
-            className={`flex items-center justify-center gap-2 py-2 text-xs font-medium rounded-lg transition-all ${
-              activeTab === 'otp'
-                ? 'bg-dark-750 text-white shadow-subtle'
-                : 'text-slate-400 hover:text-slate-200'
-            }`}
-          >
-            <KeyRound className="w-3.5 h-3.5" />
-            <span>Customer OTP</span>
-          </button>
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-dark-950/85 backdrop-blur-md animate-in fade-in duration-150">
+      <div className="relative w-full max-w-md rounded-3xl bg-dark-900 border border-dark-750 p-6 sm:p-8 shadow-modal text-white">
+        <button
+          onClick={onClose}
+          className="absolute top-5 right-5 p-2 rounded-xl bg-dark-850 hover:bg-dark-800 text-slate-400 hover:text-white border border-dark-750 transition-colors"
+        >
+          <X className="w-4 h-4" />
+        </button>
+
+        <div className="flex items-center gap-3 mb-6">
+          <div className="w-10 h-10 rounded-xl bg-sage-400/15 border border-sage-400/30 flex items-center justify-center text-sage-400 shrink-0">
+            <ShieldCheck className="w-5 h-5" />
+          </div>
+          <div>
+            <h3 className="text-base font-bold text-white tracking-tight">Customer SmartVerify™</h3>
+            <p className="text-xs text-slate-400 font-mono">Booking #{booking.booking_number || booking.id}</p>
+          </div>
         </div>
 
-        {activeTab === 'qr' ? (
-          <form onSubmit={handleScanOrTokenSubmit} className="space-y-4">
-            <div className="p-4 bg-dark-850 border border-dark-750 rounded-xl space-y-3">
-              <div className="flex items-center gap-2 text-xs text-brand-400 font-semibold">
-                <ShieldCheck className="w-4 h-4" />
-                <span>Camera Scan / Token Paste</span>
-              </div>
-              <p className="text-xs text-slate-400 leading-relaxed">
-                Scan the customer's SmartVerify QR code or paste the cryptographic token string provided by the customer.
-              </p>
-              <Input
-                placeholder="e.g. hmq_verify_7f2b9a..."
-                value={tokenInput}
-                onChange={(e) => setTokenInput(e.target.value)}
-                autoFocus
-              />
+        {success ? (
+          <div className="py-8 text-center space-y-3">
+            <div className="w-14 h-14 rounded-full bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center text-emerald-400 mx-auto">
+              <CheckCircle2 className="w-7 h-7" />
             </div>
-
-            <div className="flex items-center justify-end gap-3 pt-2">
-              <Button variant="outline" size="sm" type="button" onClick={onClose} disabled={isLoading}>
-                Cancel
-              </Button>
-              <Button variant="primary" size="sm" type="submit" isLoading={isLoading} leftIcon={CheckCircle2}>
-                Validate & Start Work
-              </Button>
-            </div>
-          </form>
+            <h4 className="text-base font-bold text-white">Verification Successful</h4>
+            <p className="text-xs text-slate-400">Customer handshake validated. Service status updated to in progress.</p>
+          </div>
         ) : (
-          <form onSubmit={handleOtpSubmit} className="space-y-4">
-            <div className="p-4 bg-dark-850 border border-dark-750 rounded-xl space-y-3">
-              <div className="flex items-center gap-2 text-xs text-brand-400 font-semibold">
-                <KeyRound className="w-4 h-4" />
-                <span>6-Digit Verification Code</span>
-              </div>
-              <p className="text-xs text-slate-400 leading-relaxed">
-                Ask the customer for the 6-digit OTP displayed on their HomiQ booking screen.
-              </p>
-              <Input
-                placeholder="6-digit code (e.g. 842109)"
+          <form onSubmit={handleSubmit} className="space-y-6">
+            <div className="p-4 rounded-2xl bg-dark-850 border border-dark-750 space-y-3">
+              <label className="block text-xs font-semibold text-slate-200">
+                Enter Customer 6-Digit Passcode
+              </label>
+              <input
+                type="text"
                 maxLength={6}
-                value={otpInput}
-                onChange={(e) => setOtpInput(e.target.value.replace(/\D/g, ''))}
-                className="text-center font-mono text-lg tracking-widest"
+                value={otpCode}
+                onChange={(e) => {
+                  setOtpCode(e.target.value.replace(/[^0-9]/g, ''));
+                  setError(null);
+                }}
+                placeholder="• • • • • •"
+                className="w-full text-center tracking-[0.5em] text-2xl font-mono font-bold bg-dark-900 border border-dark-750 focus:border-sage-400 rounded-xl py-3 text-white placeholder-slate-600 focus:outline-none focus:ring-1 focus:ring-sage-400/50"
                 autoFocus
               />
+              <p className="text-[11px] text-slate-400 leading-normal">
+                Request the 6-digit passcode displayed on the customer's HomiQ Command Center screen.
+              </p>
             </div>
 
-            <div className="flex items-center justify-end gap-3 pt-2">
-              <Button variant="outline" size="sm" type="button" onClick={onClose} disabled={isLoading}>
-                Cancel
-              </Button>
-              <Button variant="primary" size="sm" type="submit" isLoading={isLoading} leftIcon={CheckCircle2}>
-                Verify OTP & Start Work
-              </Button>
-            </div>
+            {error && (
+              <div className="p-3 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-400 text-xs flex items-center gap-2">
+                <AlertCircle className="w-4 h-4 shrink-0" />
+                <span>{error}</span>
+              </div>
+            )}
+
+            <button
+              type="submit"
+              disabled={loading || otpCode.length < 4}
+              className="w-full btn-primary text-xs py-3 font-semibold flex items-center justify-center gap-2 shadow-subtle hover:shadow-accent disabled:opacity-40"
+            >
+              {loading ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  <span>Validating Passcode...</span>
+                </>
+              ) : (
+                <>
+                  <KeyRound className="w-4 h-4" />
+                  <span>Validate & Start Service</span>
+                </>
+              )}
+            </button>
           </form>
         )}
       </div>
-    </Modal>
+    </div>
   );
 };

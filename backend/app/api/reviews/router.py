@@ -163,3 +163,58 @@ def get_technician_rating_summary(
     return ReviewService(db).get_technician_rating_summary(technician_id)
 
 
+# ─── REVIEW MEDIA ENDPOINTS (Review Photos) ──────────────────────────────
+
+from fastapi import File, UploadFile
+from app.schemas.media import MediaAssetResponse, StandardMediaResponse
+from app.services.media import MediaService
+
+
+@router.post(
+    "/{review_id}/images",
+    response_model=StandardMediaResponse,
+    status_code=status.HTTP_201_CREATED,
+    summary="Upload review photo",
+    description="Uploads a photo attached to a completed booking review (Review author only).",
+)
+def upload_review_photo(
+    review_id: int,
+    file: UploadFile = File(..., description="Review photo (JPEG, PNG, WebP)"),
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> Any:
+    """Upload review photo."""
+    return MediaService(db).upload_review_image(current_user, review_id, file)
+
+
+@router.get(
+    "/{review_id}/images",
+    response_model=list[MediaAssetResponse],
+    summary="List review photos",
+    description="Returns all photos attached to a review.",
+)
+def list_review_photos(
+    review_id: int,
+    db: Session = Depends(get_db),
+) -> Any:
+    """List review photos."""
+    return MediaService(db).list_review_images(review_id)
+
+
+@router.delete(
+    "/{review_id}/images/{asset_id}",
+    response_model=StandardMediaResponse,
+    summary="Delete review photo",
+    description="Deletes a photo from a review (Review author or Admin only).",
+)
+def delete_review_photo(
+    review_id: int,
+    asset_id: int,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> Any:
+    """Delete review photo."""
+    return MediaService(db).delete_review_image(current_user, review_id, asset_id)
+
+
+

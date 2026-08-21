@@ -1,38 +1,41 @@
 # Python
 __pycache__/
-*.py[cod]
-*$py.class
-*.so
+*.pyc
+*.pyo
+*.pyd
 .Python
 env/
 venv/
 .venv/
 ENV/
-env.bak/
-venv.bak/
 
-# Node / React
+# Testing & Coverage
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Node & Frontend
 node_modules/
 dist/
 dist-ssr/
-*.local
 
-# Environment variables
+# Environment Variables
 .env
-.env.local
-.env.development.local
-.env.test.local
-.env.production.local
+.env.*
+!.env.example
 
-# Logs and databases
+# Logs & Databases
 *.log
 *.sqlite
 *.sqlite3
-backend/uploads/
-frontend.zip
-backend.zip
+backend/uploads/*
+!backend/uploads/.gitkeep
 
-# OS / IDE
+# Archives
+*.zip
+*.tar.gz
+
+# IDE & OS
 .DS_Store
 Thumbs.db
 .vscode/
