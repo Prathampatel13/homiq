@@ -19,7 +19,13 @@ import {
   ChevronRight,
   Star,
   Layers,
-  MapPin
+  MapPin,
+  Monitor,
+  Paintbrush,
+  Bath,
+  Home,
+  TreePine,
+  DoorOpen
 } from 'lucide-react';
 import { HeroScene3D } from '../components/3d/HeroScene3D';
 import { SmartHomeLayeredView } from '../components/3d/SmartHomeLayeredView';
@@ -67,7 +73,7 @@ export const LandingPage: React.FC = () => {
   }, []);
 
   return (
-    <div className="min-h-screen bg-dark-950 text-white selection:bg-sage-400/20 selection:text-white">
+    <div className="min-h-screen bg-dark-950 text-slate-900 dark:text-white selection:bg-sage-400/20 selection:text-white">
       {/* ──────────────────────────────────────────────────────────────────────────
           1. CINEMATIC 3D HERO
       ────────────────────────────────────────────────────────────────────────── */}
@@ -173,86 +179,56 @@ export const LandingPage: React.FC = () => {
           </div>
 
           {/* Services Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {featuredServices.length > 0 ? (
-              featuredServices.map((service) => (
-                <div
-                  key={service.id}
-                  onClick={() => navigate(`/booking/new?service_id=${service.id}`)}
-                  className="group p-6 rounded-3xl bg-dark-900/90 hover:bg-dark-850 border border-dark-750 hover:border-dark-700 transition-all duration-200 cursor-pointer flex flex-col justify-between shadow-card"
-                >
-                  <div>
-                    <div className="flex items-center justify-between mb-4">
-                      <div className="w-12 h-12 rounded-2xl bg-dark-800 group-hover:bg-sage-400/15 border border-dark-750 group-hover:border-sage-400/30 flex items-center justify-center text-sage-400 transition-colors">
-                        <Wrench className="w-6 h-6" />
-                      </div>
-                      <span className="text-xs font-mono font-bold text-white px-2.5 py-1 rounded-lg bg-dark-800 border border-dark-750">
-                        ₹{(service.price || service.base_price || 499).toFixed(2)}
-                      </span>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            {[
+              { title: 'Plumbing', price: 299, time: 30, icon: Droplet, desc: 'Tap Repair, Pipe Leakage, Drain Cleaning, Sink Repair, Toilet Repair, Water Tank Repair, Bathroom Plumbing' },
+              { title: 'Electrical', price: 199, time: 30, icon: Zap, desc: 'Switch & Socket Repair, Fan Installation, Light Installation, Wiring Repair, MCB Repair, Short-Circuit Repair, Inverter Installation' },
+              { title: 'AC & Cooling', price: 499, time: 60, icon: Wind, desc: 'AC Service, AC Repair, AC Installation, AC Gas Refill, AC Cleaning, Cooler Repair' },
+              { title: 'Appliances', price: 349, time: 45, icon: Monitor, desc: 'Refrigerator Repair, Washing Machine Repair, Microwave Repair, Geyser Repair, Water Purifier Service' },
+              { title: 'Carpentry', price: 249, time: 60, icon: Wrench, desc: 'Furniture Repair, Door Repair, Lock Installation, Cabinet Repair, Shelf Installation, Bed Repair' },
+              { title: 'Cleaning', price: 999, time: 120, icon: Sparkles, desc: 'Full Home Cleaning, Kitchen Cleaning, Bathroom Cleaning, Sofa Cleaning, Carpet Cleaning, Floor Cleaning' },
+              { title: 'Painting', price: 1499, time: 240, icon: Paintbrush, desc: 'Room Painting, Full Home Painting, Wall Touch-up, Exterior Painting, Waterproof Painting' },
+              { title: 'Bathroom', price: 399, time: 60, icon: Bath, desc: 'Bathroom Deep Cleaning, Shower Repair, Toilet Repair, Basin Repair, Exhaust Fan Installation' },
+              { title: 'Home Maintenance', price: 499, time: 90, icon: Home, desc: 'General Inspection, Minor Repairs, Wall Repair, Grouting, Waterproofing, Home Inspection' },
+              { title: 'Security & Smart Home', price: 599, time: 90, icon: ShieldCheck, desc: 'CCTV Installation, Smart Lock Installation, Doorbell Installation, Wi-Fi Camera Setup' },
+              { title: 'Outdoor & Garden', price: 349, time: 60, icon: TreePine, desc: 'Garden Maintenance, Lawn Cleaning, Plant Maintenance, Balcony Cleaning' },
+              { title: 'Windows & Doors', price: 299, time: 45, icon: DoorOpen, desc: 'Door Alignment, Door Handle Repair, Window Repair, Glass Replacement, Mosquito Net Installation' },
+            ].map((item, idx) => (
+              <div
+                key={idx}
+                onClick={() => navigate('/booking/new')}
+                className="group p-6 rounded-3xl bg-dark-900/90 hover:bg-dark-850 border border-dark-750 hover:border-dark-700 transition-all duration-200 cursor-pointer flex flex-col justify-between shadow-card"
+              >
+                <div>
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="w-12 h-12 rounded-2xl bg-dark-800 group-hover:bg-sage-400/15 border border-dark-750 group-hover:border-sage-400/30 flex items-center justify-center text-sage-400 transition-colors">
+                      <item.icon className="w-6 h-6" />
                     </div>
-
-                    <h3 className="text-base font-bold text-white tracking-tight group-hover:text-sage-300 transition-colors mb-2">
-                      {service.name}
-                    </h3>
-                    <p className="text-xs text-slate-400 leading-relaxed line-clamp-2">
-                      {service.description || 'Comprehensive inspection, preventive maintenance, and precision servicing.'}
-                    </p>
-                  </div>
-
-                  <div className="pt-5 mt-5 border-t border-dark-750/70 flex items-center justify-between text-xs text-slate-400 font-mono">
-                    <span className="flex items-center gap-1.5">
-                      <Clock className="w-3.5 h-3.5 text-sage-400" />
-                      <span>{service.duration_minutes || 60} mins</span>
-                    </span>
-                    <span className="text-sage-400 group-hover:translate-x-1 transition-transform flex items-center gap-1 font-semibold">
-                      <span>Book</span>
-                      <ChevronRight className="w-3.5 h-3.5" />
+                    <span className="text-xs font-mono font-bold text-white px-2.5 py-1 rounded-lg bg-dark-800 border border-dark-750">
+                      Starts ₹{item.price}
                     </span>
                   </div>
+
+                  <h3 className="text-base font-bold text-white tracking-tight group-hover:text-sage-300 transition-colors mb-2">
+                    {item.title}
+                  </h3>
+                  <p className="text-xs text-slate-400 leading-relaxed">
+                    {item.desc}
+                  </p>
                 </div>
-              ))
-            ) : (
-              [
-                { title: 'AC & Climate Control', price: 699, time: 45, icon: Wind, desc: 'Coil sanitization, pressure check & thermostat tuning' },
-                { title: 'Electrical & Smart Power', price: 449, time: 30, icon: Zap, desc: 'Circuit diagnosis, load testing & certified wiring' },
-                { title: 'Plumbing & Hydraulic Care', price: 499, time: 45, icon: Droplet, desc: 'Leak sealing, fixture installation & valve balancing' },
-              ].map((item, idx) => (
-                <div
-                  key={idx}
-                  onClick={() => navigate('/booking/new')}
-                  className="group p-6 rounded-3xl bg-dark-900/90 hover:bg-dark-850 border border-dark-750 hover:border-dark-700 transition-all duration-200 cursor-pointer flex flex-col justify-between shadow-card"
-                >
-                  <div>
-                    <div className="flex items-center justify-between mb-4">
-                      <div className="w-12 h-12 rounded-2xl bg-dark-800 group-hover:bg-sage-400/15 border border-dark-750 group-hover:border-sage-400/30 flex items-center justify-center text-sage-400 transition-colors">
-                        <item.icon className="w-6 h-6" />
-                      </div>
-                      <span className="text-xs font-mono font-bold text-white px-2.5 py-1 rounded-lg bg-dark-800 border border-dark-750">
-                        ₹{item.price.toFixed(2)}
-                      </span>
-                    </div>
 
-                    <h3 className="text-base font-bold text-white tracking-tight group-hover:text-sage-300 transition-colors mb-2">
-                      {item.title}
-                    </h3>
-                    <p className="text-xs text-slate-400 leading-relaxed">
-                      {item.desc}
-                    </p>
-                  </div>
-
-                  <div className="pt-5 mt-5 border-t border-dark-750/70 flex items-center justify-between text-xs text-slate-400 font-mono">
-                    <span className="flex items-center gap-1.5">
-                      <Clock className="w-3.5 h-3.5 text-sage-400" />
-                      <span>{item.time} mins</span>
-                    </span>
-                    <span className="text-sage-400 group-hover:translate-x-1 transition-transform flex items-center gap-1 font-semibold">
-                      <span>Book</span>
-                      <ChevronRight className="w-3.5 h-3.5" />
-                    </span>
-                  </div>
+                <div className="pt-5 mt-5 border-t border-dark-750/70 flex items-center justify-between text-xs text-slate-400 font-mono">
+                  <span className="flex items-center gap-1.5">
+                    <Clock className="w-3.5 h-3.5 text-sage-400" />
+                    <span>~{item.time} mins</span>
+                  </span>
+                  <span className="text-sage-400 group-hover:translate-x-1 transition-transform flex items-center gap-1 font-semibold">
+                    <span>Explore</span>
+                    <ChevronRight className="w-3.5 h-3.5" />
+                  </span>
                 </div>
-              ))
-            )}
+              </div>
+            ))}
           </div>
         </div>
       </section>
@@ -337,7 +313,7 @@ export const LandingPage: React.FC = () => {
                 <span className="text-sage-400">SmartVerify™ Handshake.</span>
               </h2>
               <p className="text-sm text-slate-400 leading-relaxed">
-                Every technician visit requires a cryptographic double-blind verification. Confirm the 6-digit dynamic passcode or scan the encrypted QR code on your HomiQ Command Center before unlocking your door.
+                Every technician visit requires a cryptographic double-blind verification. Confirm the 6-digit dynamic passcode or scan the encrypted QR code on your HomiQ Dashboard before unlocking your door.
               </p>
               
               <ul className="space-y-3 text-xs text-slate-300 pt-2">

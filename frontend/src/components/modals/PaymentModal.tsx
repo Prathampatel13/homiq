@@ -37,23 +37,77 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
       setLoading(true);
       setError(null);
 
+      // Load Razorpay Script dynamically
+      const loadRazorpayScript = () => {
+        return new Promise((resolve) => {
+          if ((window as any).Razorpay) {
+            resolve(true);
+            return;
+          }
+          const script = document.createElement('script');
+          script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+          script.onload = () => resolve(true);
+          script.onerror = () => resolve(false);
+          document.body.appendChild(script);
+        });
+      };
+
+      const isLoaded = await loadRazorpayScript();
+      if (!isLoaded) {
+        setError('Razorpay SDK failed to load. Are you online?');
+        setLoading(false);
+        return;
+      }
+
+      // Create Order on Backend
       const orderRes = await paymentsApi.createOrder(booking.id);
 
-      await paymentsApi.verifyPayment({
-        razorpay_order_id: orderRes.id || `order_test_${booking.id}`,
-        razorpay_payment_id: `pay_${Date.now()}`,
-        razorpay_signature: 'sig_verified_homiq_secure',
-      });
+      const options = {
+        key: orderRes.key_id,
+        amount: orderRes.amount,
+        currency: orderRes.currency,
+        name: "HomiQ",
+        description: `Payment for Booking #${booking.booking_number || booking.id}`,
+        order_id: orderRes.id,
+        handler: async function (response: any) {
+          try {
+            setLoading(true);
+            await paymentsApi.verifyPayment({
+              razorpay_order_id: response.razorpay_order_id,
+              razorpay_payment_id: response.razorpay_payment_id,
+              razorpay_signature: response.razorpay_signature,
+            });
+            setSuccess(true);
+            setTimeout(() => {
+              onSuccess();
+              onClose();
+            }, 1800);
+          } catch (err: any) {
+            console.error('Payment verification failure:', err);
+            setError(err?.response?.data?.detail || 'Payment verification failed. Please contact support.');
+            setLoading(false);
+          }
+        },
+        prefill: {
+          name: "Customer",
+          email: "customer@homiq.com",
+          contact: "9999999999"
+        },
+        theme: {
+          color: "#99b898"
+        },
+        modal: {
+          ondismiss: function() {
+            setLoading(false);
+          }
+        }
+      };
 
-      setSuccess(true);
-      setTimeout(() => {
-        onSuccess();
-        onClose();
-      }, 1800);
+      const paymentObject = new (window as any).Razorpay(options);
+      paymentObject.open();
     } catch (err: any) {
       console.error('Payment failure:', err);
       setError(err?.response?.data?.detail || 'Payment authorization failed. Please try again.');
-    } finally {
       setLoading(false);
     }
   };

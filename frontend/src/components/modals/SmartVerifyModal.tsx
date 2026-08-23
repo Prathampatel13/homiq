@@ -32,6 +32,14 @@ export const SmartVerifyModal: React.FC<SmartVerifyModalProps> = ({
   const [copied, setCopied] = useState(false);
   const [loading, setLoading] = useState(true);
   const [isVerified, setIsVerified] = useState(false);
+  const [timeLeft, setTimeLeft] = useState<number>(300); // 5 minutes
+
+  const getTechName = (tech: any) => {
+    if (!tech) return 'Assigned Professional';
+    if (typeof tech.full_name === 'string') return tech.full_name;
+    if (tech.user?.full_name) return tech.user.full_name;
+    return 'Master Technician';
+  };
 
   useEffect(() => {
     if (!isOpen || !booking) return;
@@ -49,7 +57,7 @@ export const SmartVerifyModal: React.FC<SmartVerifyModalProps> = ({
           if (otpRes.status === 'fulfilled' && otpRes.value) {
             setOtpCode(otpRes.value.otp_code || String(Math.floor(100000 + Math.random() * 900000)));
           } else {
-            setOtpCode(String(booking.id * 1000 + 421).padStart(6, '0'));
+            setOtpCode(String(Math.floor(100000 + Math.random() * 900000)));
           }
 
           if (qrRes.status === 'fulfilled' && (qrRes.value as any)?.qr_code_url) {
@@ -63,9 +71,11 @@ export const SmartVerifyModal: React.FC<SmartVerifyModalProps> = ({
       }
     };
 
+    // Initial fetch
     fetchVerificationCredentials();
 
-    const interval = setInterval(async () => {
+    // Verification Polling
+    const pollInterval = setInterval(async () => {
       try {
         const statusRes = await bookingsApi.getVerificationStatus(booking.id);
         if (statusRes && (statusRes.qr_verified || statusRes.otp_verified || statusRes.current_status === 'in_progress')) {
@@ -77,9 +87,21 @@ export const SmartVerifyModal: React.FC<SmartVerifyModalProps> = ({
       }
     }, 4000);
 
+    // 5-minute regeneration timer
+    const countdownInterval = setInterval(() => {
+      setTimeLeft((prev) => {
+        if (prev <= 1) {
+          fetchVerificationCredentials(); // Regenerate!
+          return 300;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+
     return () => {
       isMounted = false;
-      clearInterval(interval);
+      clearInterval(pollInterval);
+      clearInterval(countdownInterval);
     };
   }, [isOpen, booking, onVerified]);
 
@@ -107,7 +129,7 @@ export const SmartVerifyModal: React.FC<SmartVerifyModalProps> = ({
         </button>
 
         {/* Header */}
-        <div className="flex items-center gap-3 mb-6">
+        <div className="flex items-center gap-3 mb-4">
           <div className="w-10 h-10 rounded-xl bg-sage-400/15 border border-sage-400/30 flex items-center justify-center text-sage-400 shrink-0 shadow-accent">
             <ShieldCheck className="w-5 h-5" />
           </div>
@@ -116,6 +138,26 @@ export const SmartVerifyModal: React.FC<SmartVerifyModalProps> = ({
             <p className="text-xs text-slate-400 font-mono">Booking #{booking.booking_number || booking.id}</p>
           </div>
         </div>
+
+        {!isVerified && (
+          <div className="flex items-center gap-3 p-3 rounded-xl bg-dark-850/50 border border-dark-750 mb-6">
+            <div className="w-10 h-10 rounded-full bg-dark-800 border-2 border-dark-700 flex items-center justify-center shrink-0">
+              <span className="text-sm font-bold text-sage-400">{getTechName(booking.technician).charAt(0)}</span>
+            </div>
+            <div className="flex-1">
+              <h4 className="text-sm font-bold text-white flex items-center gap-1.5">
+                {getTechName(booking.technician)}
+              </h4>
+              <p className="text-[10px] text-slate-400 font-mono uppercase tracking-wider">Match this face & name at the door</p>
+            </div>
+            <div className="text-right">
+              <span className="text-xs font-mono font-bold text-sage-400 block">
+                {Math.floor(timeLeft / 60)}:{(timeLeft % 60).toString().padStart(2, '0')}
+              </span>
+              <span className="text-[10px] text-slate-500 uppercase tracking-wider">Expires In</span>
+            </div>
+          </div>
+        )}
 
         {isVerified ? (
           <div className="py-8 text-center space-y-4">

@@ -8,7 +8,17 @@ import {
   ChevronRight, 
   ArrowRight,
   Filter,
-  Sparkles
+  Sparkles,
+  Droplet,
+  Zap,
+  Wind,
+  Monitor,
+  Paintbrush,
+  Bath,
+  Home,
+  ShieldCheck,
+  TreePine,
+  DoorOpen
 } from 'lucide-react';
 import { servicesApi } from '../api/services';
 import { Service, ServiceCategory } from '../types';
@@ -27,13 +37,38 @@ export const ServicesPage: React.FC = () => {
     const fetchData = async () => {
       try {
         setLoading(true);
-        const [cats, servs] = await Promise.all([
-          servicesApi.getCategories(),
-          servicesApi.getServices({}),
-        ]);
-        setCategories(Array.isArray(cats) ? cats : []);
-        const sList = Array.isArray(servs) ? servs : (servs as any)?.items || [];
-        setServices(sList);
+        const staticCategories = [
+          { id: 1, name: 'Plumbing', description: '', icon: 'Droplet' },
+          { id: 2, name: 'Electrical', description: '', icon: 'Zap' },
+          { id: 3, name: 'AC & Cooling', description: '', icon: 'Wind' },
+          { id: 4, name: 'Appliances', description: '', icon: 'Monitor' },
+          { id: 5, name: 'Carpentry', description: '', icon: 'Wrench' },
+          { id: 6, name: 'Cleaning', description: '', icon: 'Sparkles' },
+          { id: 7, name: 'Painting', description: '', icon: 'Paintbrush' },
+          { id: 8, name: 'Bathroom', description: '', icon: 'Bath' },
+          { id: 9, name: 'Home Maintenance', description: '', icon: 'Home' },
+          { id: 10, name: 'Security & Smart Home', description: '', icon: 'ShieldCheck' },
+          { id: 11, name: 'Outdoor & Garden', description: '', icon: 'TreePine' },
+          { id: 12, name: 'Windows & Doors', description: '', icon: 'DoorOpen' },
+        ];
+        
+        const staticServices = [
+          { id: 101, category_id: 1, name: 'Plumbing', description: 'Tap Repair, Pipe Leakage, Drain Cleaning, Sink Repair, Toilet Repair, Water Tank Repair, Bathroom Plumbing', price: 299, duration_minutes: 30 },
+          { id: 102, category_id: 2, name: 'Electrical', description: 'Switch & Socket Repair, Fan Installation, Light Installation, Wiring Repair, MCB Repair, Short-Circuit Repair, Inverter Installation', price: 199, duration_minutes: 30 },
+          { id: 103, category_id: 3, name: 'AC & Cooling', description: 'AC Service, AC Repair, AC Installation, AC Gas Refill, AC Cleaning, Cooler Repair', price: 499, duration_minutes: 60 },
+          { id: 104, category_id: 4, name: 'Appliances', description: 'Refrigerator Repair, Washing Machine Repair, Microwave Repair, Geyser Repair, Water Purifier Service', price: 349, duration_minutes: 45 },
+          { id: 105, category_id: 5, name: 'Carpentry', description: 'Furniture Repair, Door Repair, Lock Installation, Cabinet Repair, Shelf Installation, Bed Repair', price: 249, duration_minutes: 60 },
+          { id: 106, category_id: 6, name: 'Cleaning', description: 'Full Home Cleaning, Kitchen Cleaning, Bathroom Cleaning, Sofa Cleaning, Carpet Cleaning, Floor Cleaning', price: 999, duration_minutes: 120 },
+          { id: 107, category_id: 7, name: 'Painting', description: 'Room Painting, Full Home Painting, Wall Touch-up, Exterior Painting, Waterproof Painting', price: 1499, duration_minutes: 240 },
+          { id: 108, category_id: 8, name: 'Bathroom', description: 'Bathroom Deep Cleaning, Shower Repair, Toilet Repair, Basin Repair, Exhaust Fan Installation', price: 399, duration_minutes: 60 },
+          { id: 109, category_id: 9, name: 'Home Maintenance', description: 'General Inspection, Minor Repairs, Wall Repair, Grouting, Waterproofing, Home Inspection', price: 499, duration_minutes: 90 },
+          { id: 110, category_id: 10, name: 'Security & Smart Home', description: 'CCTV Installation, Smart Lock Installation, Doorbell Installation, Wi-Fi Camera Setup', price: 599, duration_minutes: 90 },
+          { id: 111, category_id: 11, name: 'Outdoor & Garden', description: 'Garden Maintenance, Lawn Cleaning, Plant Maintenance, Balcony Cleaning', price: 349, duration_minutes: 60 },
+          { id: 112, category_id: 12, name: 'Windows & Doors', description: 'Door Alignment, Door Handle Repair, Window Repair, Glass Replacement, Mosquito Net Installation', price: 299, duration_minutes: 45 },
+        ];
+
+        setCategories(staticCategories as any);
+        setServices(staticServices as any);
       } catch (err) {
         console.error('Failed to load services catalog:', err);
       } finally {
@@ -114,7 +149,24 @@ export const ServicesPage: React.FC = () => {
           <LoadingState message="Loading architectural service catalog..." />
         ) : filteredServices.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredServices.map((service) => (
+            {filteredServices.map((service) => {
+              const iconMap: Record<number, any> = {
+                1: Droplet,
+                2: Zap,
+                3: Wind,
+                4: Monitor,
+                5: Wrench,
+                6: Sparkles,
+                7: Paintbrush,
+                8: Bath,
+                9: Home,
+                10: ShieldCheck,
+                11: TreePine,
+                12: DoorOpen,
+              };
+              const Icon = service.category_id ? iconMap[service.category_id as number] || Wrench : Wrench;
+
+              return (
               <div
                 key={service.id}
                 onClick={() => navigate(`/booking/new?service_id=${service.id}`)}
@@ -123,17 +175,17 @@ export const ServicesPage: React.FC = () => {
                 <div>
                   <div className="flex items-center justify-between mb-4">
                     <div className="w-12 h-12 rounded-2xl bg-dark-800 group-hover:bg-sage-400/15 border border-dark-750 group-hover:border-sage-400/30 flex items-center justify-center text-sage-400 transition-colors">
-                      <Wrench className="w-6 h-6" />
+                      <Icon className="w-6 h-6" />
                     </div>
                     <span className="text-xs font-mono font-bold text-white px-2.5 py-1 rounded-lg bg-dark-800 border border-dark-750">
-                      ₹{(service.price || service.base_price || 0).toFixed(2)}
+                      Starts ₹{(service.price || service.base_price || 0).toFixed(2)}
                     </span>
                   </div>
 
                   <h3 className="text-base font-bold text-white tracking-tight group-hover:text-sage-300 transition-colors mb-2">
                     {service.name}
                   </h3>
-                  <p className="text-xs text-slate-400 leading-relaxed line-clamp-3">
+                  <p className="text-xs text-slate-400 leading-relaxed">
                     {service.description || 'Certified multi-point checkup, troubleshooting, precision servicing and workmanship guarantee.'}
                   </p>
                 </div>
@@ -141,7 +193,7 @@ export const ServicesPage: React.FC = () => {
                 <div className="pt-5 mt-5 border-t border-dark-750/70 flex items-center justify-between text-xs text-slate-400 font-mono">
                   <span className="flex items-center gap-1.5">
                     <Clock className="w-3.5 h-3.5 text-sage-400" />
-                    <span>{service.duration_minutes || 60} mins</span>
+                    <span>~{service.duration_minutes || 60} mins</span>
                   </span>
                   <span className="text-sage-400 group-hover:translate-x-1 transition-transform flex items-center gap-1 font-semibold">
                     <span>Book Service</span>
@@ -149,7 +201,7 @@ export const ServicesPage: React.FC = () => {
                   </span>
                 </div>
               </div>
-            ))}
+            )})}
           </div>
         ) : (
           <EmptyState

@@ -11,7 +11,8 @@ import {
   Briefcase, 
   Layers,
   Moon,
-  Sun
+  Sun,
+  Bell
 } from 'lucide-react';
 import { useAuthStore } from '../../store/useAuthStore';
 import { UserRole } from '../../types';
@@ -21,6 +22,23 @@ export const Navbar: React.FC = () => {
   const { user, isAuthenticated, logout, getEffectiveRole } = useAuthStore();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
+  const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
+  const [notifications, setNotifications] = useState([
+    {
+      id: 1,
+      title: 'Booking Confirmed',
+      message: 'Your AC Service has been confirmed for tomorrow at 10:00 AM.',
+      time: '2 mins ago',
+      read: false,
+    },
+    {
+      id: 2,
+      title: 'Welcome to HomiQ',
+      message: 'Thanks for setting up your Home Account.',
+      time: '1 day ago',
+      read: true,
+    }
+  ]);
   const [isDarkMode, setIsDarkMode] = useState(() => {
     return localStorage.getItem('theme') !== 'light';
   });
@@ -107,7 +125,7 @@ export const Navbar: React.FC = () => {
                 }`}
               >
                 <LayoutDashboard className="w-4 h-4" />
-                <span>Command Center</span>
+                <span>Dashboard</span>
               </Link>
             )}
           </div>
@@ -116,6 +134,76 @@ export const Navbar: React.FC = () => {
           <div className="hidden md:flex items-center gap-3">
             {isAuthenticated && user ? (
               <div className="flex items-center gap-3">
+                {/* Notification Dropdown */}
+                <div className="relative">
+                  <button
+                    onClick={() => setIsNotificationsOpen(!isNotificationsOpen)}
+                    className="p-2 relative rounded-xl bg-dark-850 hover:bg-dark-800 border border-dark-750 text-slate-300 hover:text-white transition-colors flex items-center justify-center"
+                    aria-label="Notifications"
+                  >
+                    <Bell className="w-4 h-4" />
+                    {notifications.some(n => !n.read) && (
+                      <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-sage-400"></span>
+                    )}
+                  </button>
+
+                  {isNotificationsOpen && (
+                    <div 
+                      className="absolute right-0 mt-2 w-80 rounded-2xl bg-dark-900 border border-dark-750 p-2 shadow-modal z-50 animate-in fade-in zoom-in-95 duration-100"
+                      onMouseLeave={() => setIsNotificationsOpen(false)}
+                    >
+                      <div className="px-3 py-2 border-b border-dark-750 mb-1 flex items-center justify-between">
+                        <p className="text-xs font-semibold text-white">Notifications</p>
+                        <button 
+                          onClick={() => setNotifications(notifications.map(n => ({ ...n, read: true })))}
+                          className="text-[10px] text-sage-400 hover:text-sage-300 font-medium"
+                        >
+                          Mark all as read
+                        </button>
+                      </div>
+
+                      <div className="max-h-64 overflow-y-auto pr-1">
+                        <div className="flex flex-col gap-1">
+                          {notifications.length > 0 ? (
+                            notifications.map((notification) => (
+                              <button 
+                                key={notification.id}
+                                onClick={() => setNotifications(notifications.map(n => n.id === notification.id ? { ...n, read: true } : n))}
+                                className={`w-full flex items-start gap-3 px-3 py-2 text-left hover:bg-dark-850 rounded-xl transition-colors relative group ${notification.read ? 'opacity-70' : ''}`}
+                              >
+                                {notification.read ? (
+                                  <div className="w-2 h-2 rounded-full bg-transparent border border-dark-600 shrink-0 mt-1.5" />
+                                ) : (
+                                  <div className="w-2 h-2 rounded-full bg-sage-400 shrink-0 mt-1.5" />
+                                )}
+                                <div>
+                                  <p className="text-xs font-medium text-white mb-0.5">{notification.title}</p>
+                                  <p className="text-[11px] text-slate-400 leading-relaxed">{notification.message}</p>
+                                  <p className="text-[10px] text-slate-500 mt-1">{notification.time}</p>
+                                </div>
+                              </button>
+                            ))
+                          ) : (
+                            <p className="text-xs text-slate-500 text-center py-4">No notifications yet.</p>
+                          )}
+                        </div>
+                      </div>
+                      
+                      <div className="mt-1 pt-1 border-t border-dark-750">
+                        <button 
+                          onClick={() => {
+                            setIsNotificationsOpen(false);
+                            navigate('/notifications');
+                          }}
+                          className="w-full text-center py-2 text-xs font-medium text-slate-300 hover:text-white hover:bg-dark-850 rounded-xl transition-colors"
+                        >
+                          View all notifications
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
                 {/* Theme Toggle */}
                 <button
                   onClick={toggleTheme}
@@ -233,7 +321,7 @@ export const Navbar: React.FC = () => {
 
       {/* Mobile dropdown drawer */}
       {isMenuOpen && (
-        <div className="md:hidden border-t border-dark-750 bg-dark-950/95 backdrop-blur-2xl px-4 pt-3 pb-6 space-y-2">
+        <div className="md:hidden border-t border-dark-750 bg-white/95 dark:bg-dark-950/95 backdrop-blur-2xl px-4 pt-3 pb-6 space-y-2">
           <Link
             to="/services"
             onClick={() => setIsMenuOpen(false)}
@@ -258,7 +346,7 @@ export const Navbar: React.FC = () => {
                 className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-slate-200 hover:bg-dark-850"
               >
                 <LayoutDashboard className="w-4 h-4 text-sage-400" />
-                <span>Command Center</span>
+                <span>Dashboard</span>
               </Link>
               <button
                 onClick={handleLogout}

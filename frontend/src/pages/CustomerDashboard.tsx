@@ -36,6 +36,8 @@ import { BookingDetailsModal } from '../components/modals/BookingDetailsModal';
 import { AddressModal } from '../components/modals/AddressModal';
 import { PaymentModal } from '../components/modals/PaymentModal';
 import { ReviewModal } from '../components/modals/ReviewModal';
+import { LiveTrackingModal } from '../components/modals/LiveTrackingModal';
+import { LiveTrackingWidget } from '../components/ui/LiveTrackingWidget';
 
 export const CustomerDashboard: React.FC = () => {
   const navigate = useNavigate();
@@ -46,11 +48,13 @@ export const CustomerDashboard: React.FC = () => {
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
   const [loading, setLoading] = useState(true);
 
+
   // Modals state
   const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null);
   const [verifyModalBooking, setVerifyModalBooking] = useState<Booking | null>(null);
   const [paymentModalBooking, setPaymentModalBooking] = useState<Booking | null>(null);
   const [reviewModalBooking, setReviewModalBooking] = useState<Booking | null>(null);
+  const [trackingModalBooking, setTrackingModalBooking] = useState<Booking | null>(null);
   const [addressModalOpen, setAddressModalOpen] = useState(false);
   const [editingAddress, setEditingAddress] = useState<CustomerAddress | null>(null);
 
@@ -74,7 +78,7 @@ export const CustomerDashboard: React.FC = () => {
         setNotifications(notifsRes.value);
       }
     } catch (err) {
-      console.error('Failed to load customer command center:', err);
+      console.error('Failed to load customer DASHBOARD:', err);
     } finally {
       setLoading(false);
     }
@@ -86,6 +90,10 @@ export const CustomerDashboard: React.FC = () => {
 
   const activeBooking = bookings.find((b) => 
     ['assigned', 'accepted', 'in_progress', 'arrived', 'start_trip', 'pending', 'confirmed', 'on_the_way'].includes(b.status)
+  );
+
+  const routingBooking = bookings.find((b) => 
+    ['assigned', 'accepted', 'on_the_way', 'pending', 'confirmed'].includes(b.status)
   );
 
   const pastBookings = bookings.filter((b) => 
@@ -110,7 +118,7 @@ export const CustomerDashboard: React.FC = () => {
   };
 
   if (loading) {
-    return <LoadingState message="Connecting to your Home Command Center..." />;
+    return <LoadingState message="Connecting to your Home DASHBOARD..." />;
   }
 
   return (
@@ -120,11 +128,11 @@ export const CustomerDashboard: React.FC = () => {
             HEADER & PRIMARY TOP ACTION
         ────────────────────────────────────────────────────────────────────────── */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-dark-750">
-          <div>
+                <div>
             <div className="flex items-center gap-2 mb-1">
               <span className="w-2.5 h-2.5 rounded-full bg-sage-400 animate-pulse" />
               <span className="text-xs font-mono tracking-widest text-sage-400 uppercase">
-                RESIDENTIAL COMMAND CENTER
+                RESIDENTIAL DASHBOARD
               </span>
             </div>
             <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-white">
@@ -190,6 +198,10 @@ export const CustomerDashboard: React.FC = () => {
         {/* ──────────────────────────────────────────────────────────────────────────
             CURRENT ACTIVE SERVICE OR ZERO-STATE BANNER
         ────────────────────────────────────────────────────────────────────────── */}
+        {/* 🚀 LIVE TRACKING WIDGET */}
+        {routingBooking && <LiveTrackingWidget booking={routingBooking} />}
+
+        {/* ⚡ CURRENT ACTIVE SERVICE OR ZERO-STATE BANNER */}
         <div className="space-y-4">
           <h2 className="text-lg font-bold text-white tracking-tight flex items-center gap-2">
             <span>Current Service Dispatch</span>
@@ -416,8 +428,7 @@ export const CustomerDashboard: React.FC = () => {
             <div className="p-8 rounded-2xl bg-dark-900/50 border border-dark-750 text-center text-xs text-slate-400">
               No historical services recorded yet. Your completed bookings and workmanship reports will appear here.
             </div>
-          )}
-        </div>
+          )}        </div>
       </div>
 
       {/* Modals */}
@@ -438,8 +449,18 @@ export const CustomerDashboard: React.FC = () => {
             setReviewModalBooking(selectedBooking);
             setSelectedBooking(null);
           }}
+          onOpenTracking={() => {
+            setTrackingModalBooking(selectedBooking);
+            setSelectedBooking(null);
+          }}
         />
       )}
+
+      <LiveTrackingModal
+        booking={trackingModalBooking}
+        isOpen={!!trackingModalBooking}
+        onClose={() => setTrackingModalBooking(null)}
+      />
 
       {verifyModalBooking && (
         <SmartVerifyModal
@@ -491,3 +512,6 @@ export const CustomerDashboard: React.FC = () => {
     </div>
   );
 };
+
+
+

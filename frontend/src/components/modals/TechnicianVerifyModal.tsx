@@ -101,7 +101,7 @@ export const TechnicianVerifyModal: React.FC<TechnicianVerifyModalProps> = ({
                 autoFocus
               />
               <p className="text-[11px] text-slate-400 leading-normal">
-                Request the 6-digit passcode displayed on the customer's HomiQ Command Center screen.
+                Request the 6-digit passcode displayed on the customer's HomiQ Dashboard screen.
               </p>
             </div>
 

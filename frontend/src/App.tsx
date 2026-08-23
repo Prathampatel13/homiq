@@ -4,6 +4,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Navbar } from './components/common/Navbar';
 import { Footer } from './components/common/Footer';
 import { MobileBottomNav } from './components/common/MobileBottomNav';
+import { FloatingNav } from './components/common/FloatingNav';
 import { ToastProvider } from './components/ui/Toast';
 
 import { LandingPage } from './pages/LandingPage';
@@ -129,6 +130,7 @@ export const App: React.FC = () => {
             </main>
             <Footer />
             <MobileBottomNav />
+            <FloatingNav />
           </div>
         </Router>
       </ToastProvider>

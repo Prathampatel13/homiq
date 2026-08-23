@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { User, Mail, Lock, Phone, AlertCircle, Loader2, ArrowRight, ShieldCheck, Building2, Wrench } from 'lucide-react';
+import { User, Mail, Lock, Phone, AlertCircle, Loader2, ArrowRight, ShieldCheck, Building2, Wrench, Eye, EyeOff } from 'lucide-react';
 import { authApi } from '../api/auth';
 import { useAuthStore } from '../store/useAuthStore';
 import { HomiQLogo } from '../components/brand/HomiQLogo';
@@ -14,6 +14,7 @@ export const RegisterPage: React.FC = () => {
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -115,7 +116,11 @@ export const RegisterPage: React.FC = () => {
                   type="text"
                   value={fullName}
                   onChange={(e) => setFullName(e.target.value)}
-                  placeholder={role === 'company' ? 'Acme Facilities Corp' : 'Pratham Patel'}
+                  placeholder={
+                    role === 'company' ? 'Acme Facilities Corp' : 
+                    role === 'technician' ? 'Jane Smith' : 
+                    'John Doe'
+                  }
                   className="input-field pl-10"
                   required
                 />
@@ -143,9 +148,10 @@ export const RegisterPage: React.FC = () => {
                 <Phone className="w-4 h-4 text-slate-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
                 <input
                   type="tel"
+                  inputMode="numeric"
                   value={phone}
-                  onChange={(e) => setPhone(e.target.value)}
-                  placeholder="+91 98765 43210"
+                  onChange={(e) => setPhone(e.target.value.replace(/[^0-9]/g, ''))}
+                  placeholder="9876543210"
                   className="input-field pl-10"
                 />
               </div>
@@ -156,13 +162,20 @@ export const RegisterPage: React.FC = () => {
               <div className="relative">
                 <Lock className="w-4 h-4 text-slate-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
                 <input
-                  type="password"
+                  type={showPassword ? "text" : "password"}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="••••••••"
-                  className="input-field pl-10"
+                  className="input-field pl-10 pr-10"
                   required
                 />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300 transition-colors"
+                >
+                  {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
               </div>
             </div>
 

@@ -45,7 +45,7 @@ export const BookingPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
 
   // Form State
-  const [selectedService, setSelectedService] = useState<Service | null>(null);
+  const [selectedServices, setSelectedServices] = useState<Service[]>([]);
   const [selectedAddress, setSelectedAddress] = useState<CustomerAddress | null>(null);
   const [bookingDate, setBookingDate] = useState<string>('');
   const [preferredTime, setPreferredTime] = useState<string>('10:00 AM');
@@ -78,7 +78,48 @@ export const BookingPage: React.FC = () => {
 
         let allServices: Service[] = [];
         if (servsRes.status === 'fulfilled') {
-          allServices = Array.isArray(servsRes.value) ? servsRes.value : (servsRes.value as any)?.items || [];
+          const staticPackages = [
+            // AC & Cooling (Category 3)
+            { id: 1001, category_id: 3, name: 'AC Service', description: 'Comprehensive AC servicing, filter cleaning, and performance check.', price: 599, duration_minutes: 45, is_active: true },
+            { id: 1002, category_id: 3, name: 'AC Repair', description: 'Expert diagnosis and repair for all types of AC issues.', price: 499, duration_minutes: 60, is_active: true },
+            { id: 1003, category_id: 3, name: 'AC Installation', description: 'Professional installation of Split or Window AC units.', price: 1499, duration_minutes: 120, is_active: true },
+            { id: 1004, category_id: 3, name: 'AC Gas Refill', description: 'Leakage checking and full gas refill for optimal cooling.', price: 2499, duration_minutes: 90, is_active: true },
+            { id: 1005, category_id: 3, name: 'AC Cleaning', description: 'Deep cleaning of indoor and outdoor AC units.', price: 799, duration_minutes: 60, is_active: true },
+            { id: 1006, category_id: 3, name: 'Cooler Repair', description: 'Motor repair, pump replacement, and general servicing for coolers.', price: 399, duration_minutes: 45, is_active: true },
+            
+            // Plumbing (Category 1)
+            { id: 2001, category_id: 1, name: 'Tap Repair', description: 'Fix leaking taps or install new ones.', price: 199, duration_minutes: 30, is_active: true },
+            { id: 2002, category_id: 1, name: 'Pipe Leakage', description: 'Fix pipe leaks and water seepage issues.', price: 299, duration_minutes: 60, is_active: true },
+            { id: 2003, category_id: 1, name: 'Drain Cleaning', description: 'Clear clogged drains and pipes.', price: 399, duration_minutes: 45, is_active: true },
+
+            // Electrical (Category 2)
+            { id: 3001, category_id: 2, name: 'Switch & Socket Repair', description: 'Repair or replace damaged switches and sockets.', price: 149, duration_minutes: 30, is_active: true },
+            { id: 3002, category_id: 2, name: 'Fan Installation', description: 'Ceiling or exhaust fan installation and repair.', price: 199, duration_minutes: 45, is_active: true },
+            { id: 3003, category_id: 2, name: 'Wiring Repair', description: 'Fix electrical wiring faults and short circuits.', price: 499, duration_minutes: 60, is_active: true },
+
+            // Other Categories (4-12 placeholders so they aren't empty)
+            { id: 4001, category_id: 4, name: 'Appliance Repair', description: 'Washing machine and refrigerator repair.', price: 349, duration_minutes: 60, is_active: true },
+            { id: 5001, category_id: 5, name: 'Furniture Assembly', description: 'Professional carpentry and furniture assembly.', price: 249, duration_minutes: 60, is_active: true },
+            { id: 6001, category_id: 6, name: 'Deep Cleaning', description: 'Complete home deep cleaning service.', price: 999, duration_minutes: 180, is_active: true },
+            { id: 7001, category_id: 7, name: 'Wall Painting', description: 'Interior and exterior wall painting.', price: 1499, duration_minutes: 240, is_active: true },
+            { id: 8001, category_id: 8, name: 'Bathroom Servicing', description: 'Bathroom plumbing and deep cleaning.', price: 399, duration_minutes: 90, is_active: true },
+            { id: 9001, category_id: 9, name: 'General Maintenance', description: 'Minor home repairs and inspections.', price: 499, duration_minutes: 60, is_active: true },
+            { id: 10001, category_id: 10, name: 'Smart Lock Setup', description: 'Installation of security cameras and smart locks.', price: 599, duration_minutes: 120, is_active: true },
+            { id: 11001, category_id: 11, name: 'Garden Maintenance', description: 'Lawn mowing and plant care.', price: 349, duration_minutes: 60, is_active: true },
+            { id: 12001, category_id: 12, name: 'Door Alignment', description: 'Fixing door hinges and window frames.', price: 299, duration_minutes: 45, is_active: true },
+          ];
+
+          allServices = staticPackages as any;
+          
+          // If navigated from a specific category on Services page (e.g. service_id=103)
+          const preId = searchParams.get('service_id');
+          if (preId) {
+            const catId = Number(preId) - 100; // 103 -> 3
+            if (catId >= 1 && catId <= 12) {
+              allServices = allServices.filter(s => s.category_id === catId);
+            }
+          }
+
           setServices(allServices);
         }
         if (catsRes.status === 'fulfilled' && Array.isArray(catsRes.value)) {
@@ -95,7 +136,7 @@ export const BookingPage: React.FC = () => {
         if (preselectedId && allServices.length > 0) {
           const found = allServices.find((s) => s.id === Number(preselectedId));
           if (found) {
-            setSelectedService(found);
+            setSelectedServices([found]);
             setCurrentStep(2); // Jump to address
           }
         }
@@ -110,10 +151,10 @@ export const BookingPage: React.FC = () => {
   }, [isAuthenticated, searchParams]);
 
   const handleApplyCoupon = async () => {
-    if (!couponCode.trim() || !selectedService) return;
+    if (!couponCode.trim() || selectedServices.length === 0) return;
     try {
       setCouponError(null);
-      const res = await couponsApi.validateCoupon(couponCode, selectedService.price || selectedService.base_price || 0);
+      const baseTotal = selectedServices.reduce((sum, s) => sum + (s.price || s.base_price || 0), 0); const res = await couponsApi.validateCoupon(couponCode, baseTotal);
       setAppliedCoupon(res);
     } catch (err: any) {
       setCouponError(err?.response?.data?.detail || 'Invalid or expired coupon code.');
@@ -122,8 +163,7 @@ export const BookingPage: React.FC = () => {
   };
 
   const calculateFinalPrice = () => {
-    if (!selectedService) return 0;
-    const base = selectedService.price || selectedService.base_price || 0;
+    if (selectedServices.length === 0) return 0; const base = selectedServices.reduce((sum, s) => sum + (s.price || s.base_price || 0), 0);
     if (appliedCoupon?.discount_amount) {
       return Math.max(0, base - appliedCoupon.discount_amount);
     }
@@ -135,7 +175,7 @@ export const BookingPage: React.FC = () => {
       navigate('/login?redirect=/booking/new');
       return;
     }
-    if (!selectedService || !selectedAddress || !bookingDate) {
+    if (selectedServices.length === 0 || !selectedAddress || !bookingDate) {
       setSubmitError('Please complete all required fields.');
       return;
     }
@@ -144,17 +184,19 @@ export const BookingPage: React.FC = () => {
       setSubmitting(true);
       setSubmitError(null);
 
-      // Create booking payload conforming to backend schema
-      const payload = {
-        service_id: selectedService.id,
-        address_id: selectedAddress.id,
-        booking_date: bookingDate,
-        preferred_time: preferredTime,
-        customer_note: customerNotes || undefined,
-        estimated_price: calculateFinalPrice(),
-      };
-
-      const newBooking = await bookingsApi.createBooking(payload);
+      // Create multiple bookings if needed
+      const bookingPromises = selectedServices.map(svc => {
+        return bookingsApi.createBooking({
+          service_id: svc.id,
+          address_id: selectedAddress.id,
+          booking_date: bookingDate,
+          preferred_time: preferredTime,
+          customer_note: customerNotes || undefined,
+          estimated_price: (svc.price || svc.base_price || 0),
+        });
+      });
+      const bookings = await Promise.all(bookingPromises);
+      const newBooking = bookings[0];
       setConfirmedBooking(newBooking);
 
       // Auto-initiate payment order
@@ -170,57 +212,70 @@ export const BookingPage: React.FC = () => {
       setSubmitting(false);
     }
   };
-
   if (loading) {
     return <LoadingState message="Configuring Booking Stepper..." />;
   }
 
   if (confirmedBooking) {
+    const serviceNames = (selectedServices || []).map(s => s?.name || '').filter(Boolean).join(", ") || "Service";
+    const refId = confirmedBooking?.booking_number || confirmedBooking?.id || "Pending";
+    let formattedDate = bookingDate || '';
+    try {
+      if (bookingDate) {
+        formattedDate = new Date(bookingDate).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+      }
+    } catch (e) {
+      formattedDate = bookingDate;
+    }
+    const slotStart = (preferredTime || '').split('-')[0]?.trim() || preferredTime || '';
+
     return (
-      <div className="min-h-screen bg-dark-950 py-16 text-white flex items-center justify-center">
-        <div className="max-w-lg w-full p-8 rounded-3xl bg-dark-900 border border-dark-750 text-center shadow-modal space-y-6">
-          <div className="w-16 h-16 rounded-full bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center text-emerald-400 mx-auto shadow-accent">
-            <CheckCircle2 className="w-8 h-8" />
+      <div className="min-h-screen bg-dark-950 py-16 text-white flex items-center justify-center px-4">
+        <div className="max-w-[420px] w-full p-8 rounded-[32px] bg-dark-900 border border-dark-750 text-center shadow-modal space-y-7">
+          
+          <div className="w-[72px] h-[72px] rounded-full bg-emerald-500 flex items-center justify-center text-white mx-auto shadow-accent">
+            <CheckCircle2 className="w-10 h-10" />
           </div>
 
-          <div>
-            <span className="text-xs font-mono uppercase text-sage-400 tracking-wider">ORDER CONFIRMED</span>
-            <h2 className="text-2xl font-bold text-white mt-1">Your Booking Is Scheduled</h2>
-            <p className="text-xs text-slate-400 font-mono mt-1">
-              Booking Ref: #{confirmedBooking.booking_number || confirmedBooking.id}
+          <div className="space-y-2">
+            <h2 className="text-2xl font-bold text-white tracking-tight">Booking Confirmed!</h2>
+            <p className="text-sm text-slate-400 leading-relaxed">
+              Your {serviceNames} has been scheduled.<br />
+              A certified professional will be assigned shortly.
             </p>
           </div>
 
-          <div className="p-5 rounded-2xl bg-dark-850 border border-dark-750 text-left space-y-2 text-xs">
-            <div className="flex justify-between text-slate-400">
+          <div className="p-5 rounded-2xl bg-dark-850 border border-dark-750 text-left space-y-3.5 text-sm">
+            <div className="flex justify-between items-center text-slate-400">
               <span>Service</span>
-              <span className="font-bold text-white">{selectedService?.name}</span>
+              <span className="font-semibold text-white truncate max-w-[200px] text-right">{serviceNames}</span>
             </div>
-            <div className="flex justify-between text-slate-400">
-              <span>Date & Slot</span>
-              <span className="text-slate-200">{bookingDate} • {preferredTime}</span>
+            <div className="flex justify-between items-center text-slate-400">
+              <span>Technician</span>
+              <span className="font-semibold text-white">Assigning...</span>
             </div>
-            <div className="flex justify-between text-slate-400">
-              <span>Dispatch Address</span>
-              <span className="text-slate-200 truncate max-w-[200px]">{selectedAddress?.house_no} {selectedAddress?.area}</span>
+            <div className="flex justify-between items-center text-slate-400">
+              <span>Date & Time</span>
+              <span className="font-semibold text-white text-right">{formattedDate}, {slotStart}</span>
             </div>
-            <div className="pt-2 border-t border-dark-750 flex justify-between font-bold text-white">
-              <span>Total Payable</span>
-              <span className="font-mono">₹{calculateFinalPrice().toFixed(2)}</span>
+            <div className="flex justify-between items-center text-slate-400">
+              <span>Booking ID</span>
+              <span className="font-mono font-bold text-sage-400">#{refId}</span>
             </div>
           </div>
 
-          <div className="p-3.5 rounded-xl bg-dark-800/80 border border-dark-750 text-xs text-slate-300 flex items-center gap-2.5 text-left">
-            <ShieldCheck className="w-5 h-5 text-sage-400 shrink-0" />
-            <span>SmartVerify™ handshake will be enabled on arrival.</span>
-          </div>
-
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 pt-2">
             <button
               onClick={() => navigate('/customer/dashboard')}
-              className="w-full btn-primary text-xs py-3 font-semibold"
+              className="flex-1 btn-primary text-sm py-3.5 font-semibold rounded-xl"
             >
-              Go to Command Center
+              Track Technician
+            </button>
+            <button
+              onClick={() => navigate('/customer/dashboard')}
+              className="flex-1 btn-secondary text-sm py-3.5 font-semibold rounded-xl"
+            >
+              Dashboard
             </button>
           </div>
         </div>
@@ -278,11 +333,11 @@ export const BookingPage: React.FC = () => {
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   {services.map((s) => {
-                    const isSelected = selectedService?.id === s.id;
+                    const isSelected = selectedServices.some(sel => sel.id === s.id);
                     return (
                       <div
                         key={s.id}
-                        onClick={() => setSelectedService(s)}
+                        onClick={() => setSelectedServices(prev => isSelected ? prev.filter(p => p.id !== s.id) : [...prev, s])}
                         className={`p-5 rounded-2xl border transition-all cursor-pointer flex flex-col justify-between ${
                           isSelected
                             ? 'bg-sage-400/15 border-sage-400 text-white shadow-accent ring-1 ring-sage-400/40'
@@ -476,7 +531,7 @@ export const BookingPage: React.FC = () => {
               {currentStep < 4 ? (
                 <button
                   onClick={() => {
-                    if (currentStep === 1 && !selectedService) {
+                    if (currentStep === 1 && selectedServices.length === 0) {
                       alert('Please select a service first.');
                       return;
                     }
@@ -513,7 +568,7 @@ export const BookingPage: React.FC = () => {
             <div className="space-y-3 text-xs">
               <div className="flex justify-between text-slate-400">
                 <span>Selected Service</span>
-                <span className="font-semibold text-white">{selectedService?.name || '—'}</span>
+                <span className="font-semibold text-white">{selectedServices.length > 0 ? selectedServices.map(s => s.name).join(", ") : '-'}</span>
               </div>
 
               <div className="flex justify-between text-slate-400">
@@ -536,7 +591,7 @@ export const BookingPage: React.FC = () => {
               <div className="pt-3 border-t border-dark-750 space-y-2">
                 <div className="flex justify-between text-slate-400">
                   <span>Base Rate</span>
-                  <span className="font-mono text-white">₹{(selectedService?.price || selectedService?.base_price || 0).toFixed(2)}</span>
+                  <span className="font-mono text-white">₹{(selectedServices.reduce((sum, s) => sum + (s.price || s.base_price || 0), 0)).toFixed(2)}</span>
                 </div>
 
                 {appliedCoupon && (
@@ -578,3 +633,4 @@ export const BookingPage: React.FC = () => {
     </div>
   );
 };
+
