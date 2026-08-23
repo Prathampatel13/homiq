@@ -15,6 +15,8 @@ from app.services.report import ReportService
 from app.services.analytics import AnalyticsService
 from app.services.company import CompanyService
 from app.services.jobs import JobService
+from app.services.media import MediaService
+from app.services.cloudinary_service import CloudinaryService, cloudinary_service
 
 __all__ = [
     "BookingService",
@@ -34,4 +36,7 @@ __all__ = [
     "AnalyticsService",
     "CompanyService",
     "JobService",
+    "MediaService",
+    "CloudinaryService",
+    "cloudinary_service",
 ]

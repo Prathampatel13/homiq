@@ -17,6 +17,9 @@ class UserCRUD:
     def get_by_id(self, user_id: int) -> Optional[User]:
         return self.db.get(User, user_id)
 
+    def get_user_by_id(self, user_id: int) -> Optional[User]:
+        return self.get_by_id(user_id)
+
     def get_user_by_email(self, email: str) -> Optional[User]:
         return self.db.scalar(
             select(User).where(User.email == email)
@@ -147,6 +150,19 @@ class UserCRUD:
         self.db.commit()
         self.db.refresh(user)
 
+        return user
+
+    def update_avatar_url(
+        self,
+        user_id: int,
+        avatar_url: Optional[str],
+    ) -> Optional[User]:
+        user = self.get_by_id(user_id)
+        if user is None:
+            return None
+        user.avatar_url = avatar_url
+        self.db.commit()
+        self.db.refresh(user)
         return user
 
     def update_last_login(self, user_id: int) -> None:

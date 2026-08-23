@@ -7,9 +7,9 @@ Admins have full access; customers and technicians have role-scoped access.
 
 from __future__ import annotations
 
-from typing import Any
+from typing import Any, Optional
 
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Body, Depends, status
 from sqlalchemy.orm import Session
 
 from app.database.session import get_db
@@ -541,7 +541,7 @@ def get_assigned_technician(
 )
 def accept_booking(
     booking_id: int,
-    payload: BookingRejectRequest,
+    payload: Optional[BookingRejectRequest] = None,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ) -> Any:
@@ -581,7 +581,7 @@ def accept_booking(
 )
 def reject_booking(
     booking_id: int,
-    payload: BookingRejectRequest,
+    payload: Optional[BookingRejectRequest] = None,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ) -> Any:
@@ -622,7 +622,7 @@ def reject_booking(
 )
 def start_trip(
     booking_id: int,
-    payload: BookingRejectRequest,
+    payload: Optional[BookingRejectRequest] = None,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ) -> Any:
@@ -662,7 +662,7 @@ def start_trip(
 )
 def mark_arrived(
     booking_id: int,
-    payload: BookingRejectRequest,
+    payload: Optional[BookingRejectRequest] = None,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ) -> Any:
@@ -703,7 +703,7 @@ def mark_arrived(
 )
 def start_service(
     booking_id: int,
-    payload: BookingRejectRequest,
+    payload: Optional[BookingRejectRequest] = None,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ) -> Any:
@@ -743,7 +743,7 @@ def start_service(
 )
 def complete_service(
     booking_id: int,
-    payload: BookingRejectRequest,
+    payload: Optional[BookingRejectRequest] = None,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ) -> Any:
@@ -874,5 +874,95 @@ def get_verification_status(
 ) -> Any:
     """Get SmartVerify status."""
     return SmartVerifyService(db).get_verification_status(current_user, booking_id)
+
+
+# ─── BOOKING MEDIA ENDPOINTS (Before, After, Attachments) ─────────────────
+
+from fastapi import File, UploadFile
+from app.schemas.media import MediaAssetResponse, StandardMediaResponse
+from app.services.media import MediaService
+
+
+@router.post(
+    "/{booking_id}/before-images",
+    response_model=StandardMediaResponse,
+    status_code=status.HTTP_201_CREATED,
+    summary="Upload before-work photo",
+    description="Uploads a photo of the site before service begins (Customer or Technician).",
+)
+def upload_booking_before_image(
+    booking_id: int,
+    file: UploadFile = File(..., description="Before image (JPEG, PNG, WebP)"),
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> Any:
+    """Upload before-service photo."""
+    return MediaService(db).upload_booking_before_image(current_user, booking_id, file)
+
+
+@router.post(
+    "/{booking_id}/after-images",
+    response_model=StandardMediaResponse,
+    status_code=status.HTTP_201_CREATED,
+    summary="Upload after-work photo",
+    description="Uploads a photo of completed work (Technician or Customer).",
+)
+def upload_booking_after_image(
+    booking_id: int,
+    file: UploadFile = File(..., description="After image (JPEG, PNG, WebP)"),
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> Any:
+    """Upload after-service photo."""
+    return MediaService(db).upload_booking_after_image(current_user, booking_id, file)
+
+
+@router.post(
+    "/{booking_id}/attachments",
+    response_model=StandardMediaResponse,
+    status_code=status.HTTP_201_CREATED,
+    summary="Upload booking attachment/document",
+    description="Uploads an invoice, blueprint, or document for the booking (Image or PDF).",
+)
+def upload_booking_attachment(
+    booking_id: int,
+    file: UploadFile = File(..., description="Attachment file (Image or PDF)"),
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> Any:
+    """Upload booking attachment."""
+    return MediaService(db).upload_booking_attachment(current_user, booking_id, file)
+
+
+@router.get(
+    "/{booking_id}/media",
+    response_model=list[MediaAssetResponse],
+    summary="List all booking media",
+    description="Returns all before, after, and attachment media associated with the booking.",
+)
+def list_booking_media(
+    booking_id: int,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> Any:
+    """List booking media."""
+    return MediaService(db).list_booking_media(current_user, booking_id)
+
+
+@router.delete(
+    "/{booking_id}/media/{asset_id}",
+    response_model=StandardMediaResponse,
+    summary="Delete booking media asset",
+    description="Deletes a media asset from a booking.",
+)
+def delete_booking_media(
+    booking_id: int,
+    asset_id: int,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> Any:
+    """Delete booking media asset."""
+    return MediaService(db).delete_booking_media(current_user, booking_id, asset_id)
+
 
 

@@ -1,0 +1,673 @@
+[
+  {
+    "endpoint": "/auth/me",
+    "method": "GET",
+    "request_data": null,
+    "expected_status": 200,
+    "actual_status": 200,
+    "failure_reason": "None",
+    "code_changed": "None",
+    "final_result": "PASSED"
+  },
+  {
+    "endpoint": "/users/me",
+    "method": "GET",
+    "request_data": null,
+    "expected_status": 200,
+    "actual_status": 200,
+    "failure_reason": "None",
+    "code_changed": "None",
+    "final_result": "PASSED"
+  },
+  {
+    "endpoint": "/auth/refresh",
+    "method": "POST",
+    "request_data": {
+      "refresh_token": "..."
+    },
+    "expected_status": 200,
+    "actual_status": 200,
+    "failure_reason": "None",
+    "code_changed": "None",
+    "final_result": "PASSED"
+  },
+  {
+    "endpoint": "/services/categories",
+    "method": "POST",
+    "request_data": {
+      "name": "Testing Cat 703a",
+      "description": "Automated test category"
+    },
+    "expected_status": 200,
+    "actual_status": 201,
+    "failure_reason": "None",
+    "code_changed": "None",
+    "final_result": "PASSED"
+  },
+  {
+    "endpoint": "/services/categories",
+    "method": "GET",
+    "request_data": null,
+    "expected_status": 200,
+    "actual_status": 200,
+    "failure_reason": "None",
+    "code_changed": "None",
+    "final_result": "PASSED"
+  },
+  {
+    "endpoint": "/services/",
+    "method": "POST",
+    "request_data": {
+      "name": "Comprehensive AC Checkup 8702",
+      "category_id": 27,
+      "base_price": 599.0,
+      "duration_minutes": 45,
+      "description": "Thorough inspection of coils, filter, and gas pressure."
+    },
+    "expected_status": 200,
+    "actual_status": 201,
+    "failure_reason": "None",
+    "code_changed": "None",
+    "final_result": "PASSED"
+  },
+  {
+    "endpoint": "/services/44",
+    "method": "GET",
+    "request_data": null,
+    "expected_status": 200,
+    "actual_status": 200,
+    "failure_reason": "None",
+    "code_changed": "None",
+    "final_result": "PASSED"
+  },
+  {
+    "endpoint": "/services/?category_id=...",
+    "method": "GET",
+    "request_data": null,
+    "expected_status": 200,
+    "actual_status": 200,
+    "failure_reason": "None",
+    "code_changed": "None",
+    "final_result": "PASSED"
+  },
+  {
+    "endpoint": "/customer/addresses",
+    "method": "POST",
+    "request_data": {
+      "full_name": "Customer Tester",
+      "phone": "+919999999999",
+      "house_no": "Flat 304, Palm Heights",
+      "area": "Koramangala",
+      "city": "Bengaluru",
+      "state": "Karnataka",
+      "pincode": "560034",
+      "is_default": true
+    },
+    "expected_status": 200,
+    "actual_status": 201,
+    "failure_reason": "None",
+    "code_changed": "None",
+    "final_result": "PASSED"
+  },
+  {
+    "endpoint": "/customer/addresses",
+    "method": "GET",
+    "request_data": null,
+    "expected_status": 200,
+    "actual_status": 200,
+    "failure_reason": "None",
+    "code_changed": "None",
+    "final_result": "PASSED"
+  },
+  {
+    "endpoint": "/customer/profile",
+    "method": "GET",
+    "request_data": null,
+    "expected_status": 200,
+    "actual_status": 200,
+    "failure_reason": "None",
+    "code_changed": "None",
+    "final_result": "PASSED"
+  },
+  {
+    "endpoint": "/technician/profile",
+    "method": "GET",
+    "request_data": null,
+    "expected_status": 200,
+    "actual_status": 200,
+    "failure_reason": "None",
+    "code_changed": "None",
+    "final_result": "PASSED"
+  },
+  {
+    "endpoint": "/technician/availability",
+    "method": "PUT",
+    "request_data": {
+      "availability": true,
+      "is_online": true
+    },
+    "expected_status": 200,
+    "actual_status": 200,
+    "failure_reason": "None",
+    "code_changed": "None",
+    "final_result": "PASSED"
+  },
+  {
+    "endpoint": "/technician/dashboard",
+    "method": "GET",
+    "request_data": null,
+    "expected_status": 200,
+    "actual_status": 200,
+    "failure_reason": "None",
+    "code_changed": "None",
+    "final_result": "PASSED"
+  },
+  {
+    "endpoint": "/technician/earnings",
+    "method": "GET",
+    "request_data": null,
+    "expected_status": 200,
+    "actual_status": 200,
+    "failure_reason": "None",
+    "code_changed": "None",
+    "final_result": "PASSED"
+  },
+  {
+    "endpoint": "/company/profile",
+    "method": "GET",
+    "request_data": null,
+    "expected_status": 200,
+    "actual_status": 200,
+    "failure_reason": "None",
+    "code_changed": "None",
+    "final_result": "PASSED"
+  },
+  {
+    "endpoint": "/jobs/",
+    "method": "POST",
+    "request_data": {
+      "title": "Master Electrician 8df8",
+      "description": "Seeking expert residential wiring technician.",
+      "job_type": "full_time",
+      "location": "Bengaluru",
+      "salary_min": 30000,
+      "salary_max": 45000,
+      "experience_required_years": 3
+    },
+    "expected_status": 201,
+    "actual_status": 201,
+    "failure_reason": "None",
+    "code_changed": "None",
+    "final_result": "PASSED"
+  },
+  {
+    "endpoint": "/jobs/",
+    "method": "GET",
+    "request_data": null,
+    "expected_status": 200,
+    "actual_status": 200,
+    "failure_reason": "None",
+    "code_changed": "None",
+    "final_result": "PASSED"
+  },
+  {
+    "endpoint": "/jobs/26/apply",
+    "method": "POST",
+    "request_data": {
+      "cover_letter": "I have 4 years experience in residential wiring."
+    },
+    "expected_status": 201,
+    "actual_status": 201,
+    "failure_reason": "None",
+    "code_changed": "None",
+    "final_result": "PASSED"
+  },
+  {
+    "endpoint": "/jobs/26/applications",
+    "method": "GET",
+    "request_data": null,
+    "expected_status": 200,
+    "actual_status": 200,
+    "failure_reason": "None",
+    "code_changed": "None",
+    "final_result": "PASSED"
+  },
+  {
+    "endpoint": "/jobs/applications/24/status",
+    "method": "PUT",
+    "request_data": {
+      "status": "shortlisted"
+    },
+    "expected_status": 200,
+    "actual_status": 200,
+    "failure_reason": "None",
+    "code_changed": "None",
+    "final_result": "PASSED"
+  },
+  {
+    "endpoint": "/bookings/",
+    "method": "POST",
+    "request_data": {
+      "service_id": 44,
+      "address_id": 104,
+      "booking_date": "2026-08-22",
+      "preferred_time": "14:00:00",
+      "estimated_price": 599.0,
+      "customer_note": "Please call 10 mins before arrival."
+    },
+    "expected_status": 201,
+    "actual_status": 201,
+    "failure_reason": "None",
+    "code_changed": "None",
+    "final_result": "PASSED"
+  },
+  {
+    "endpoint": "/bookings/113/accept",
+    "method": "POST",
+    "request_data": null,
+    "expected_status": 200,
+    "actual_status": 200,
+    "failure_reason": "None",
+    "code_changed": "None",
+    "final_result": "PASSED"
+  },
+  {
+    "endpoint": "/bookings/113/start-trip",
+    "method": "POST",
+    "request_data": null,
+    "expected_status": 200,
+    "actual_status": 200,
+    "failure_reason": "None",
+    "code_changed": "None",
+    "final_result": "PASSED"
+  },
+  {
+    "endpoint": "/location/update",
+    "method": "POST",
+    "request_data": {
+      "booking_id": 113,
+      "latitude": 12.9352,
+      "longitude": 77.6245,
+      "status": "en_route"
+    },
+    "expected_status": 200,
+    "actual_status": 200,
+    "failure_reason": "None",
+    "code_changed": "None",
+    "final_result": "PASSED"
+  },
+  {
+    "endpoint": "/location/booking/113",
+    "method": "GET",
+    "request_data": null,
+    "expected_status": 200,
+    "actual_status": 200,
+    "failure_reason": "None",
+    "code_changed": "None",
+    "final_result": "PASSED"
+  },
+  {
+    "endpoint": "/bookings/113/arrived",
+    "method": "POST",
+    "request_data": null,
+    "expected_status": 200,
+    "actual_status": 200,
+    "failure_reason": "None",
+    "code_changed": "None",
+    "final_result": "PASSED"
+  },
+  {
+    "endpoint": "/bookings/113/generate-otp",
+    "method": "POST",
+    "request_data": null,
+    "expected_status": 200,
+    "actual_status": 200,
+    "failure_reason": "None",
+    "code_changed": "None",
+    "final_result": "PASSED"
+  },
+  {
+    "endpoint": "/bookings/113/verify-otp",
+    "method": "POST",
+    "request_data": {
+      "otp_code": "939474"
+    },
+    "expected_status": 200,
+    "actual_status": 200,
+    "failure_reason": "None",
+    "code_changed": "None",
+    "final_result": "PASSED"
+  },
+  {
+    "endpoint": "/bookings/113/complete",
+    "method": "POST",
+    "request_data": null,
+    "expected_status": 200,
+    "actual_status": 200,
+    "failure_reason": "None",
+    "code_changed": "None",
+    "final_result": "PASSED"
+  },
+  {
+    "endpoint": "/bookings/113/history",
+    "method": "GET",
+    "request_data": null,
+    "expected_status": 200,
+    "actual_status": 200,
+    "failure_reason": "None",
+    "code_changed": "None",
+    "final_result": "PASSED"
+  },
+  {
+    "endpoint": "/coupons/",
+    "method": "POST",
+    "request_data": {
+      "code": "DISCC1326E",
+      "discount_type": "percentage",
+      "discount_value": 15.0,
+      "min_order_value": 300.0,
+      "max_discount": 100.0,
+      "valid_from": "2026-08-21",
+      "valid_until": "2029-12-31",
+      "usage_limit": 100
+    },
+    "expected_status": 201,
+    "actual_status": 201,
+    "failure_reason": "None",
+    "code_changed": "None",
+    "final_result": "PASSED"
+  },
+  {
+    "endpoint": "/coupons/validate",
+    "method": "POST",
+    "request_data": {
+      "code": "DISCC1326E",
+      "booking_id": 113
+    },
+    "expected_status": 200,
+    "actual_status": 200,
+    "failure_reason": "None",
+    "code_changed": "None",
+    "final_result": "PASSED"
+  },
+  {
+    "endpoint": "/payments/create-order",
+    "method": "POST",
+    "request_data": {
+      "booking_id": 113,
+      "amount": 509.0,
+      "currency": "INR",
+      "payment_method": "card"
+    },
+    "expected_status": 200,
+    "actual_status": 200,
+    "failure_reason": "None",
+    "code_changed": "None",
+    "final_result": "PASSED"
+  },
+  {
+    "endpoint": "/invoices/",
+    "method": "POST",
+    "request_data": {
+      "booking_id": 113,
+      "customer_id": 122,
+      "technician_id": 100,
+      "subtotal": 599.0,
+      "tax_amount": 0.0,
+      "discount_amount": 90.0,
+      "total_amount": 509.0
+    },
+    "expected_status": 201,
+    "actual_status": 201,
+    "failure_reason": "None",
+    "code_changed": "None",
+    "final_result": "PASSED"
+  },
+  {
+    "endpoint": "/invoices/25",
+    "method": "GET",
+    "request_data": null,
+    "expected_status": 200,
+    "actual_status": 200,
+    "failure_reason": "None",
+    "code_changed": "None",
+    "final_result": "PASSED"
+  },
+  {
+    "endpoint": "/reviews/",
+    "method": "POST",
+    "request_data": {
+      "booking_id": 113,
+      "technician_id": 100,
+      "rating": 5,
+      "comment": "Outstanding service! Arrived on time and resolved AC cooling perfectly."
+    },
+    "expected_status": 201,
+    "actual_status": 201,
+    "failure_reason": "None",
+    "code_changed": "None",
+    "final_result": "PASSED"
+  },
+  {
+    "endpoint": "/reviews/technician/100",
+    "method": "GET",
+    "request_data": null,
+    "expected_status": 200,
+    "actual_status": 200,
+    "failure_reason": "None",
+    "code_changed": "None",
+    "final_result": "PASSED"
+  },
+  {
+    "endpoint": "/reviews/technician/100/summary",
+    "method": "GET",
+    "request_data": null,
+    "expected_status": 200,
+    "actual_status": 200,
+    "failure_reason": "None",
+    "code_changed": "None",
+    "final_result": "PASSED"
+  },
+  {
+    "endpoint": "/notifications/",
+    "method": "GET",
+    "request_data": null,
+    "expected_status": 200,
+    "actual_status": 200,
+    "failure_reason": "None",
+    "code_changed": "None",
+    "final_result": "PASSED"
+  },
+  {
+    "endpoint": "/notifications/unread",
+    "method": "GET",
+    "request_data": null,
+    "expected_status": 200,
+    "actual_status": 200,
+    "failure_reason": "None",
+    "code_changed": "None",
+    "final_result": "PASSED"
+  },
+  {
+    "endpoint": "/notifications/read-all",
+    "method": "PUT",
+    "request_data": null,
+    "expected_status": 200,
+    "actual_status": 200,
+    "failure_reason": "None",
+    "code_changed": "None",
+    "final_result": "PASSED"
+  },
+  {
+    "endpoint": "/users/me/avatar",
+    "method": "POST",
+    "request_data": null,
+    "expected_status": 200,
+    "actual_status": 200,
+    "failure_reason": "None",
+    "code_changed": "None",
+    "final_result": "PASSED"
+  },
+  {
+    "endpoint": "/technicians/me/portfolio",
+    "method": "POST",
+    "request_data": null,
+    "expected_status": 201,
+    "actual_status": 201,
+    "failure_reason": "None",
+    "code_changed": "None",
+    "final_result": "PASSED"
+  },
+  {
+    "endpoint": "/bookings/113/before-images",
+    "method": "POST",
+    "request_data": null,
+    "expected_status": 201,
+    "actual_status": 201,
+    "failure_reason": "None",
+    "code_changed": "None",
+    "final_result": "PASSED"
+  },
+  {
+    "endpoint": "/bookings/113/attachments",
+    "method": "POST",
+    "request_data": null,
+    "expected_status": 201,
+    "actual_status": 201,
+    "failure_reason": "None",
+    "code_changed": "None",
+    "final_result": "PASSED"
+  },
+  {
+    "endpoint": "/bookings/113/media",
+    "method": "GET",
+    "request_data": null,
+    "expected_status": 200,
+    "actual_status": 200,
+    "failure_reason": "None",
+    "code_changed": "None",
+    "final_result": "PASSED"
+  },
+  {
+    "endpoint": "/admin/media",
+    "method": "GET",
+    "request_data": null,
+    "expected_status": 200,
+    "actual_status": 200,
+    "failure_reason": "None",
+    "code_changed": "None",
+    "final_result": "PASSED"
+  },
+  {
+    "endpoint": "/search/?q=AC",
+    "method": "GET",
+    "request_data": null,
+    "expected_status": 200,
+    "actual_status": 200,
+    "failure_reason": "None",
+    "code_changed": "None",
+    "final_result": "PASSED"
+  },
+  {
+    "endpoint": "/search/suggestions?q=AC",
+    "method": "GET",
+    "request_data": null,
+    "expected_status": 200,
+    "actual_status": 200,
+    "failure_reason": "None",
+    "code_changed": "None",
+    "final_result": "PASSED"
+  },
+  {
+    "endpoint": "/analytics/admin",
+    "method": "GET",
+    "request_data": null,
+    "expected_status": 200,
+    "actual_status": 200,
+    "failure_reason": "None",
+    "code_changed": "None",
+    "final_result": "PASSED"
+  },
+  {
+    "endpoint": "/reports/monthly",
+    "method": "GET",
+    "request_data": null,
+    "expected_status": 200,
+    "actual_status": 200,
+    "failure_reason": "None",
+    "code_changed": "None",
+    "final_result": "PASSED"
+  },
+  {
+    "endpoint": "/reports/export",
+    "method": "GET",
+    "request_data": {
+      "format": "csv"
+    },
+    "expected_status": 200,
+    "actual_status": 200,
+    "failure_reason": "None",
+    "code_changed": "None",
+    "final_result": "PASSED"
+  },
+  {
+    "endpoint": "/health/detail",
+    "method": "GET",
+    "request_data": null,
+    "expected_status": 200,
+    "actual_status": 200,
+    "failure_reason": "None",
+    "code_changed": "None",
+    "final_result": "PASSED"
+  },
+  {
+    "endpoint": "/metrics",
+    "method": "GET",
+    "request_data": null,
+    "expected_status": 200,
+    "actual_status": 200,
+    "failure_reason": "None",
+    "code_changed": "None",
+    "final_result": "PASSED"
+  },
+  {
+    "endpoint": "/security/sessions",
+    "method": "GET",
+    "request_data": null,
+    "expected_status": 200,
+    "actual_status": 200,
+    "failure_reason": "None",
+    "code_changed": "None",
+    "final_result": "PASSED"
+  },
+  {
+    "endpoint": "/security/audit-logs",
+    "method": "GET",
+    "request_data": null,
+    "expected_status": 200,
+    "actual_status": 200,
+    "failure_reason": "None",
+    "code_changed": "None",
+    "final_result": "PASSED"
+  },
+  {
+    "endpoint": "/analytics/admin (Customer)",
+    "method": "GET",
+    "request_data": null,
+    "expected_status": 403,
+    "actual_status": 403,
+    "failure_reason": "None",
+    "code_changed": "None",
+    "final_result": "PASSED"
+  },
+  {
+    "endpoint": "/users/me (Anonymous)",
+    "method": "GET",
+    "request_data": null,
+    "expected_status": 403,
+    "actual_status": 403,
+    "failure_reason": "None",
+    "code_changed": "None",
+    "final_result": "PASSED"
+  }
+]

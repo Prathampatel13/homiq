@@ -31,14 +31,14 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
             "max-age=31536000; includeSubDomains"
         )
 
-        # Allow Swagger/ReDoc CDN assets while keeping the app secure.
+        # Allow frontend assets, fonts, CDN, QR codes and localhost connections
         response.headers["Content-Security-Policy"] = (
-    "default-src 'self'; "
-    "script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; "
-    "style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; "
-    "img-src 'self' data: https://fastapi.tiangolo.com; "
-    "font-src 'self' data: https://cdn.jsdelivr.net; "
-    "connect-src 'self' https://cdn.jsdelivr.net; "
-)
+            "default-src 'self' 'unsafe-inline' 'unsafe-eval' data: blob: http: https:; "
+            "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.jsdelivr.net http: https:; "
+            "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdn.jsdelivr.net http: https:; "
+            "img-src 'self' data: blob: https: http:; "
+            "font-src 'self' data: https://fonts.gstatic.com https://cdn.jsdelivr.net http: https:; "
+            "connect-src 'self' ws: wss: http: https:; "
+        )
 
         return response

@@ -150,7 +150,7 @@ class ServiceService:
             )
         return {"message": "Service deleted successfully."}
 
-    def upload_service_image(
+    async def upload_service_image(
         self, current_user: User, service_id: int, file: UploadFile
     ) -> ServiceImageResponse:
         self._require_admin(current_user)
@@ -161,7 +161,7 @@ class ServiceService:
                 detail="Service not found.",
             )
 
-        image_url = self._store_image(file, service_id)
+        image_url = await self._store_image(file, service_id)
         self.crud.update_service(service_id, {"image_url": image_url})
         return ServiceImageResponse(image_url=image_url)
 

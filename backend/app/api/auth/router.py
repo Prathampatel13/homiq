@@ -97,3 +97,52 @@ def get_current_user_profile(
         "avatar_url": current_user.avatar_url,
         "created_at": current_user.created_at.isoformat() if current_user.created_at else None,
     }
+
+
+# ─── USER AVATAR & PROFILE ENDPOINTS (/users/me) ─────────────────────────
+
+from fastapi import File, UploadFile
+from app.schemas.media import StandardMediaResponse
+from app.services.media import MediaService
+
+users_router = APIRouter(prefix="/users", tags=["Users"])
+
+
+@users_router.get("/me")
+def get_user_me(
+    current_user: User = Depends(get_current_user),
+) -> dict[str, Any]:
+    """Get authenticated user profile."""
+    return get_current_user_profile(current_user)
+
+
+@users_router.post(
+    "/me/avatar",
+    response_model=StandardMediaResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Upload user profile avatar",
+    description="Uploads and sets avatar for the authenticated user using safe replacement and Cloudinary optimization.",
+)
+def upload_avatar(
+    file: UploadFile = File(..., description="Avatar image (JPEG, PNG, WebP)"),
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> Any:
+    """Upload or replace avatar for authenticated user."""
+    return MediaService(db).update_user_avatar(current_user, file)
+
+
+@users_router.delete(
+    "/me/avatar",
+    response_model=StandardMediaResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Delete user profile avatar",
+    description="Removes the authenticated user's avatar from Cloudinary and clears database reference.",
+)
+def delete_avatar(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> Any:
+    """Delete avatar for authenticated user."""
+    return MediaService(db).delete_user_avatar(current_user)
+

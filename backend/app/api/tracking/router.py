@@ -156,6 +156,18 @@ def find_nearby_technicians(
 
 
 # ─── BACKWARD COMPATIBILITY TRACKING ENDPOINTS ──────────────────────────
+@router.get(
+    "/tracking/me/location",
+    response_model=TechnicianLocationResponse,
+    summary="Get my current location (legacy)",
+    description="Returns current location of authenticated technician.",
+)
+def get_my_location(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> Any:
+    """Get current location of authenticated technician."""
+    return TrackingService(db).get_technician_current_location(current_user)
 
 
 @router.put(
@@ -206,19 +218,5 @@ def get_tracking_history(
     return TrackingService(db).get_tracking_history(
         current_user, booking_id, offset=offset, limit=limit
     )
-
-
-@router.get(
-    "/tracking/me/location",
-    response_model=TechnicianLocationResponse,
-    summary="Get my current location (legacy)",
-    description="Returns current location of authenticated technician.",
-)
-def get_my_location(
-    current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db),
-) -> Any:
-    """Get current location of authenticated technician."""
-    return TrackingService(db).get_technician_current_location(current_user)
 
 

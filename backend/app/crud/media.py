@@ -1,18 +1,93 @@
+"""
+CRUD operations for MediaAsset and Profile/Verification records.
+"""
+
 from __future__ import annotations
 
-from typing import Any, Optional
+from typing import Optional
+from sqlalchemy import select
 from sqlalchemy.orm import Session
-from sqlalchemy import select, update
 
+from app.models.media import MediaAsset, MediaAssetType
 from app.models.users import Customer, Technician
-from app.schemas.media import DocumentStatusEnum, DocumentTypeEnum
 
 
 class MediaCRUD:
-    """CRUD operations for Media & Technician Document Management."""
+    """CRUD operations for centralized Media Assets & Profile References."""
 
     def __init__(self, db: Session):
         self.db = db
+
+    # ── MediaAsset DB Records ────────────────────────────────────────────────
+
+    def create_media_asset(
+        self,
+        owner_id: int,
+        owner_type: str,
+        asset_type: MediaAssetType,
+        cloudinary_public_id: str,
+        secure_url: str,
+        resource_type: str = "image",
+        format: str = "png",
+        width: Optional[int] = None,
+        height: Optional[int] = None,
+        file_size: int = 0,
+        cloudinary_asset_id: Optional[str] = None,
+    ) -> MediaAsset:
+        """Create and persist a new MediaAsset record."""
+        asset = MediaAsset(
+            owner_id=owner_id,
+            owner_type=owner_type,
+            asset_type=asset_type,
+            cloudinary_asset_id=cloudinary_asset_id,
+            cloudinary_public_id=cloudinary_public_id,
+            secure_url=secure_url,
+            resource_type=resource_type,
+            format=format,
+            width=width,
+            height=height,
+            file_size=file_size,
+        )
+        self.db.add(asset)
+        self.db.commit()
+        self.db.refresh(asset)
+        return asset
+
+    def get_by_id(self, asset_id: int) -> Optional[MediaAsset]:
+        """Fetch media asset by primary key ID."""
+        return self.db.get(MediaAsset, asset_id)
+
+    def get_by_public_id(self, public_id: str) -> Optional[MediaAsset]:
+        """Fetch media asset by Cloudinary public ID."""
+        stmt = select(MediaAsset).where(MediaAsset.cloudinary_public_id == public_id)
+        return self.db.scalars(stmt).first()
+
+    def get_assets_by_owner(
+        self,
+        owner_id: int,
+        owner_type: str,
+        asset_type: Optional[MediaAssetType] = None,
+    ) -> list[MediaAsset]:
+        """Fetch all media assets belonging to an entity, optionally filtered by asset type."""
+        stmt = select(MediaAsset).where(
+            MediaAsset.owner_id == owner_id,
+            MediaAsset.owner_type == owner_type,
+        )
+        if asset_type:
+            stmt = stmt.where(MediaAsset.asset_type == asset_type)
+        stmt = stmt.order_by(MediaAsset.created_at.desc())
+        return list(self.db.scalars(stmt).all())
+
+    def delete_media_asset(self, public_id: str) -> bool:
+        """Delete a media asset record from the database."""
+        asset = self.get_by_public_id(public_id)
+        if not asset:
+            return False
+        self.db.delete(asset)
+        self.db.commit()
+        return True
+
+    # ── User Profile & Government ID Convenience Links ───────────────────────
 
     def update_customer_profile_image(self, customer_id: int, image_url: str) -> Optional[Customer]:
         """Update customer profile image URL."""

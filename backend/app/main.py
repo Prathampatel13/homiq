@@ -8,11 +8,11 @@ from sqlalchemy.orm import Session
 
 import app.models
 
-from app.api.auth.router import router as auth_router
+from app.api.auth.router import router as auth_router, users_router
 from app.api.bookings.router import router as booking_router
 from app.api.customer.router import router as customer_router
 from app.api.services.router import router as services_router
-from app.api.technician.router import router as technician_router
+from app.api.technician.router import router as technician_router, technicians_router
 from app.api.payments.router import router as payment_router
 from app.api.coupons.router import router as coupons_router
 from app.api.invoices.router import router as invoices_router
@@ -20,7 +20,7 @@ from app.api.reviews.router import router as reviews_router
 from app.api.notifications.router import router as notifications_router
 from app.api.tracking.router import router as tracking_router
 from app.api.admin.router import router as admin_router
-from app.api.company.router import router as company_router
+from app.api.company.router import router as company_router, companies_router
 from app.api.jobs.router import router as jobs_router
 from app.api.media.router import router as media_router
 from app.api.reports.router import router as reports_router
@@ -60,9 +60,11 @@ upload_dir.mkdir(parents=True, exist_ok=True)
 app.mount(f"/{settings.UPLOAD_DIR}", StaticFiles(directory=str(upload_dir)), name="uploads")
 
 app.include_router(auth_router)
+app.include_router(users_router)
 app.include_router(booking_router)
 app.include_router(customer_router)
 app.include_router(technician_router)
+app.include_router(technicians_router)
 app.include_router(services_router)
 app.include_router(payment_router)
 app.include_router(coupons_router)
@@ -72,6 +74,7 @@ app.include_router(notifications_router)
 app.include_router(tracking_router)
 app.include_router(admin_router)
 app.include_router(company_router)
+app.include_router(companies_router)
 app.include_router(jobs_router)
 app.include_router(media_router)
 app.include_router(reports_router)

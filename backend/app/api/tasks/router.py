@@ -49,13 +49,16 @@ def get_task_status(
 
     # Check Celery AsyncResult if active
     if HAS_CELERY and hasattr(celery_app, "AsyncResult"):
-        res = celery_app.AsyncResult(task_id)
-        return TaskStatusResponse(
-            task_id=task_id,
-            status=res.status,
-            result=res.result if res.ready() else None,
-            error=str(res.result) if res.failed() else None,
-        )
+        try:
+            res = celery_app.AsyncResult(task_id)
+            return TaskStatusResponse(
+                task_id=task_id,
+                status=res.status,
+                result=res.result if res.ready() else None,
+                error=str(res.result) if res.failed() else None,
+            )
+        except Exception:
+            pass
 
     return TaskStatusResponse(
         task_id=task_id,
