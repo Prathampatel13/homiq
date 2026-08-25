@@ -37,7 +37,7 @@ export const servicesApi = {
     _t?: number;
   }): Promise<Service[]> => {
     const response = await api.get('/services/', { params: { ...params, _t: Date.now() } });
-    return response.data;
+    return response.data.items || response.data;
   },
 
   getService: async (id: number): Promise<Service> => {

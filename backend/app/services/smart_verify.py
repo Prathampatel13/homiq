@@ -277,6 +277,8 @@ class SmartVerifyService:
 
         # Expiry check
         now = datetime.now(timezone.utc)
+        if qr_record.expires_at.tzinfo is None:
+            now = now.replace(tzinfo=None)
         if qr_record.expires_at < now:
             self._log_audit_event(
                 booking.id,
@@ -415,6 +417,8 @@ class SmartVerifyService:
             )
 
         now = datetime.now(timezone.utc)
+        if qr_record.expires_at.tzinfo is None:
+            now = now.replace(tzinfo=None)
         if qr_record.expires_at < now:
             self._log_audit_event(
                 booking.id,

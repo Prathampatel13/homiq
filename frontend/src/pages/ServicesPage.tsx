@@ -37,38 +37,12 @@ export const ServicesPage: React.FC = () => {
     const fetchData = async () => {
       try {
         setLoading(true);
-        const staticCategories = [
-          { id: 1, name: 'Plumbing', description: '', icon: 'Droplet' },
-          { id: 2, name: 'Electrical', description: '', icon: 'Zap' },
-          { id: 3, name: 'AC & Cooling', description: '', icon: 'Wind' },
-          { id: 4, name: 'Appliances', description: '', icon: 'Monitor' },
-          { id: 5, name: 'Carpentry', description: '', icon: 'Wrench' },
-          { id: 6, name: 'Cleaning', description: '', icon: 'Sparkles' },
-          { id: 7, name: 'Painting', description: '', icon: 'Paintbrush' },
-          { id: 8, name: 'Bathroom', description: '', icon: 'Bath' },
-          { id: 9, name: 'Home Maintenance', description: '', icon: 'Home' },
-          { id: 10, name: 'Security & Smart Home', description: '', icon: 'ShieldCheck' },
-          { id: 11, name: 'Outdoor & Garden', description: '', icon: 'TreePine' },
-          { id: 12, name: 'Windows & Doors', description: '', icon: 'DoorOpen' },
-        ];
-        
-        const staticServices = [
-          { id: 101, category_id: 1, name: 'Plumbing', description: 'Tap Repair, Pipe Leakage, Drain Cleaning, Sink Repair, Toilet Repair, Water Tank Repair, Bathroom Plumbing', price: 299, duration_minutes: 30 },
-          { id: 102, category_id: 2, name: 'Electrical', description: 'Switch & Socket Repair, Fan Installation, Light Installation, Wiring Repair, MCB Repair, Short-Circuit Repair, Inverter Installation', price: 199, duration_minutes: 30 },
-          { id: 103, category_id: 3, name: 'AC & Cooling', description: 'AC Service, AC Repair, AC Installation, AC Gas Refill, AC Cleaning, Cooler Repair', price: 499, duration_minutes: 60 },
-          { id: 104, category_id: 4, name: 'Appliances', description: 'Refrigerator Repair, Washing Machine Repair, Microwave Repair, Geyser Repair, Water Purifier Service', price: 349, duration_minutes: 45 },
-          { id: 105, category_id: 5, name: 'Carpentry', description: 'Furniture Repair, Door Repair, Lock Installation, Cabinet Repair, Shelf Installation, Bed Repair', price: 249, duration_minutes: 60 },
-          { id: 106, category_id: 6, name: 'Cleaning', description: 'Full Home Cleaning, Kitchen Cleaning, Bathroom Cleaning, Sofa Cleaning, Carpet Cleaning, Floor Cleaning', price: 999, duration_minutes: 120 },
-          { id: 107, category_id: 7, name: 'Painting', description: 'Room Painting, Full Home Painting, Wall Touch-up, Exterior Painting, Waterproof Painting', price: 1499, duration_minutes: 240 },
-          { id: 108, category_id: 8, name: 'Bathroom', description: 'Bathroom Deep Cleaning, Shower Repair, Toilet Repair, Basin Repair, Exhaust Fan Installation', price: 399, duration_minutes: 60 },
-          { id: 109, category_id: 9, name: 'Home Maintenance', description: 'General Inspection, Minor Repairs, Wall Repair, Grouting, Waterproofing, Home Inspection', price: 499, duration_minutes: 90 },
-          { id: 110, category_id: 10, name: 'Security & Smart Home', description: 'CCTV Installation, Smart Lock Installation, Doorbell Installation, Wi-Fi Camera Setup', price: 599, duration_minutes: 90 },
-          { id: 111, category_id: 11, name: 'Outdoor & Garden', description: 'Garden Maintenance, Lawn Cleaning, Plant Maintenance, Balcony Cleaning', price: 349, duration_minutes: 60 },
-          { id: 112, category_id: 12, name: 'Windows & Doors', description: 'Door Alignment, Door Handle Repair, Window Repair, Glass Replacement, Mosquito Net Installation', price: 299, duration_minutes: 45 },
-        ];
-
-        setCategories(staticCategories as any);
-        setServices(staticServices as any);
+        const [cats, svcs] = await Promise.all([
+          servicesApi.getCategories(),
+          servicesApi.getServices({ limit: 1000 })
+        ]);
+        setCategories(cats);
+        setServices(svcs as Service[]);
       } catch (err) {
         console.error('Failed to load services catalog:', err);
       } finally {

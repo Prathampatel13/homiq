@@ -71,113 +71,38 @@ export const BookingPage: React.FC = () => {
   useEffect(() => {
     const loadBookingRequirements = async () => {
       setLoading(true);
-      setTimeout(async () => {
-        let allServices: Service[] = [];
-        const staticServices = [
-          { id: 1001, category_id: 3, name: 'AC Service', description: 'Comprehensive AC servicing, filter cleaning, and performance check.', price: 599, duration_minutes: 45 },
-          { id: 1002, category_id: 3, name: 'AC Repair', description: 'Expert diagnosis and repair for all types of AC issues.', price: 499, duration_minutes: 60 },
-          { id: 1003, category_id: 3, name: 'AC Installation', description: 'Professional installation of Split or Window AC units.', price: 1499, duration_minutes: 120 },
-          { id: 1004, category_id: 3, name: 'AC Gas Refill', description: 'Leakage checking and full gas refill for optimal cooling.', price: 2499, duration_minutes: 90 },
-          { id: 1005, category_id: 3, name: 'AC Cleaning', description: 'Deep cleaning of indoor and outdoor AC units.', price: 799, duration_minutes: 60 },
-          { id: 1006, category_id: 3, name: 'Cooler Repair', description: 'Motor repair, pump replacement, and general servicing for coolers.', price: 399, duration_minutes: 45 },
-          { id: 1007, category_id: 1, name: 'Tap Repair', description: 'Professional tap repair service by expert technicians.', price: 299, duration_minutes: 45 },
-          { id: 1008, category_id: 1, name: 'Pipe Leakage', description: 'Professional pipe leakage service by expert technicians.', price: 349, duration_minutes: 60 },
-          { id: 1009, category_id: 1, name: 'Drain Cleaning', description: 'Professional drain cleaning service by expert technicians.', price: 399, duration_minutes: 75 },
-          { id: 1010, category_id: 1, name: 'Sink Repair', description: 'Professional sink repair service by expert technicians.', price: 449, duration_minutes: 90 },
-          { id: 1011, category_id: 1, name: 'Toilet Repair', description: 'Professional toilet repair service by expert technicians.', price: 499, duration_minutes: 105 },
-          { id: 1012, category_id: 1, name: 'Water Tank Repair', description: 'Professional water tank repair service by expert technicians.', price: 549, duration_minutes: 120 },
-          { id: 1013, category_id: 1, name: 'Bathroom Plumbing', description: 'Professional bathroom plumbing service by expert technicians.', price: 599, duration_minutes: 135 },
-          { id: 1014, category_id: 2, name: 'Switch & Socket Repair', description: 'Professional switch & socket repair service by expert technicians.', price: 299, duration_minutes: 45 },
-          { id: 1015, category_id: 2, name: 'Fan Installation', description: 'Professional fan installation service by expert technicians.', price: 349, duration_minutes: 60 },
-          { id: 1016, category_id: 2, name: 'Light Installation', description: 'Professional light installation service by expert technicians.', price: 399, duration_minutes: 75 },
-          { id: 1017, category_id: 2, name: 'Wiring Repair', description: 'Professional wiring repair service by expert technicians.', price: 449, duration_minutes: 90 },
-          { id: 1018, category_id: 2, name: 'MCB Repair', description: 'Professional mcb repair service by expert technicians.', price: 499, duration_minutes: 105 },
-          { id: 1019, category_id: 2, name: 'Short-Circuit Repair', description: 'Professional short-circuit repair service by expert technicians.', price: 549, duration_minutes: 120 },
-          { id: 1020, category_id: 2, name: 'Inverter Installation', description: 'Professional inverter installation service by expert technicians.', price: 599, duration_minutes: 135 },
-          { id: 1021, category_id: 4, name: 'Refrigerator Repair', description: 'Professional refrigerator repair service by expert technicians.', price: 299, duration_minutes: 45 },
-          { id: 1022, category_id: 4, name: 'Washing Machine Repair', description: 'Professional washing machine repair service by expert technicians.', price: 349, duration_minutes: 60 },
-          { id: 1023, category_id: 4, name: 'Microwave Repair', description: 'Professional microwave repair service by expert technicians.', price: 399, duration_minutes: 75 },
-          { id: 1024, category_id: 4, name: 'Geyser Repair', description: 'Professional geyser repair service by expert technicians.', price: 449, duration_minutes: 90 },
-          { id: 1025, category_id: 4, name: 'Water Purifier Service', description: 'Professional water purifier service service by expert technicians.', price: 499, duration_minutes: 105 },
-          { id: 1026, category_id: 5, name: 'Furniture Assembly', description: 'Professional furniture assembly service by expert technicians.', price: 299, duration_minutes: 45 },
-          { id: 1027, category_id: 5, name: 'Bed Repair', description: 'Professional bed repair service by expert technicians.', price: 349, duration_minutes: 60 },
-          { id: 1028, category_id: 5, name: 'Sofa Repair', description: 'Professional sofa repair service by expert technicians.', price: 399, duration_minutes: 75 },
-          { id: 1029, category_id: 5, name: 'Table/Chair Repair', description: 'Professional table/chair repair service by expert technicians.', price: 449, duration_minutes: 90 },
-          { id: 1030, category_id: 5, name: 'Door/Window Carpentry', description: 'Professional door/window carpentry service by expert technicians.', price: 499, duration_minutes: 105 },
-          { id: 1031, category_id: 6, name: 'Deep Home Cleaning', description: 'Professional deep home cleaning service by expert technicians.', price: 299, duration_minutes: 45 },
-          { id: 1032, category_id: 6, name: 'Bathroom Cleaning', description: 'Professional bathroom cleaning service by expert technicians.', price: 349, duration_minutes: 60 },
-          { id: 1033, category_id: 6, name: 'Kitchen Cleaning', description: 'Professional kitchen cleaning service by expert technicians.', price: 399, duration_minutes: 75 },
-          { id: 1034, category_id: 6, name: 'Sofa Cleaning', description: 'Professional sofa cleaning service by expert technicians.', price: 449, duration_minutes: 90 },
-          { id: 1035, category_id: 6, name: 'Carpet Cleaning', description: 'Professional carpet cleaning service by expert technicians.', price: 499, duration_minutes: 105 },
-          { id: 1036, category_id: 7, name: 'Interior Painting', description: 'Professional interior painting service by expert technicians.', price: 299, duration_minutes: 45 },
-          { id: 1037, category_id: 7, name: 'Exterior Painting', description: 'Professional exterior painting service by expert technicians.', price: 349, duration_minutes: 60 },
-          { id: 1038, category_id: 7, name: 'Wall Putty/Primer', description: 'Professional wall putty/primer service by expert technicians.', price: 399, duration_minutes: 75 },
-          { id: 1039, category_id: 7, name: 'Texture Painting', description: 'Professional texture painting service by expert technicians.', price: 449, duration_minutes: 90 },
-          { id: 1040, category_id: 7, name: 'Waterproofing', description: 'Professional waterproofing service by expert technicians.', price: 499, duration_minutes: 105 },
-          { id: 1041, category_id: 8, name: 'CCTV Installation', description: 'Professional cctv installation service by expert technicians.', price: 299, duration_minutes: 45 },
-          { id: 1042, category_id: 8, name: 'CCTV Repair', description: 'Professional cctv repair service by expert technicians.', price: 349, duration_minutes: 60 },
-          { id: 1043, category_id: 8, name: 'Smart Lock Installation', description: 'Professional smart lock installation service by expert technicians.', price: 399, duration_minutes: 75 },
-          { id: 1044, category_id: 8, name: 'Video Doorbell Setup', description: 'Professional video doorbell setup service by expert technicians.', price: 449, duration_minutes: 90 },
-          { id: 1045, category_id: 8, name: 'Biometric Access Setup', description: 'Professional biometric access setup service by expert technicians.', price: 499, duration_minutes: 105 },
-          { id: 1046, category_id: 9, name: 'RO Installation', description: 'Professional ro installation service by expert technicians.', price: 299, duration_minutes: 45 },
-          { id: 1047, category_id: 9, name: 'RO Filter Change', description: 'Professional ro filter change service by expert technicians.', price: 349, duration_minutes: 60 },
-          { id: 1048, category_id: 9, name: 'RO Repair', description: 'Professional ro repair service by expert technicians.', price: 399, duration_minutes: 75 },
-          { id: 1049, category_id: 9, name: 'Water Dispenser Repair', description: 'Professional water dispenser repair service by expert technicians.', price: 449, duration_minutes: 90 },
-          { id: 1050, category_id: 9, name: 'UV Purifier Service', description: 'Professional uv purifier service service by expert technicians.', price: 499, duration_minutes: 105 },
-          { id: 1051, category_id: 10, name: 'Pest Control', description: 'Professional pest control service by expert technicians.', price: 299, duration_minutes: 45 },
-          { id: 1052, category_id: 10, name: 'Termite Treatment', description: 'Professional termite treatment service by expert technicians.', price: 349, duration_minutes: 60 },
-          { id: 1053, category_id: 10, name: 'Bedbug Treatment', description: 'Professional bedbug treatment service by expert technicians.', price: 399, duration_minutes: 75 },
-          { id: 1054, category_id: 10, name: 'Cockroach Control', description: 'Professional cockroach control service by expert technicians.', price: 449, duration_minutes: 90 },
-          { id: 1055, category_id: 10, name: 'Rodent Control', description: 'Professional rodent control service by expert technicians.', price: 499, duration_minutes: 105 },
-          { id: 1056, category_id: 11, name: 'Garden Maintenance', description: 'Professional garden maintenance service by expert technicians.', price: 299, duration_minutes: 45 },
-          { id: 1057, category_id: 11, name: 'Grass Cutting', description: 'Professional grass cutting service by expert technicians.', price: 349, duration_minutes: 60 },
-          { id: 1058, category_id: 11, name: 'Lawn Cleaning', description: 'Professional lawn cleaning service by expert technicians.', price: 399, duration_minutes: 75 },
-          { id: 1059, category_id: 11, name: 'Plant Maintenance', description: 'Professional plant maintenance service by expert technicians.', price: 449, duration_minutes: 90 },
-          { id: 1060, category_id: 11, name: 'Balcony Cleaning', description: 'Professional balcony cleaning service by expert technicians.', price: 499, duration_minutes: 105 },
-          { id: 1061, category_id: 12, name: 'Door Alignment', description: 'Professional door alignment service by expert technicians.', price: 299, duration_minutes: 45 },
-          { id: 1062, category_id: 12, name: 'Door Handle Repair', description: 'Professional door handle repair service by expert technicians.', price: 349, duration_minutes: 60 },
-          { id: 1063, category_id: 12, name: 'Window Repair', description: 'Professional window repair service by expert technicians.', price: 399, duration_minutes: 75 },
-          { id: 1064, category_id: 12, name: 'Glass Replacement', description: 'Professional glass replacement service by expert technicians.', price: 449, duration_minutes: 90 },
-          { id: 1065, category_id: 12, name: 'Mosquito Net Installation', description: 'Professional mosquito net installation service by expert technicians.', price: 499, duration_minutes: 105 }
-        ];
-
-        allServices = staticServices as any;
-        
-        // If navigated from a specific category on Services page (e.g. category_id=1)
+      try {
         const catId = searchParams.get('category_id');
-        if (catId) {
-          allServices = allServices.filter(s => s.category_id === Number(catId));
-        }
-
+        const svcs = await servicesApi.getServices({
+          limit: 1000,
+          category_id: catId ? Number(catId) : undefined
+        });
+        const allServices = svcs as Service[];
         setServices(allServices);
 
-        // Fetch addresses quickly if authenticated (we assume it's mocked or quick)
-        try {
-          if (isAuthenticated) {
-            // MOCK ADDRESS TO PREVENT 15s API HANG
-            const addrsRes = [
-              {
-                id: 1,
-                customer_id: 1,
-                full_name: 'Pratham Patel',
-                phone: '+91-9876543210',
-                house_no: '123 Main Street',
-                area: 'Andheri West',
-                city: 'Mumbai',
-                state: 'Maharashtra',
-                pincode: '400001',
-                country: 'India',
-                is_default: true,
-                latitude: 18.9220,
-                longitude: 72.8347
-              }
-            ];
-            setAddresses(addrsRes as any);
-            const defaultAddr = addrsRes.find((a) => a.is_default) || addrsRes[0];
-            if (defaultAddr) setSelectedAddress(defaultAddr as any);
+        if (isAuthenticated) {
+          // Fallback static addresses
+          const addrsRes = [
+            {
+              id: 1,
+              customer_id: 1,
+              full_name: 'Pratham Patel',
+              phone: '+91-9876543210',
+              house_no: '123 Main Street',
+              area: 'Andheri West',
+              city: 'Mumbai',
+              state: 'Maharashtra',
+              pincode: '400001',
+              country: 'India',
+              is_default: true,
+              latitude: 18.9220,
+              longitude: 72.8347
+            }
+          ];
+          setAddresses(addrsRes as any);
+          if (addrsRes.length > 0) {
+            setSelectedAddress(addrsRes[0] as any);
           }
-        } catch (e) {
-          // ignore
         }
 
         // Check if pre-selected service in query
@@ -189,8 +114,11 @@ export const BookingPage: React.FC = () => {
             setCurrentStep(2); // Jump to address
           }
         }
+      } catch (err) {
+        console.error("Failed to load booking requirements:", err);
+      } finally {
         setLoading(false);
-      }, 100);
+      }
     };
 
     loadBookingRequirements();
