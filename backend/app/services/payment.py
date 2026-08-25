@@ -141,6 +141,12 @@ class PaymentService:
 
         # Convert ₹ to paise
         amount_paise = int(payable * 100)
+        
+        if amount_paise < 100:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Minimum amount must be at least ₹1 (100 paise).",
+            )
 
         # ── Idempotency: resume an existing CREATED order ──────────
         existing = self.crud.get_by_booking(payload.booking_id)
@@ -225,6 +231,12 @@ class PaymentService:
             404: If the payment record is not found.
             400: If the signature is invalid or payment already processed.
         """
+        if not payload.razorpay_order_id or not payload.razorpay_payment_id or not payload.razorpay_signature:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Missing payment verification fields.",
+            )
+
         payment = self.crud.get_by_order_id(payload.razorpay_order_id)
         if not payment:
             raise HTTPException(

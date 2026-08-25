@@ -8,8 +8,7 @@ import {
   ShieldCheck, 
   CreditCard, 
   Phone, 
-  CheckCircle2,
-  Navigation2
+  CheckCircle2
 } from 'lucide-react';
 import { Booking } from '../../types';
 import { StatusBadge } from '../ui/StatusBadge';
@@ -21,7 +20,6 @@ export interface BookingDetailsModalProps {
   onOpenVerify?: () => void;
   onOpenPayment?: () => void;
   onOpenReview?: () => void;
-  onOpenTracking?: () => void;
 }
 
 export const BookingDetailsModal: React.FC<BookingDetailsModalProps> = ({
@@ -31,7 +29,6 @@ export const BookingDetailsModal: React.FC<BookingDetailsModalProps> = ({
   onOpenVerify,
   onOpenPayment,
   onOpenReview,
-  onOpenTracking,
 }) => {
   if (!isOpen || !booking) return null;
 
@@ -182,19 +179,6 @@ export const BookingDetailsModal: React.FC<BookingDetailsModalProps> = ({
 
         {/* Action Buttons */}
         <div className="flex flex-wrap items-center justify-end gap-3 pt-4 border-t border-dark-750">
-          {onOpenTracking && (
-            <button
-              onClick={() => {
-                onClose();
-                onOpenTracking();
-              }}
-              className="bg-sage-400/10 text-sage-400 hover:bg-sage-400/20 border border-sage-400/30 rounded-xl font-bold transition-all text-xs px-4 py-2.5 flex items-center gap-1.5"
-            >
-              <Navigation2 className="w-4 h-4" />
-              <span>Live Track Technician</span>
-            </button>
-          )}
-
           {onOpenVerify && ['assigned', 'accepted', 'in_progress', 'arrived', 'on_the_way'].includes(booking.status) && (
             <button
               onClick={() => {

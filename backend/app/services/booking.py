@@ -136,6 +136,9 @@ class BookingService:
             404: If service or address not found.
         """
         customer_id = self._get_customer_id(current_user)
+        print('='*50)
+        with open('payload_log.txt', 'a') as f: f.write(str(payload.model_dump()) + '\n')
+        print('='*50)
 
         # Defensive check (schema-level validator also enforces this)
         if payload.booking_date < date.today():
@@ -348,6 +351,9 @@ class BookingService:
         # If address is provided, ensure it belongs to customer
         if "address_id" in data:
             customer_id = self._get_customer_id(current_user)
+        print('='*50)
+        with open('payload_log.txt', 'a') as f: f.write(str(payload.model_dump()) + '\n')
+        print('='*50)
             addr = self.address_crud.get_address(customer_id, int(data["address_id"]))
             if not addr:
                 raise HTTPException(

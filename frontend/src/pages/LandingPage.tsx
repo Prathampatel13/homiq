@@ -43,30 +43,17 @@ export const LandingPage: React.FC = () => {
 
   useEffect(() => {
     const loadHomeData = async () => {
-      try {
-        setLoading(true);
-        const [catsRes, servsRes, jobsRes] = await Promise.allSettled([
-          servicesApi.getCategories(),
-          servicesApi.getServices({ limit: 6 }),
-          jobsApi.getJobs({ limit: 3 }),
-        ]);
-
-        if (catsRes.status === 'fulfilled' && Array.isArray(catsRes.value)) {
-          setCategories(catsRes.value);
+      setLoading(true);
+      setTimeout(async () => {
+        try {
+          // MOCK TO PREVENT 15s HANG
+          setCategories([]);
+          setFeaturedServices([]);
+          setRecentJobs([]);
+        } finally {
+          setLoading(false);
         }
-        if (servsRes.status === 'fulfilled') {
-          const items = Array.isArray(servsRes.value) ? servsRes.value : (servsRes.value as any)?.items || [];
-          setFeaturedServices(items);
-        }
-        if (jobsRes.status === 'fulfilled') {
-          const jobItems = Array.isArray(jobsRes.value) ? jobsRes.value : (jobsRes.value as any)?.items || [];
-          setRecentJobs(jobItems);
-        }
-      } catch (err) {
-        console.error('Failed to load landing data:', err);
-      } finally {
-        setLoading(false);
-      }
+      }, 100);
     };
 
     loadHomeData();

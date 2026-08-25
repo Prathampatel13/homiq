@@ -16,6 +16,7 @@
       radial-gradient(ellipse 80% 50% at 50% -20%, rgba(143, 168, 160, 0.05), transparent 70%),
       linear-gradient(180deg, rgba(13, 15, 18, 0.6) 0%, rgba(8, 9, 11, 1) 100%);
     background-attachment: fixed;
+    color-scheme: dark;
   }
 
   h1, h2, h3, h4, h5, h6 {

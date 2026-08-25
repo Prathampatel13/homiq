@@ -169,7 +169,7 @@ export const ServicesPage: React.FC = () => {
               return (
               <div
                 key={service.id}
-                onClick={() => navigate(`/booking/new?service_id=${service.id}`)}
+                onClick={() => navigate(`/booking/new?category_id=${service.category_id}`)}
                 className="group p-6 rounded-3xl bg-dark-900/90 hover:bg-dark-850 border border-dark-750 hover:border-dark-700 transition-all duration-200 cursor-pointer flex flex-col justify-between shadow-card"
               >
                 <div>

@@ -22,7 +22,7 @@ export const AddressModal: React.FC<AddressModalProps> = ({
   const [building, setBuilding] = useState(initialData?.building || '');
   const [area, setArea] = useState(initialData?.area || '');
   const [city, setCity] = useState(initialData?.city || '');
-  const [stateName, setStateName] = useState(initialData?.state || 'State');
+  const [stateName, setStateName] = useState(initialData?.state || '');
   const [pincode, setPincode] = useState(initialData?.pincode || '');
   const [isDefault, setIsDefault] = useState(initialData?.is_default || false);
   const [loading, setLoading] = useState(false);
@@ -32,8 +32,8 @@ export const AddressModal: React.FC<AddressModalProps> = ({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!houseNo.trim() || !area.trim() || !city.trim() || !pincode.trim()) {
-      setError('Please provide house/unit no, area, city, and pincode.');
+    if (!houseNo.trim() || !area.trim() || !city.trim() || !stateName.trim() || pincode.length !== 6) {
+      setError('Please provide house/unit no, area, city, state, and a valid 6-digit pincode.');
       return;
     }
 
@@ -48,7 +48,7 @@ export const AddressModal: React.FC<AddressModalProps> = ({
         building: building || undefined,
         area: area,
         city: city,
-        state: stateName || 'State',
+        state: stateName,
         pincode: pincode,
         is_default: isDefault,
       };
@@ -142,16 +142,49 @@ export const AddressModal: React.FC<AddressModalProps> = ({
               />
             </div>
             <div>
-              <label className="block text-xs font-semibold text-slate-300 mb-1.5">Pincode *</label>
-              <input
-                type="text"
-                value={pincode}
-                onChange={(e) => setPincode(e.target.value)}
-                placeholder="6-digit PIN"
-                className="input-field"
+              <label className="block text-xs font-semibold text-slate-300 mb-1.5">State *</label>
+              <select
+                value={stateName}
+                onChange={(e) => setStateName(e.target.value)}
+                className="input-field appearance-none bg-dark-900"
                 required
-              />
+              >
+                <option value="" disabled>Select State</option>
+                <option value="Andhra Pradesh">Andhra Pradesh</option>
+                <option value="Delhi">Delhi</option>
+                <option value="Gujarat">Gujarat</option>
+                <option value="Haryana">Haryana</option>
+                <option value="Karnataka">Karnataka</option>
+                <option value="Kerala">Kerala</option>
+                <option value="Maharashtra">Maharashtra</option>
+                <option value="Punjab">Punjab</option>
+                <option value="Rajasthan">Rajasthan</option>
+                <option value="Tamil Nadu">Tamil Nadu</option>
+                <option value="Telangana">Telangana</option>
+                <option value="Uttar Pradesh">Uttar Pradesh</option>
+                <option value="West Bengal">West Bengal</option>
+              </select>
             </div>
+          </div>
+
+          <div>
+            <label className="block text-xs font-semibold text-slate-300 mb-1.5">Pincode *</label>
+            <input
+              type="text"
+              inputMode="numeric"
+              maxLength={6}
+              value={pincode}
+              onChange={(e) => {
+                const val = e.target.value.replace(/\D/g, '');
+                if (val.length <= 6) setPincode(val);
+              }}
+              placeholder="6-digit PIN"
+              className={`input-field ${pincode.length > 0 && pincode.length < 6 ? 'border-rose-500/80 focus:border-rose-500 focus:ring-rose-500/20' : ''}`}
+              required
+            />
+            {pincode.length > 0 && pincode.length < 6 && (
+              <p className="text-[10px] text-rose-400 mt-1.5">Pincode must be exactly 6 digits</p>
+            )}
           </div>
 
           <div className="flex items-center gap-2 pt-2">
@@ -184,8 +217,8 @@ export const AddressModal: React.FC<AddressModalProps> = ({
             </button>
             <button
               type="submit"
-              disabled={loading}
-              className="btn-primary text-xs px-5 py-2.5 flex items-center gap-1.5"
+              disabled={loading || !houseNo.trim() || !area.trim() || !city.trim() || !stateName.trim() || pincode.length !== 6}
+              className="btn-primary text-xs px-5 py-2.5 flex items-center gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {loading && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
               <span>Save Address</span>

@@ -17,7 +17,6 @@ class CustomerAddress(Base):
     __tablename__ = "customer_addresses"
 
     __table_args__ = (
-        Index("ix_customer_addresses_customer_id", "customer_id"),
         Index(
             "ix_customer_addresses_customer_id_default",
             "customer_id",

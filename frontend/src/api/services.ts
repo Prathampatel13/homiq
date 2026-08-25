@@ -2,8 +2,8 @@ import api from './axios';
 import { Service, ServiceCategory } from '../types';
 
 export const servicesApi = {
-  getCategories: async (): Promise<ServiceCategory[]> => {
-    const response = await api.get<ServiceCategory[]>('/services/categories');
+  getCategories: async (params?: { offset?: number; limit?: number; _t?: number }): Promise<ServiceCategory[]> => {
+    const response = await api.get<ServiceCategory[]>('/services/categories', { params: { ...params, _t: Date.now() } });
     return response.data;
   },
 
@@ -34,8 +34,9 @@ export const servicesApi = {
     search?: string;
     offset?: number;
     limit?: number;
+    _t?: number;
   }): Promise<Service[]> => {
-    const response = await api.get<Service[]>('/services/', { params });
+    const response = await api.get('/services/', { params: { ...params, _t: Date.now() } });
     return response.data;
   },
 

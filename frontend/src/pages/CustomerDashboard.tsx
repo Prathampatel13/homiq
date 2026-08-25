@@ -36,8 +36,6 @@ import { BookingDetailsModal } from '../components/modals/BookingDetailsModal';
 import { AddressModal } from '../components/modals/AddressModal';
 import { PaymentModal } from '../components/modals/PaymentModal';
 import { ReviewModal } from '../components/modals/ReviewModal';
-import { LiveTrackingModal } from '../components/modals/LiveTrackingModal';
-import { LiveTrackingWidget } from '../components/ui/LiveTrackingWidget';
 
 export const CustomerDashboard: React.FC = () => {
   const navigate = useNavigate();
@@ -54,7 +52,6 @@ export const CustomerDashboard: React.FC = () => {
   const [verifyModalBooking, setVerifyModalBooking] = useState<Booking | null>(null);
   const [paymentModalBooking, setPaymentModalBooking] = useState<Booking | null>(null);
   const [reviewModalBooking, setReviewModalBooking] = useState<Booking | null>(null);
-  const [trackingModalBooking, setTrackingModalBooking] = useState<Booking | null>(null);
   const [addressModalOpen, setAddressModalOpen] = useState(false);
   const [editingAddress, setEditingAddress] = useState<CustomerAddress | null>(null);
 
@@ -90,10 +87,6 @@ export const CustomerDashboard: React.FC = () => {
 
   const activeBooking = bookings.find((b) => 
     ['assigned', 'accepted', 'in_progress', 'arrived', 'start_trip', 'pending', 'confirmed', 'on_the_way'].includes(b.status)
-  );
-
-  const routingBooking = bookings.find((b) => 
-    ['assigned', 'accepted', 'on_the_way', 'pending', 'confirmed'].includes(b.status)
   );
 
   const pastBookings = bookings.filter((b) => 
@@ -198,10 +191,6 @@ export const CustomerDashboard: React.FC = () => {
         {/* ──────────────────────────────────────────────────────────────────────────
             CURRENT ACTIVE SERVICE OR ZERO-STATE BANNER
         ────────────────────────────────────────────────────────────────────────── */}
-        {/* 🚀 LIVE TRACKING WIDGET */}
-        {routingBooking && <LiveTrackingWidget booking={routingBooking} />}
-
-        {/* ⚡ CURRENT ACTIVE SERVICE OR ZERO-STATE BANNER */}
         <div className="space-y-4">
           <h2 className="text-lg font-bold text-white tracking-tight flex items-center gap-2">
             <span>Current Service Dispatch</span>
@@ -449,18 +438,8 @@ export const CustomerDashboard: React.FC = () => {
             setReviewModalBooking(selectedBooking);
             setSelectedBooking(null);
           }}
-          onOpenTracking={() => {
-            setTrackingModalBooking(selectedBooking);
-            setSelectedBooking(null);
-          }}
         />
       )}
-
-      <LiveTrackingModal
-        booking={trackingModalBooking}
-        isOpen={!!trackingModalBooking}
-        onClose={() => setTrackingModalBooking(null)}
-      />
 
       {verifyModalBooking && (
         <SmartVerifyModal
