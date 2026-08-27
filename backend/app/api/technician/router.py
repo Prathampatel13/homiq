@@ -209,6 +209,24 @@ def get_booking_history(
     return service.get_booking_history(current_user, offset=offset, limit=limit)
 
 
+@router.get(
+    "/customers/{customer_id}/history",
+    response_model=TechnicianJobListResponse,
+    summary="Get customer booking history",
+    description="Returns past booking history of a specific customer.",
+)
+def get_customer_history_for_tech(
+    customer_id: int,
+    offset: int = 0,
+    limit: int = 100,
+    current_user: User = Depends(get_current_technician),
+    db: Session = Depends(get_db),
+) -> Any:
+    """Get past/completed booking history of a customer."""
+    service = TechnicianService(db)
+    return service.get_customer_history(current_user, customer_id, offset=offset, limit=limit)
+
+
 # ── Booking Action Workflow ───────────────────────────────────────────
 
 

@@ -43,7 +43,7 @@ def register(payload: RegisterRequest, db: Session = Depends(get_db)) -> Token:
 @router.post("/login", response_model=Token)
 def login(payload: LoginRequest, db: Session = Depends(get_db)) -> Token:
     crud = UserCRUD(db)
-    user = crud.authenticate(email=str(payload.email), password=payload.password)
+    user = crud.authenticate(identifier=payload.identifier, password=payload.password)
     if not user:
         raise HTTPException(status_code=401, detail="Invalid credentials")
     tokens = crud.create_tokens(user)
@@ -72,14 +72,61 @@ def refresh_token(refresh_token: str, db: Session = Depends(get_db)) -> Token:
     return Token(**tokens)
 
 
+from jose import jwt
+from datetime import datetime, timedelta, timezone
+from app.core.config import settings
+from app.services.email import send_email_in_background
+
 @router.post("/forgot-password")
 def forgot_password(payload: ForgotPasswordRequest, db: Session = Depends(get_db)) -> dict[str, str]:
-    return {"message": "Password reset instructions sent"}
+    crud = UserCRUD(db)
+    user = crud.get_user_by_email(payload.email)
+    if user:
+        expire = datetime.now(timezone.utc) + timedelta(hours=1)
+        reset_token = jwt.encode(
+            {"sub": str(user.id), "type": "reset", "exp": expire},
+            settings.SECRET_KEY,
+            algorithm=settings.ALGORITHM
+        )
+        reset_link = f"http://localhost:5173/reset-password?token={reset_token}"
+        
+        html_body = f"""
+        <h3>Reset Your Password</h3>
+        <p>Hi {user.full_name},</p>
+        <p>You requested a password reset. Click the link below to set a new password:</p>
+        <p><a href="{reset_link}">{reset_link}</a></p>
+        <p>This link expires in 1 hour.</p>
+        <p>If you didn't request this, you can safely ignore this email.</p>
+        """
+        send_email_in_background(
+            subject="Password Reset - HomiQ",
+            email_to=user.email,
+            body=html_body
+        )
+        
+    return {"message": "If an account with that email exists, password reset instructions have been sent."}
 
 
 @router.post("/reset-password")
 def reset_password(payload: ResetPasswordRequest, db: Session = Depends(get_db)) -> dict[str, str]:
-    return {"message": "Password updated"}
+    from jose import JWTError
+    try:
+        payload_data = jwt.decode(payload.token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
+        if payload_data.get("type") != "reset":
+            raise HTTPException(status_code=400, detail="Invalid token type")
+        user_id = int(payload_data.get("sub"))
+    except JWTError:
+        raise HTTPException(status_code=400, detail="Invalid or expired reset token")
+        
+    crud = UserCRUD(db)
+    user = crud.get_user_by_id(user_id)
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+        
+    user.hashed_password = hash_password(payload.new_password)
+    db.commit()
+    
+    return {"message": "Password successfully updated"}
 
 
 @router.get("/me")

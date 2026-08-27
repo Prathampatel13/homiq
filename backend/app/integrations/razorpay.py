@@ -83,7 +83,7 @@ class RazorpayClient:
             )
         except Exception as exc:
             raise HTTPException(
-                status_code=status.HTTP_502_BAD_GATEWAY,
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail=f"Razorpay order creation failed: {exc}",
             )
 
@@ -129,7 +129,7 @@ class RazorpayClient:
             return self.client.payment.fetch(payment_id)
         except Exception as exc:
             raise HTTPException(
-                status_code=status.HTTP_502_BAD_GATEWAY,
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail=f"Failed to fetch payment details: {exc}",
             )
 
@@ -159,7 +159,7 @@ class RazorpayClient:
             )
         except Exception as exc:
             raise HTTPException(
-                status_code=status.HTTP_502_BAD_GATEWAY,
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail=f"Razorpay refund failed: {exc}",
             )
 
@@ -191,7 +191,7 @@ class RazorpayClient:
             return self.client.payment.all(filters)
         except Exception as exc:
             raise HTTPException(
-                status_code=status.HTTP_502_BAD_GATEWAY,
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail=f"Failed to fetch payments: {exc}",
             )
 
@@ -222,7 +222,7 @@ class RazorpayClient:
             return self.client.customer.create(data=data)
         except Exception as exc:
             raise HTTPException(
-                status_code=status.HTTP_502_BAD_GATEWAY,
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail=f"Failed to create Razorpay customer: {exc}",
             )
 

@@ -24,7 +24,7 @@ from typing import Any, Optional
 
 from fastapi import HTTPException, status
 from sqlalchemy import func, select
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 
 from app.crud.booking import BookingCRUD
 from app.crud.customer import CustomerCRUD
@@ -242,6 +242,9 @@ class BookingService:
             if customer:
                 stmt = (
                     select(Booking)
+                    .options(joinedload(Booking.service))
+                    .options(joinedload(Booking.technician))
+                    .options(joinedload(Booking.address))
                     .where(Booking.customer_id == customer.id)
                     .order_by(Booking.created_at.desc())
                     .offset(offset)

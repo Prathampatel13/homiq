@@ -194,6 +194,37 @@ class TechnicianService:
             total=int(total),
         )
 
+    def get_customer_history(
+        self,
+        current_user: User,
+        customer_id: int,
+        offset: int = 0,
+        limit: int = 100,
+    ) -> TechnicianJobListResponse:
+        """Return past/completed booking history of a specific customer."""
+        technician = self._get_technician_or_404(current_user.id)
+        
+        # Verify if technician has ever served this customer (or is an admin)
+        has_interaction = self.db.scalar(
+            select(Booking).where(
+                Booking.technician_id == technician.id,
+                Booking.customer_id == customer_id
+            ).limit(1)
+        )
+        if not has_interaction and current_user.role.name.lower() != "admin":
+            raise HTTPException(status_code=403, detail="Not authorized to view this customer's history.")
+            
+        stmt = select(Booking).where(Booking.customer_id == customer_id).order_by(Booking.created_at.desc()).offset(offset).limit(limit)
+        bookings = self.db.scalars(stmt).all()
+        
+        count_stmt = select(func.count(Booking.id)).where(Booking.customer_id == customer_id)
+        total = self.db.scalar(count_stmt) or 0
+        
+        return TechnicianJobListResponse(
+            items=[self._build_job_response(b) for b in bookings],
+            total=int(total)
+        )
+
     # ── Technician Workflow Actions ───────────────────────────────────
 
     def accept_booking(

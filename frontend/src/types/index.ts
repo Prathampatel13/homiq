@@ -137,6 +137,7 @@ export interface Booking {
   tax_amount?: number;
   final_price?: number;
   total_amount?: number;
+  payment_status?: 'pending' | 'paid' | 'failed' | 'refunded' | string;
   customer_note?: string;
   admin_note?: string;
   qr_code?: string;

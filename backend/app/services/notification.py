@@ -16,6 +16,9 @@ from app.schemas.notifications import (
 )
 
 
+from app.crud.user import UserCRUD
+from app.services.email import send_email_in_background
+
 class NotificationService:
     """Service layer for notification operations."""
 
@@ -23,6 +26,7 @@ class NotificationService:
         self.db = db
         self.crud = NotificationCRUD(db)
         self.customer_crud = CustomerCRUD(db)
+        self.user_crud = UserCRUD(db)
 
     def _get_customer_id(self, current_user: User) -> int:
         customer = self.customer_crud.get_by_user_id(current_user.id)
@@ -47,12 +51,27 @@ class NotificationService:
         title: str,
         message: str,
     ) -> NotificationResponse:
-        """Helper to create a notification for a specific user."""
+        """Helper to create a notification for a specific user and send an email."""
         notification = self.crud.create({
             "user_id": user_id,
             "title": title,
             "message": message,
         })
+        
+        user = self.user_crud.get_by_id(user_id)
+        if user and user.email:
+            html_body = f"""
+            <h3>{title}</h3>
+            <p>{message}</p>
+            <hr>
+            <p><small>HomiQ Services</small></p>
+            """
+            send_email_in_background(
+                subject=title,
+                email_to=user.email,
+                body=html_body,
+            )
+
         return NotificationResponse.model_validate(notification)
 
     def notify_booking_created(self, user_id: int, booking_number: str) -> NotificationResponse:

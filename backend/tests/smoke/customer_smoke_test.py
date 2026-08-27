@@ -59,7 +59,7 @@ def main():
 
     # Login
     print("\nPOST /auth/login")
-    r = client.post("/auth/login", json={"email": email, "password": password})
+    r = client.post("/auth/login", json={"identifier": email, "password": password})
     print(" ", r.status_code, r.text[:200])
     check("login", r.status_code, [200])
     assert r.status_code == 200, r.text

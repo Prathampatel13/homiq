@@ -42,8 +42,9 @@ class CustomerCRUD:
             .returning(Customer)
         )
         result = self.db.execute(stmt)
+        item = result.scalar_one_or_none()
         self.db.commit()
-        return result.scalar_one_or_none()
+        return item
 
     def update_user_name(self, user_id: int, full_name: str) -> None:
         user = self.db.get(User, user_id)

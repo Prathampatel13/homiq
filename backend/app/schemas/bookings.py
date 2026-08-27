@@ -56,6 +56,28 @@ class BookingStatusUpdate(BaseModel):
     admin_note: Optional[str] = Field(None, max_length=2000)
 
 
+class BookingServiceNested(BaseModel):
+    id: int
+    name: str
+    base_price: float
+    model_config = {"from_attributes": True}
+
+class BookingTechnicianNested(BaseModel):
+    id: int
+    user_id: int
+    model_config = {"from_attributes": True}
+
+class BookingAddressNested(BaseModel):
+    id: int
+    full_name: str
+    phone: str
+    house_no: str
+    area: str
+    city: str
+    state: str
+    pincode: str
+    model_config = {"from_attributes": True}
+
 class BookingResponse(BaseModel):
     id: int
     booking_number: str
@@ -73,6 +95,10 @@ class BookingResponse(BaseModel):
     admin_note: Optional[str]
     created_at: datetime
     updated_at: datetime
+
+    service: Optional[BookingServiceNested] = None
+    technician: Optional[BookingTechnicianNested] = None
+    address: Optional[BookingAddressNested] = None
 
     model_config = {"from_attributes": True}
 

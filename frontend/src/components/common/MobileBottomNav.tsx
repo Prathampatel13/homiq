@@ -45,15 +45,17 @@ export const MobileBottomNav: React.FC = () => {
           <span className="text-[10px] font-medium">Home</span>
         </button>
 
-        <button
-          onClick={() => navigate('/services')}
-          className={`flex flex-col items-center gap-1 py-1 px-2 rounded-xl transition-colors ${
-            isCurrent('/services') ? 'text-sage-400' : 'text-slate-400 hover:text-slate-200'
-          }`}
-        >
-          <Layers className="w-5 h-5" />
-          <span className="text-[10px] font-medium">Services</span>
-        </button>
+        {role !== UserRole.TECHNICIAN && (
+          <button
+            onClick={() => navigate('/services')}
+            className={`flex flex-col items-center gap-1 py-1 px-2 rounded-xl transition-colors ${
+              isCurrent('/services') ? 'text-sage-400' : 'text-slate-400 hover:text-slate-200'
+            }`}
+          >
+            <Layers className="w-5 h-5" />
+            <span className="text-[10px] font-medium">Services</span>
+          </button>
+        )}
 
         {role === UserRole.CUSTOMER && (
           <button

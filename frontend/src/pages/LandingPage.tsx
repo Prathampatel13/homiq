@@ -32,7 +32,8 @@ import { SmartHomeLayeredView } from '../components/3d/SmartHomeLayeredView';
 import { HomiQLogo } from '../components/brand/HomiQLogo';
 import { servicesApi } from '../api/services';
 import { jobsApi } from '../api/jobs';
-import { Service, ServiceCategory, JobPost } from '../types';
+import { Service, ServiceCategory, JobPost, UserRole } from '../types';
+import { useAuthStore } from '../store/useAuthStore';
 
 export const LandingPage: React.FC = () => {
   const navigate = useNavigate();
@@ -40,6 +41,8 @@ export const LandingPage: React.FC = () => {
   const [featuredServices, setFeaturedServices] = useState<Service[]>([]);
   const [recentJobs, setRecentJobs] = useState<JobPost[]>([]);
   const [loading, setLoading] = useState(true);
+  const { getEffectiveRole } = useAuthStore();
+  const role = getEffectiveRole();
 
   useEffect(() => {
     const loadHomeData = async () => {
@@ -91,20 +94,22 @@ export const LandingPage: React.FC = () => {
               {/* CTAs */}
               <div className="flex flex-wrap items-center gap-3.5 pt-2">
                 <button
-                  onClick={() => navigate('/booking/new')}
+                  onClick={() => navigate(role === UserRole.TECHNICIAN ? '/provider/dashboard' : '/booking/new')}
                   className="btn-primary px-6 py-3 text-xs sm:text-sm font-semibold shadow-subtle hover:shadow-metallic flex items-center gap-2 group"
                 >
-                  <span>BOOK A SERVICE</span>
+                  <span>{role === UserRole.TECHNICIAN ? 'ORDER RECEIVED' : 'BOOK A SERVICE'}</span>
                   <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
                 </button>
 
-                <button
-                  onClick={() => navigate('/services')}
-                  className="btn-secondary px-6 py-3 text-xs sm:text-sm font-semibold flex items-center gap-2"
-                >
-                  <span>EXPLORE SERVICES</span>
-                  <ChevronRight className="w-4 h-4 text-slate-400" />
-                </button>
+                {role !== UserRole.TECHNICIAN && (
+                  <button
+                    onClick={() => navigate('/services')}
+                    className="btn-secondary px-6 py-3 text-xs sm:text-sm font-semibold flex items-center gap-2"
+                  >
+                    <span>EXPLORE SERVICES</span>
+                    <ChevronRight className="w-4 h-4 text-slate-400" />
+                  </button>
+                )}
               </div>
 
               {/* Trust Indicators */}
@@ -156,13 +161,15 @@ export const LandingPage: React.FC = () => {
               </p>
             </div>
 
-            <button
-              onClick={() => navigate('/services')}
-              className="btn-secondary text-xs px-5 py-2.5 flex items-center gap-2 self-start md:self-auto"
-            >
-              <span>View All Services</span>
-              <ArrowRight className="w-3.5 h-3.5" />
-            </button>
+            {role !== UserRole.TECHNICIAN && (
+              <button
+                onClick={() => navigate('/services')}
+                className="btn-secondary text-xs px-5 py-2.5 flex items-center gap-2 self-start md:self-auto"
+              >
+                <span>View All Services</span>
+                <ArrowRight className="w-3.5 h-3.5" />
+              </button>
+            )}
           </div>
 
           {/* Services Grid */}
@@ -183,7 +190,7 @@ export const LandingPage: React.FC = () => {
             ].map((item, idx) => (
               <div
                 key={idx}
-                onClick={() => navigate('/booking/new')}
+                onClick={() => navigate(role === UserRole.TECHNICIAN ? '/provider/dashboard' : '/booking/new')}
                 className="group p-6 rounded-3xl bg-dark-900/90 hover:bg-dark-850 border border-dark-750 hover:border-dark-700 transition-all duration-200 cursor-pointer flex flex-col justify-between shadow-card"
               >
                 <div>
@@ -450,10 +457,10 @@ export const LandingPage: React.FC = () => {
 
           <div className="pt-4 flex flex-wrap items-center justify-center gap-4">
             <button
-              onClick={() => navigate('/booking/new')}
+              onClick={() => navigate(role === UserRole.TECHNICIAN ? '/provider/dashboard' : '/booking/new')}
               className="btn-primary px-8 py-3.5 text-sm font-semibold shadow-subtle hover:shadow-metallic flex items-center gap-2"
             >
-              <span>BOOK A SERVICE NOW</span>
+              <span>{role === UserRole.TECHNICIAN ? 'ORDER RECEIVED' : 'BOOK A SERVICE NOW'}</span>
               <ArrowRight className="w-4 h-4" />
             </button>
             <button

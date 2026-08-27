@@ -97,7 +97,7 @@ def ensure_admin() -> dict:
     conn.commit()
     conn.close()
 
-    r = client.post("/auth/login", json={"email": ADMIN_EMAIL, "password": ADMIN_PASSWORD})
+    r = client.post("/auth/login", json={"identifier": ADMIN_EMAIL, "password": ADMIN_PASSWORD})
     assert r.status_code == 200, f"Admin login failed: {r.text}"
     return {"Authorization": f"Bearer {r.json()['access_token']}"}
 

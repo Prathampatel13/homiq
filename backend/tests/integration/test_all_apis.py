@@ -111,7 +111,7 @@ def register_user(role: str, custom_prefix: str = "") -> dict[str, Any]:
 def login_admin() -> dict[str, Any]:
     # Check if existing admin can login or register a new admin
     email = "admin_master@homiq.com"
-    r = client.post("/auth/login", json={"email": email, "password": PASSWORD})
+    r = client.post("/auth/login", json={"identifier": email, "password": PASSWORD})
     if r.status_code == 200:
         data = r.json()
         return {
@@ -144,14 +144,14 @@ def test_auth_api(customer: dict, admin: dict):
 
     # 1.2 Login with valid credentials
     r = client.post("/auth/login", json={
-        "email": customer["email"],
+        "identifier": customer["email"],
         "password": PASSWORD,
     })
     check("Login Valid Credentials (200)", "POST", "/auth/login", r, (200,))
 
     # 1.3 Login with invalid credentials (401)
     r = client.post("/auth/login", json={
-        "email": customer["email"],
+        "identifier": customer["email"],
         "password": "WrongPassword123",
     })
     check("Login Invalid Credentials (401)", "POST", "/auth/login", r, (401,))

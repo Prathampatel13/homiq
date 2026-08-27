@@ -34,7 +34,7 @@ export const ProviderDashboard: React.FC = () => {
   const [isOnline, setIsOnline] = useState<boolean>(true);
   const [jobs, setJobs] = useState<Booking[]>([]);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<'today' | 'active' | 'pending' | 'earnings' | 'documents'>('today');
+  const [activeTab, setActiveTab] = useState<'today' | 'active' | 'pending' | 'all' | 'earnings' | 'documents'>('today');
 
   const [verifyBooking, setVerifyBooking] = useState<Booking | null>(null);
   const [detailsBooking, setDetailsBooking] = useState<Booking | null>(null);
@@ -179,6 +179,7 @@ export const ProviderDashboard: React.FC = () => {
             { id: 'today', label: "Today's Queue", count: activeJobs.length + pendingJobs.length },
             { id: 'active', label: 'In Execution', count: activeJobs.length },
             { id: 'pending', label: 'Incoming Dispatches', count: pendingJobs.length },
+            { id: 'all', label: 'All Services', count: jobs.length },
             { id: 'earnings', label: 'Earnings & Payouts' },
             { id: 'documents', label: 'KYC & Credentials' },
           ].map((tab) => (
@@ -206,7 +207,7 @@ export const ProviderDashboard: React.FC = () => {
         {/* ──────────────────────────────────────────────────────────────────────────
             TAB CONTENT
         ────────────────────────────────────────────────────────────────────────── */}
-        {activeTab === 'today' || activeTab === 'active' || activeTab === 'pending' ? (
+        {activeTab === 'today' || activeTab === 'active' || activeTab === 'pending' || activeTab === 'all' ? (
           <div className="space-y-4">
             {jobs.length > 0 ? (
               <div className="space-y-4">
@@ -214,7 +215,8 @@ export const ProviderDashboard: React.FC = () => {
                   .filter((j) => {
                     if (activeTab === 'active') return ['in_progress', 'arrived', 'start_trip', 'on_the_way'].includes(j.status);
                     if (activeTab === 'pending') return ['assigned', 'pending'].includes(j.status);
-                    return true;
+                    if (activeTab === 'today') return ['assigned', 'pending', 'in_progress', 'arrived', 'start_trip', 'on_the_way'].includes(j.status);
+                    return true; // 'all' will return true for all jobs including completed
                   })
                   .map((job) => (
                     <div
@@ -233,11 +235,24 @@ export const ProviderDashboard: React.FC = () => {
                           Booking ID #{job.booking_number || job.id} • Schedule: {job.booking_date ? new Date(job.booking_date).toLocaleDateString() : 'Today'} {job.preferred_time ? `(${job.preferred_time})` : ''}
                         </p>
 
-                        <div className="flex items-start gap-2 text-xs text-slate-300 pt-1">
-                          <MapPin className="w-4 h-4 text-sage-400 shrink-0 mt-0.5" />
-                          <span>
-                            {job.address ? `${job.address.house_no} ${job.address.area}, ${job.address.city}` : 'Customer Address on record'}
-                          </span>
+                        <div className="flex flex-col gap-1.5 pt-1">
+                          <div className="flex items-center gap-2 text-xs text-slate-300">
+                            <User className="w-3.5 h-3.5 text-sage-400 shrink-0" />
+                            <span className="font-semibold text-white">{job.customer?.full_name || 'Customer'}</span>
+                            {job.customer?.phone && (
+                              <>
+                                <span className="text-slate-500">•</span>
+                                <Phone className="w-3 h-3 text-slate-400 shrink-0" />
+                                <span className="text-slate-400">{job.customer.phone}</span>
+                              </>
+                            )}
+                          </div>
+                          <div className="flex items-start gap-2 text-xs text-slate-300">
+                            <MapPin className="w-3.5 h-3.5 text-sage-400 shrink-0 mt-0.5" />
+                            <span>
+                              {job.address ? `${job.address.house_no} ${job.address.area}, ${job.address.city}` : 'Customer Address on record'}
+                            </span>
+                          </div>
                         </div>
 
                         {job.customer_note && (

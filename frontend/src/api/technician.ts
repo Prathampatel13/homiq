@@ -83,6 +83,16 @@ export const technicianApi = {
     return response.data;
   },
 
+  getBookingHistory: async (params?: { offset?: number; limit?: number }): Promise<{ items: Booking[]; total: number }> => {
+    const response = await api.get<{ items: Booking[]; total: number }>('/technician/history', { params });
+    return response.data;
+  },
+
+  getCustomerHistory: async (customerId: number, params?: { offset?: number; limit?: number }): Promise<{ items: Booking[]; total: number }> => {
+    const response = await api.get<{ items: Booking[]; total: number }>(`/technician/customers/${customerId}/history`, { params });
+    return response.data;
+  },
+
   getMyJobs: async (params?: { status?: string; offset?: number; limit?: number }): Promise<Booking[] | { items: Booking[]; total: number }> => {
     const response = await api.get<Booking[] | { items: Booking[]; total: number }>('/technician/jobs', { params });
     return response.data;

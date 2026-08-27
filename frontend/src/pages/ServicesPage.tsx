@@ -21,8 +21,9 @@ import {
   DoorOpen
 } from 'lucide-react';
 import { servicesApi } from '../api/services';
-import { Service, ServiceCategory } from '../types';
+import { Service, ServiceCategory, UserRole } from '../types';
 import { EmptyState } from '../components/ui/EmptyState';
+import { useAuthStore } from '../store/useAuthStore';
 import { LoadingState } from '../components/ui/LoadingState';
 
 export const ServicesPage: React.FC = () => {
@@ -32,6 +33,8 @@ export const ServicesPage: React.FC = () => {
   const [selectedCategory, setSelectedCategory] = useState<number | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [loading, setLoading] = useState(true);
+  const { getEffectiveRole } = useAuthStore();
+  const role = getEffectiveRole();
 
   useEffect(() => {
     const fetchData = async () => {
@@ -164,13 +167,16 @@ export const ServicesPage: React.FC = () => {
                   </p>
                 </div>
 
-                <div className="pt-5 mt-5 border-t border-dark-750/70 flex items-center justify-between text-xs text-slate-400 font-mono">
+                <div 
+                  onClick={() => navigate(role === UserRole.TECHNICIAN ? '/provider/dashboard' : '/booking/new')}
+                  className="pt-5 mt-5 border-t border-dark-750/70 flex items-center justify-between text-xs text-slate-400 font-mono"
+                >
                   <span className="flex items-center gap-1.5">
                     <Clock className="w-3.5 h-3.5 text-sage-400" />
                     <span>~{service.duration_minutes || 60} mins</span>
                   </span>
                   <span className="text-sage-400 group-hover:translate-x-1 transition-transform flex items-center gap-1 font-semibold">
-                    <span>Book Service</span>
+                    <span>{role === UserRole.TECHNICIAN ? 'Order Received' : 'Book Service'}</span>
                     <ChevronRight className="w-3.5 h-3.5" />
                   </span>
                 </div>

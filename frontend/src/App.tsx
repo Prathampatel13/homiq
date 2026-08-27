@@ -19,6 +19,8 @@ import { LoginPage } from './pages/LoginPage';
 import { RegisterPage } from './pages/RegisterPage';
 import { ForgotPasswordPage } from './pages/ForgotPasswordPage';
 import { ResetPasswordPage } from './pages/ResetPasswordPage';
+import { NotificationsPage } from './pages/NotificationsPage';
+import { LiveTrackingPage } from './pages/LiveTrackingPage';
 
 import { useAuthStore } from './store/useAuthStore';
 import { UserRole } from './types';
@@ -82,6 +84,22 @@ export const App: React.FC = () => {
                   element={
                     <ProtectedRoute allowedRoles={[UserRole.CUSTOMER]}>
                       <CustomerDashboard />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/notifications"
+                  element={
+                    <ProtectedRoute>
+                      <NotificationsPage />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/live-tracking"
+                  element={
+                    <ProtectedRoute>
+                      <LiveTrackingPage />
                     </ProtectedRoute>
                   }
                 />

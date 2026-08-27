@@ -45,8 +45,9 @@ class CompanyCRUD:
             .returning(Company)
         )
         result = self.db.execute(stmt)
+        item = result.scalar_one_or_none()
         self.db.commit()
-        return result.scalar_one_or_none()
+        return item
 
     def delete(self, company_id: int) -> bool:
         company = self.get_by_company_id(company_id)

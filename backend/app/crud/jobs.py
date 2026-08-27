@@ -103,8 +103,9 @@ class JobCRUD:
             .returning(JobPost)
         )
         result = self.db.execute(stmt)
+        item = result.scalar_one_or_none()
         self.db.commit()
-        return result.scalar_one_or_none()
+        return item
 
     def delete_job_post(self, job_post_id: int) -> bool:
         job_post = self.get_job_post(job_post_id)

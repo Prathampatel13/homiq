@@ -36,8 +36,9 @@ class TechnicianCRUD:
             .returning(Technician)
         )
         result = self.db.execute(stmt)
+        technician = result.scalar_one_or_none()
         self.db.commit()
-        return result.scalar_one_or_none()
+        return technician
 
     def delete(self, technician_id: int) -> bool:
         technician = self.get_by_technician_id(technician_id)

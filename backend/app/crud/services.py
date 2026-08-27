@@ -38,8 +38,9 @@ class ServicesCRUD:
             .returning(Category)
         )
         result = self.db.execute(stmt)
+        item = result.scalar_one_or_none()
         self.db.commit()
-        return result.scalar_one_or_none()
+        return item
 
     def delete_category(self, category_id: int) -> bool:
         category = self.get_category(category_id)
@@ -78,8 +79,9 @@ class ServicesCRUD:
             .returning(Service)
         )
         result = self.db.execute(stmt)
+        item = result.scalar_one_or_none()
         self.db.commit()
-        return result.scalar_one_or_none()
+        return item
 
     def delete_service(self, service_id: int) -> bool:
         service = self.get_service(service_id)

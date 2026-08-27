@@ -197,7 +197,7 @@ class FullSpectrumAPITester:
 
         # 5. Admin (Superuser)
         admin_email = "admin_master@homiq.com"
-        r = client.post("/auth/login", json={"email": admin_email, "password": self.password})
+        r = client.post("/auth/login", json={"identifier": admin_email, "password": self.password})
         if r.status_code == 200:
             data = r.json()
             self.context["admin"] = {

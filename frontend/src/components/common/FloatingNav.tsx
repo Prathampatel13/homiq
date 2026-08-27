@@ -14,10 +14,15 @@ import {
   ChevronUp
 } from 'lucide-react';
 
+import { useAuthStore } from '../../store/useAuthStore';
+import { UserRole } from '../../types';
+
 export const FloatingNav: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
+  const { getEffectiveRole } = useAuthStore();
+  const role = getEffectiveRole();
 
   const getPageInfo = (pathname: string) => {
     if (pathname === '/') return { name: 'Landing Page', icon: Home };
@@ -71,32 +76,40 @@ export const FloatingNav: React.FC = () => {
             </div>
 
             {/* CUSTOMER */}
-            <div className="mb-6">
-              <p className="text-[11px] font-bold text-slate-500 tracking-widest mb-3 px-3 uppercase">CUSTOMER</p>
-              <NavItem path="/customer/dashboard" icon={LayoutGrid} label="Customer Dashboard" isActive={location.pathname === '/customer/dashboard'} />
-              <NavItem path="/booking/new" icon={Calendar} label="Book Service" isActive={location.pathname === '/booking/new'} />
-              <NavItem path="/live-tracking" icon={Navigation} label="Live Tracking" isActive={location.pathname === '/live-tracking'} />
-              <NavItem path="/qr-verification" icon={QrCode} label="QR Verification" isActive={location.pathname === '/qr-verification'} />
-            </div>
+            {(!role || role === UserRole.CUSTOMER || role === UserRole.ADMIN) && (
+              <div className="mb-6">
+                <p className="text-[11px] font-bold text-slate-500 tracking-widest mb-3 px-3 uppercase">CUSTOMER</p>
+                <NavItem path="/customer/dashboard" icon={LayoutGrid} label="Customer Dashboard" isActive={location.pathname === '/customer/dashboard'} />
+                <NavItem path="/booking/new" icon={Calendar} label="Book Service" isActive={location.pathname === '/booking/new'} />
+                <NavItem path="/live-tracking" icon={Navigation} label="Live Tracking" isActive={location.pathname === '/live-tracking'} />
+                <NavItem path="/qr-verification" icon={QrCode} label="QR Verification" isActive={location.pathname === '/qr-verification'} />
+              </div>
+            )}
 
             {/* PROFESSIONAL */}
-            <div className="mb-6">
-              <p className="text-[11px] font-bold text-slate-500 tracking-widest mb-3 px-3 uppercase">PROFESSIONAL</p>
-              <NavItem path="/provider/dashboard" icon={Wrench} label="Technician Panel" isActive={location.pathname.includes('/provider/dashboard')} />
-            </div>
+            {(role === UserRole.TECHNICIAN || role === UserRole.ADMIN) && (
+              <div className="mb-6">
+                <p className="text-[11px] font-bold text-slate-500 tracking-widest mb-3 px-3 uppercase">PROFESSIONAL</p>
+                <NavItem path="/provider/dashboard" icon={Wrench} label="Technician Panel" isActive={location.pathname.includes('/provider/dashboard')} />
+              </div>
+            )}
 
             {/* JOBS */}
             <div className="mb-6">
               <p className="text-[11px] font-bold text-slate-500 tracking-widest mb-3 px-3 uppercase">JOBS</p>
               <NavItem path="/jobs" icon={Briefcase} label="Recruitment" isActive={location.pathname === '/jobs'} />
-              <NavItem path="/company/dashboard" icon={Building2} label="Company Dashboard" isActive={location.pathname.includes('/company/dashboard')} />
+              {(role === UserRole.COMPANY || role === UserRole.ADMIN) && (
+                <NavItem path="/company/dashboard" icon={Building2} label="Company Dashboard" isActive={location.pathname.includes('/company/dashboard')} />
+              )}
             </div>
 
             {/* ADMIN */}
-            <div className="mb-2">
-              <p className="text-[11px] font-bold text-slate-500 tracking-widest mb-3 px-3 uppercase">ADMIN</p>
-              <NavItem path="/admin/dashboard" icon={ShieldCheck} label="Admin Panel" isActive={location.pathname.includes('/admin/dashboard')} />
-            </div>
+            {role === UserRole.ADMIN && (
+              <div className="mb-2">
+                <p className="text-[11px] font-bold text-slate-500 tracking-widest mb-3 px-3 uppercase">ADMIN</p>
+                <NavItem path="/admin/dashboard" icon={ShieldCheck} label="Admin Panel" isActive={location.pathname.includes('/admin/dashboard')} />
+              </div>
+            )}
           </div>
         </div>
       )}

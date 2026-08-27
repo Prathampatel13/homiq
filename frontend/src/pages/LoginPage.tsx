@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { Lock, Mail, AlertCircle, Loader2, ArrowRight, Eye, EyeOff } from 'lucide-react';
+import { Lock, User as UserIcon, AlertCircle, Loader2, ArrowRight, Eye, EyeOff } from 'lucide-react';
 import { authApi } from '../api/auth';
 import { useAuthStore } from '../store/useAuthStore';
 import { HomiQLogo } from '../components/brand/HomiQLogo';
@@ -10,7 +10,7 @@ export const LoginPage: React.FC = () => {
   const location = useLocation();
   const { login } = useAuthStore();
 
-  const [email, setEmail] = useState('');
+  const [identifier, setIdentifier] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -18,15 +18,15 @@ export const LoginPage: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!email.trim() || !password.trim()) {
-      setError('Please enter both your email address and password.');
+    if (!identifier.trim() || !password.trim()) {
+      setError('Please enter your email, mobile number, or username and password.');
       return;
     }
 
     try {
       setLoading(true);
       setError(null);
-      const res = await authApi.login({ email, password });
+      const res = await authApi.login({ identifier, password });
       
       // Save tokens and user in store
       login(res.access_token, res.refresh_token, res.user);
@@ -80,14 +80,14 @@ export const LoginPage: React.FC = () => {
         <div className="p-6 sm:p-8 rounded-3xl bg-dark-900 border border-dark-750 shadow-modal space-y-6">
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <label className="block text-xs font-semibold text-slate-300 mb-1.5">Email Address</label>
+              <label className="block text-xs font-semibold text-slate-300 mb-1.5">Email, Mobile Number or Username</label>
               <div className="relative">
-                <Mail className="w-4 h-4 text-slate-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                <UserIcon className="w-4 h-4 text-slate-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
                 <input
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="name@example.com"
+                  type="text"
+                  value={identifier}
+                  onChange={(e) => setIdentifier(e.target.value)}
+                  placeholder="Enter email, mobile number or username"
                   className="input-field pl-10"
                   required
                 />

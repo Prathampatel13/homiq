@@ -21,7 +21,8 @@ import {
   Star,
   Phone,
   Trash2,
-  Edit2
+  Edit2,
+  Navigation2
 } from 'lucide-react';
 import { bookingsApi } from '../api/bookings';
 import { customerApi } from '../api/customer';
@@ -66,7 +67,12 @@ export const CustomerDashboard: React.FC = () => {
 
       if (bookingsRes.status === 'fulfilled') {
         const bList = Array.isArray(bookingsRes.value) ? bookingsRes.value : (bookingsRes.value as any)?.items || [];
-        setBookings(bList);
+        const sortedList = [...bList].sort((a, b) => {
+          const dateA = new Date(a.booking_date).getTime();
+          const dateB = new Date(b.booking_date).getTime();
+          return dateB - dateA;
+        });
+        setBookings(sortedList);
       }
       if (addressesRes.status === 'fulfilled' && Array.isArray(addressesRes.value)) {
         setAddresses(addressesRes.value);
@@ -89,9 +95,7 @@ export const CustomerDashboard: React.FC = () => {
     ['assigned', 'accepted', 'in_progress', 'arrived', 'start_trip', 'pending', 'confirmed', 'on_the_way'].includes(b.status)
   );
 
-  const pastBookings = bookings.filter((b) => 
-    ['completed', 'cancelled', 'rejected'].includes(b.status)
-  );
+
 
   const handleDeleteAddress = async (id: number) => {
     if (!window.confirm('Remove this service address?')) return;
@@ -243,6 +247,14 @@ export const CustomerDashboard: React.FC = () => {
                   <span>View Details</span>
                 </button>
 
+                <button
+                  onClick={() => navigate('/live-tracking')}
+                  className="btn-accent text-xs px-5 py-2.5 font-semibold flex items-center gap-1.5 shadow-accent bg-sage-400 text-dark-950 hover:bg-sage-300"
+                >
+                  <Navigation2 className="w-4 h-4" />
+                  <span>Live Tracking</span>
+                </button>
+
                 {['assigned', 'accepted', 'in_progress', 'arrived', 'on_the_way'].includes(activeBooking.status) && (
                   <button
                     onClick={() => setVerifyModalBooking(activeBooking)}
@@ -354,19 +366,18 @@ export const CustomerDashboard: React.FC = () => {
         </div>
 
         {/* ──────────────────────────────────────────────────────────────────────────
-            SERVICE HISTORY & COMPLETED BOOKINGS TABLE
+            SERVICE HISTORY & ALL BOOKINGS TABLE
         ────────────────────────────────────────────────────────────────────────── */}
         <div className="space-y-4">
           <h2 className="text-lg font-bold text-white tracking-tight">Service History</h2>
 
-          {pastBookings.length > 0 ? (
+          {bookings.length > 0 ? (
             <div className="rounded-3xl bg-dark-900 border border-dark-750 overflow-hidden shadow-card">
               <div className="overflow-x-auto">
                 <table className="w-full text-left text-xs">
                   <thead className="bg-dark-850 border-b border-dark-750 text-slate-400 font-mono uppercase text-[10px]">
                     <tr>
-                      <th className="py-3.5 px-4">Booking Ref</th>
-                      <th className="py-3.5 px-4">Service</th>
+                      <th className="py-3.5 px-4">Booking Ref & Service</th>
                       <th className="py-3.5 px-4">Date</th>
                       <th className="py-3.5 px-4">Status</th>
                       <th className="py-3.5 px-4">Amount</th>
@@ -374,19 +385,22 @@ export const CustomerDashboard: React.FC = () => {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-dark-750/70 text-slate-300">
-                    {pastBookings.map((b) => (
+                    {bookings.map((b) => (
                       <tr key={b.id} className="hover:bg-dark-850/50 transition-colors">
                         <td className="py-3.5 px-4 font-mono font-medium text-white">
                           #{b.booking_number || b.id}
-                        </td>
-                        <td className="py-3.5 px-4 font-semibold text-white">
-                          {b.service?.name || 'Service Order'}
+                          <div className="text-[10px] text-sage-400 mt-1 uppercase font-sans tracking-widest font-semibold">
+                            {b.service?.name || 'Service Order'}
+                          </div>
                         </td>
                         <td className="py-3.5 px-4 text-slate-400">
                           {b.booking_date ? new Date(b.booking_date).toLocaleDateString() : '—'}
                         </td>
                         <td className="py-3.5 px-4">
-                          <StatusBadge status={b.status} size="sm" />
+                          <StatusBadge 
+                            status={b.status === 'completed' && b.payment_status !== 'paid' ? 'waiting_payment' : b.status} 
+                            size="sm" 
+                          />
                         </td>
                         <td className="py-3.5 px-4 font-mono font-bold text-white">
                           ₹{(b.final_price || b.total_amount || b.estimated_price || 0).toFixed(2)}
@@ -398,12 +412,20 @@ export const CustomerDashboard: React.FC = () => {
                           >
                             Details
                           </button>
-                          {b.status === 'completed' && (
+                          {b.status === 'completed' && b.payment_status === 'paid' && (
                             <button
                               onClick={() => setReviewModalBooking(b)}
                               className="px-2.5 py-1 rounded-lg bg-sage-400/15 hover:bg-sage-400/25 text-sage-300 border border-sage-400/30 text-[11px]"
                             >
                               Review
+                            </button>
+                          )}
+                          {b.status === 'completed' && b.payment_status !== 'paid' && (
+                            <button
+                              onClick={() => setPaymentModalBooking(b)}
+                              className="px-2.5 py-1 rounded-lg bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-400 border border-emerald-500/30 text-[11px]"
+                            >
+                              Pay Now
                             </button>
                           )}
                         </td>
@@ -417,7 +439,8 @@ export const CustomerDashboard: React.FC = () => {
             <div className="p-8 rounded-2xl bg-dark-900/50 border border-dark-750 text-center text-xs text-slate-400">
               No historical services recorded yet. Your completed bookings and workmanship reports will appear here.
             </div>
-          )}        </div>
+          )}
+        </div>
       </div>
 
       {/* Modals */}

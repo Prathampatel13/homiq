@@ -37,6 +37,13 @@ export const StatusBadge: React.FC<StatusBadgeProps> = ({
           bg: 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400',
           icon: CheckCircle2,
         };
+      case 'waiting_payment':
+      case 'payment_pending':
+        return {
+          label: 'Payment Pending',
+          bg: 'bg-orange-500/10 border-orange-500/30 text-orange-400',
+          icon: Clock,
+        };
       case 'in_progress':
       case 'started':
       case 'service_started':

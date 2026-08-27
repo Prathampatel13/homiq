@@ -12,36 +12,38 @@ import {
   Layers,
   Moon,
   Sun,
-  Bell
+  Bell,
+  Wallet,
+  Settings,
+  History,
+  Star,
+  BarChart3
 } from 'lucide-react';
 import { useAuthStore } from '../../store/useAuthStore';
 import { UserRole } from '../../types';
 import { HomiQLogo } from '../brand/HomiQLogo';
+import { notificationsApi } from '../../api/notifications';
 
 export const Navbar: React.FC = () => {
   const { user, isAuthenticated, logout, getEffectiveRole } = useAuthStore();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
-  const [notifications, setNotifications] = useState([
-    {
-      id: 1,
-      title: 'Booking Confirmed',
-      message: 'Your AC Service has been confirmed for tomorrow at 10:00 AM.',
-      time: '2 mins ago',
-      read: false,
-    },
-    {
-      id: 2,
-      title: 'Welcome to HomiQ',
-      message: 'Thanks for setting up your Home Account.',
-      time: '1 day ago',
-      read: true,
-    }
-  ]);
+  const [notifications, setNotifications] = useState<any[]>([]);
+  const [unreadCount, setUnreadCount] = useState(0);
   const [isDarkMode, setIsDarkMode] = useState(() => {
     return localStorage.getItem('theme') !== 'light';
   });
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      notificationsApi.getNotifications({ limit: 5 }).then(res => {
+        const items = Array.isArray(res) ? res : res.items;
+        setNotifications(items);
+        setUnreadCount(items.filter(i => !i.is_read).length);
+      }).catch(console.error);
+    }
+  }, [isAuthenticated]);
 
   useEffect(() => {
     if (isDarkMode) {
@@ -97,15 +99,17 @@ export const Navbar: React.FC = () => {
 
           {/* Desktop Nav Links */}
           <div className="hidden md:flex items-center gap-8 text-sm font-medium">
-            <Link
-              to="/services"
-              className={`transition-colors duration-150 flex items-center gap-1.5 ${
-                isCurrent('/services') ? 'text-sage-400 font-semibold' : 'text-slate-300 hover:text-white'
-              }`}
-            >
-              <Layers className="w-4 h-4" />
-              <span>Services</span>
-            </Link>
+            {role !== UserRole.TECHNICIAN && (
+              <Link
+                to="/services"
+                className={`transition-colors duration-150 flex items-center gap-1.5 ${
+                  isCurrent('/services') ? 'text-sage-400 font-semibold' : 'text-slate-300 hover:text-white'
+                }`}
+              >
+                <Layers className="w-4 h-4" />
+                <span>Services</span>
+              </Link>
+            )}
             
             <Link
               to="/jobs"
@@ -142,7 +146,7 @@ export const Navbar: React.FC = () => {
                     aria-label="Notifications"
                   >
                     <Bell className="w-4 h-4" />
-                    {notifications.some(n => !n.read) && (
+                    {unreadCount > 0 && (
                       <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-sage-400"></span>
                     )}
                   </button>
@@ -155,7 +159,11 @@ export const Navbar: React.FC = () => {
                       <div className="px-3 py-2 border-b border-dark-750 mb-1 flex items-center justify-between">
                         <p className="text-xs font-semibold text-white">Notifications</p>
                         <button 
-                          onClick={() => setNotifications(notifications.map(n => ({ ...n, read: true })))}
+                          onClick={async () => {
+                            await notificationsApi.markAllRead();
+                            setNotifications(notifications.map(n => ({ ...n, is_read: true })));
+                            setUnreadCount(0);
+                          }}
                           className="text-[10px] text-sage-400 hover:text-sage-300 font-medium"
                         >
                           Mark all as read
@@ -168,18 +176,26 @@ export const Navbar: React.FC = () => {
                             notifications.map((notification) => (
                               <button 
                                 key={notification.id}
-                                onClick={() => setNotifications(notifications.map(n => n.id === notification.id ? { ...n, read: true } : n))}
-                                className={`w-full flex items-start gap-3 px-3 py-2 text-left hover:bg-dark-850 rounded-xl transition-colors relative group ${notification.read ? 'opacity-70' : ''}`}
+                                onClick={async () => {
+                                  if (!notification.is_read) {
+                                    await notificationsApi.markRead(notification.id);
+                                    setNotifications(notifications.map(n => n.id === notification.id ? { ...n, is_read: true } : n));
+                                    setUnreadCount(prev => Math.max(0, prev - 1));
+                                  }
+                                  setIsNotificationsOpen(false);
+                                  navigate('/notifications');
+                                }}
+                                className={`w-full flex items-start gap-3 px-3 py-2 text-left hover:bg-dark-850 rounded-xl transition-colors relative group ${notification.is_read ? 'opacity-70' : ''}`}
                               >
-                                {notification.read ? (
+                                {notification.is_read ? (
                                   <div className="w-2 h-2 rounded-full bg-transparent border border-dark-600 shrink-0 mt-1.5" />
                                 ) : (
                                   <div className="w-2 h-2 rounded-full bg-sage-400 shrink-0 mt-1.5" />
                                 )}
                                 <div>
-                                  <p className="text-xs font-medium text-white mb-0.5">{notification.title}</p>
-                                  <p className="text-[11px] text-slate-400 leading-relaxed">{notification.message}</p>
-                                  <p className="text-[10px] text-slate-500 mt-1">{notification.time}</p>
+                                  <p className="text-xs font-medium text-white mb-0.5 truncate">{notification.title}</p>
+                                  <p className="text-[11px] text-slate-400 leading-relaxed line-clamp-2">{notification.message}</p>
+                                  <p className="text-[10px] text-slate-500 mt-1">{new Date(notification.created_at).toLocaleDateString()}</p>
                                 </div>
                               </button>
                             ))
@@ -263,6 +279,63 @@ export const Navbar: React.FC = () => {
                       </button>
 
                       <button
+                        onClick={() => {
+                          setIsProfileOpen(false);
+                          navigate('/wallet');
+                        }}
+                        className="w-full flex items-center gap-2 px-3 py-2 text-xs font-medium text-slate-300 hover:text-white hover:bg-dark-850 rounded-xl transition-colors text-left mt-0.5"
+                      >
+                        <Wallet className="w-4 h-4 text-sage-400" />
+                        <span>Wallet</span>
+                      </button>
+
+                      <button
+                        onClick={() => {
+                          setIsProfileOpen(false);
+                          navigate('/history');
+                        }}
+                        className="w-full flex items-center gap-2 px-3 py-2 text-xs font-medium text-slate-300 hover:text-white hover:bg-dark-850 rounded-xl transition-colors text-left mt-0.5"
+                      >
+                        <History className="w-4 h-4 text-sage-400" />
+                        <span>History</span>
+                      </button>
+
+                      <button
+                        onClick={() => {
+                          setIsProfileOpen(false);
+                          navigate('/reviews');
+                        }}
+                        className="w-full flex items-center gap-2 px-3 py-2 text-xs font-medium text-slate-300 hover:text-white hover:bg-dark-850 rounded-xl transition-colors text-left mt-0.5"
+                      >
+                        <Star className="w-4 h-4 text-sage-400" />
+                        <span>Review</span>
+                      </button>
+
+                      <button
+                        onClick={() => {
+                          setIsProfileOpen(false);
+                          navigate('/analytics');
+                        }}
+                        className="w-full flex items-center gap-2 px-3 py-2 text-xs font-medium text-slate-300 hover:text-white hover:bg-dark-850 rounded-xl transition-colors text-left mt-0.5"
+                      >
+                        <BarChart3 className="w-4 h-4 text-sage-400" />
+                        <span>Analytics</span>
+                      </button>
+
+                      <button
+                        onClick={() => {
+                          setIsProfileOpen(false);
+                          navigate('/settings');
+                        }}
+                        className="w-full flex items-center gap-2 px-3 py-2 text-xs font-medium text-slate-300 hover:text-white hover:bg-dark-850 rounded-xl transition-colors text-left mt-0.5"
+                      >
+                        <Settings className="w-4 h-4 text-sage-400" />
+                        <span>Settings</span>
+                      </button>
+
+                      <div className="h-px bg-dark-750 my-1 mx-3" />
+
+                      <button
                         onClick={handleLogout}
                         className="w-full flex items-center gap-2 px-3 py-2 text-xs font-medium text-rose-400 hover:bg-rose-500/10 rounded-xl transition-colors text-left mt-1"
                       >
@@ -322,14 +395,16 @@ export const Navbar: React.FC = () => {
       {/* Mobile dropdown drawer */}
       {isMenuOpen && (
         <div className="md:hidden border-t border-dark-750 bg-white/95 dark:bg-dark-950/95 backdrop-blur-2xl px-4 pt-3 pb-6 space-y-2">
-          <Link
-            to="/services"
-            onClick={() => setIsMenuOpen(false)}
-            className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-slate-200 hover:bg-dark-850"
-          >
-            <Layers className="w-4 h-4 text-sage-400" />
-            <span>Services</span>
-          </Link>
+          {role !== UserRole.TECHNICIAN && (
+            <Link
+              to="/services"
+              onClick={() => setIsMenuOpen(false)}
+              className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-slate-200 hover:bg-dark-850"
+            >
+              <Layers className="w-4 h-4 text-sage-400" />
+              <span>Services</span>
+            </Link>
+          )}
           <Link
             to="/jobs"
             onClick={() => setIsMenuOpen(false)}

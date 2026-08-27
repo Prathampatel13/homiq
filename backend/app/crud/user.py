@@ -107,11 +107,22 @@ class UserCRUD:
 
         return user
 
-    def authenticate(self, *, email: str, password: str) -> Optional[User]:
-        print("=" * 50)
-        print("LOGIN EMAIL:", email)
+    def get_user_by_identifier(self, identifier: str) -> Optional[User]:
+        return self.db.scalar(
+            select(User).where(
+                or_(
+                    User.email == identifier,
+                    User.phone == identifier,
+                    User.full_name == identifier
+                )
+            )
+        )
 
-        user = self.get_user_by_email(email)
+    def authenticate(self, *, identifier: str, password: str) -> Optional[User]:
+        print("=" * 50)
+        print("LOGIN IDENTIFIER:", identifier)
+
+        user = self.get_user_by_identifier(identifier)
 
         print("USER FOUND:", user is not None)
 

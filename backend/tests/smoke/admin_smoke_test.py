@@ -53,7 +53,7 @@ conn.commit()
 conn.close()
 
 print(f"▶ Admin login ({ADMIN_EMAIL})")
-r = client.post("/auth/login", json={"email": ADMIN_EMAIL, "password": ADMIN_PASSWORD})
+r = client.post("/auth/login", json={"identifier": ADMIN_EMAIL, "password": ADMIN_PASSWORD})
 print(r.status_code)
 assert r.status_code == 200, f"Admin login failed: {r.text}"
 headers = {"Authorization": f"Bearer {r.json()['access_token']}"}

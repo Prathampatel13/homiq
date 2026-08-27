@@ -61,7 +61,7 @@ def main():
 
     # ── 2. LOGIN ───────────────────────────────────────────────────────
     step("2. POST /auth/login")
-    r = client.post("/auth/login", json={"email": email, "password": password})
+    r = client.post("/auth/login", json={"identifier": email, "password": password})
     print(r.status_code, r.json())
     assert r.status_code == 200
     access_token = r.json()["access_token"]

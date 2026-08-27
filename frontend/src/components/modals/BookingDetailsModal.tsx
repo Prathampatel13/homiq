@@ -12,6 +12,9 @@ import {
 } from 'lucide-react';
 import { Booking } from '../../types';
 import { StatusBadge } from '../ui/StatusBadge';
+import { BookingMediaSection } from '../media/BookingMediaSection';
+import { CustomerHistorySection } from '../bookings/CustomerHistorySection';
+import { useAuthStore } from '../../store/useAuthStore';
 
 export interface BookingDetailsModalProps {
   booking: Booking | null;
@@ -30,6 +33,7 @@ export const BookingDetailsModal: React.FC<BookingDetailsModalProps> = ({
   onOpenPayment,
   onOpenReview,
 }) => {
+  const { user } = useAuthStore();
   if (!isOpen || !booking) return null;
 
   const getTechName = (tech: any) => {
@@ -95,7 +99,9 @@ export const BookingDetailsModal: React.FC<BookingDetailsModalProps> = ({
             <div className="flex items-start gap-2 text-xs text-slate-200">
               <MapPin className="w-4 h-4 text-slate-400 shrink-0 mt-0.5" />
               <span>
-                {booking.address ? `${booking.address.house_no} ${booking.address.area}, ${booking.address.city || ''}` : 'Customer Residential Address'}
+                {booking.address 
+                  ? `${booking.address.house_no}, ${booking.address.area}, ${booking.address.city || ''}` 
+                  : 'Address details unavailable (Please refresh)'}
               </span>
             </div>
           </div>
@@ -143,38 +149,16 @@ export const BookingDetailsModal: React.FC<BookingDetailsModalProps> = ({
           </div>
         )}
 
+        {/* Customer History (Only for Tech/Admin) */}
+        {(user?.role === 'technician' || user?.role === 'admin') && booking.customer && (
+          <CustomerHistorySection customerId={booking.customer.id || booking.customer_id || (booking.customer as any).user_id} />
+        )}
+
         {/* ── SERVICE MEDIA & SITE EVIDENCE (Before/After Photos) ── */}
-        <div className="p-4 rounded-2xl bg-dark-850 border border-dark-750 mb-6 space-y-3">
-          <div className="flex items-center justify-between">
-            <span className="text-[11px] font-mono text-sage-400 uppercase tracking-wider block">
-              Site Media & Work Evidence (Cloudinary)
-            </span>
-            <span className="text-[10px] font-mono text-slate-400">Deterministic & Encrypted</span>
-          </div>
-
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-            <div className="p-3 rounded-xl bg-dark-900 border border-dark-750 text-center">
-              <span className="text-[10px] font-mono text-slate-400 uppercase block mb-1">Before Work</span>
-              <div className="w-full h-20 rounded-lg bg-dark-850 border border-dashed border-dark-700 flex flex-col items-center justify-center text-slate-400 text-xs">
-                <span>Site Ready</span>
-              </div>
-            </div>
-
-            <div className="p-3 rounded-xl bg-dark-900 border border-dark-750 text-center">
-              <span className="text-[10px] font-mono text-slate-400 uppercase block mb-1">After Work</span>
-              <div className="w-full h-20 rounded-lg bg-dark-850 border border-dashed border-dark-700 flex flex-col items-center justify-center text-slate-400 text-xs">
-                <span>Completed Inspection</span>
-              </div>
-            </div>
-
-            <div className="p-3 rounded-xl bg-dark-900 border border-dark-750 text-center col-span-2 sm:col-span-1">
-              <span className="text-[10px] font-mono text-slate-400 uppercase block mb-1">Invoice / Docs</span>
-              <div className="w-full h-20 rounded-lg bg-dark-850 border border-dashed border-dark-700 flex flex-col items-center justify-center text-slate-400 text-xs">
-                <span>Work Spec (PDF)</span>
-              </div>
-            </div>
-          </div>
-        </div>
+        <BookingMediaSection 
+          bookingId={booking.id} 
+          assignedTechnicianId={(booking.technician as any)?.user_id || (booking.technician as any)?.id} 
+        />
 
 
         {/* Action Buttons */}
