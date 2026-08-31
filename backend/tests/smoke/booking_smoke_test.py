@@ -34,10 +34,11 @@ Also verifies:
   - Duplicate action detection (already-accepted -> 409)
 """
 import sys
+from pathlib import Path
 import uuid
 from datetime import date, timedelta
 
-sys.path.insert(0, r"c:/Users/prath/OneDrive/Desktop/HomiQ/homiq/backend")
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent))
 
 import psycopg
 from fastapi.testclient import TestClient

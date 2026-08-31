@@ -19,7 +19,7 @@ import time
 import uuid
 from pathlib import Path
 
-sys.path.insert(0, r"c:/Users/prath/OneDrive/Desktop/HomiQ/homiq/backend")
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent))
 
 from fastapi.testclient import TestClient
 

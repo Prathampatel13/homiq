@@ -19,9 +19,10 @@ Covers the exact API surface required:
 """
 import datetime
 import sys
+from pathlib import Path
 from uuid import uuid4
 
-sys.path.insert(0, r"c:/Users/prath/OneDrive/Desktop/HomiQ/homiq/backend")
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent))
 
 from fastapi.testclient import TestClient
 

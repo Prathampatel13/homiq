@@ -5,8 +5,9 @@ Creates/uses a dedicated test admin account so we can validate
 admin-only endpoints without depending on the pre-seeded admin password.
 """
 import sys
+from pathlib import Path
 
-sys.path.insert(0, r"c:/Users/prath/OneDrive/Desktop/HomiQ/homiq/backend")
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent))
 
 import psycopg
 from fastapi.testclient import TestClient

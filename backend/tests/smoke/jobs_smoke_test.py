@@ -16,9 +16,10 @@ Covers the exact Jobs API surface:
 Also verifies role enforcement: a customer cannot create a job post (403).
 """
 import sys
+from pathlib import Path
 import uuid
 
-sys.path.insert(0, r"c:/Users/prath/OneDrive/Desktop/HomiQ/homiq/backend")
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent))
 
 from fastapi.testclient import TestClient
 

@@ -2,7 +2,7 @@ import os
 import re
 
 def fix_crud_files():
-    crud_dir = r"c:\Users\prath\OneDrive\Desktop\HomiQ\homiq\backend\app\crud"
+    crud_dir = os.path.join(os.path.dirname(__file__), "app", "crud")
     pattern = re.compile(r"(result = self\.db\.execute\(stmt\))\s*self\.db\.commit\(\)\s*return result\.scalar_one_or_none\(\)")
     replacement = r"\1\n        item = result.scalar_one_or_none()\n        self.db.commit()\n        return item"
     
