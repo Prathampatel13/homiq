@@ -50,45 +50,23 @@ homiq/
 
 ---
 
-## 🚀 Quick Start Guide
+## 🚀 Quick Start Guide (OKF Orchestrated)
 
-### 1. Backend Setup (FastAPI + PostgreSQL)
+To ensure consistency across development environments, this project uses OKF-standardized batch scripts for 1-click initialization and launching.
 
-```bash
-# Navigate to backend
-cd homiq/backend
-
-# Create and activate virtual environment
-python -m venv .venv
-source .venv/bin/activate  # On Windows: .venv\Scripts\activate
-
-# Install dependencies
-pip install -r requirements.txt
-
-# Configure environment variables
-cp .env.example .env
-
-# Apply database migrations
-alembic upgrade head
-
-# Start development server
-uvicorn app.main:app --reload --port 8000
+### 1. Initialization
+Run the setup script from the root directory to automatically create virtual environments, install Python dependencies, configure `.env` files, and install Node modules.
+```cmd
+setup.bat
 ```
 
-### 2. Frontend Setup (React + Vite)
-
-```bash
-# Navigate to frontend
-cd homiq/frontend
-
-# Install dependencies
-npm install
-
-# Start Vite development server
-npm run dev
+### 2. Launch
+Run the launch sequence to automatically start both the FastAPI backend and Vite frontend in separate terminal instances.
+```cmd
+start.bat
 ```
 
----
+*Note: The backend will be available at http://127.0.0.1:8000 and the frontend at http://localhost:3000.*
 
 ## 🔒 Key Enterprise Features
 
