@@ -34,9 +34,15 @@ export const servicesApi = {
     search?: string;
     offset?: number;
     limit?: number;
+    per_page?: number;
     _t?: number;
   }): Promise<Service[]> => {
-    const response = await api.get('/services/', { params: { ...params, _t: Date.now() } });
+    const queryParams = {
+      ...params,
+      per_page: params?.per_page || params?.limit || 1000,
+      _t: Date.now()
+    };
+    const response = await api.get('/services/', { params: queryParams });
     return response.data.items || response.data;
   },
 

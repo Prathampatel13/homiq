@@ -157,26 +157,29 @@ class CouponService:
         - Applicable services match
         - Per-user limit not exceeded
         """
-        # Get booking to verify ownership and amount
-        booking_crud = BookingCRUD(self.db)
-        booking = booking_crud.get_booking(payload.booking_id)
-        if not booking:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="Booking not found.",
-            )
+        if payload.booking_id:
+            booking_crud = BookingCRUD(self.db)
+            booking = booking_crud.get_booking(payload.booking_id)
+            if not booking:
+                raise HTTPException(
+                    status_code=status.HTTP_404_NOT_FOUND,
+                    detail="Booking not found.",
+                )
 
-        # Verify booking ownership
-        from app.crud.customer import CustomerCRUD
-        customer = CustomerCRUD(self.db).get_by_user_id(current_user.id)
-        if not customer or booking.customer_id != customer.id:
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="This booking does not belong to you.",
-            )
+            # Verify booking ownership
+            from app.crud.customer import CustomerCRUD
+            customer = CustomerCRUD(self.db).get_by_user_id(current_user.id)
+            if not customer or booking.customer_id != customer.id:
+                raise HTTPException(
+                    status_code=status.HTTP_403_FORBIDDEN,
+                    detail="This booking does not belong to you.",
+                )
 
-        amount = booking.final_price or booking.estimated_price or 0
-        service_id = booking.service_id
+            amount = booking.final_price or booking.estimated_price or 0
+            service_id = booking.service_id
+        else:
+            amount = payload.amount or 100.0
+            service_id = payload.service_id
 
         is_valid, message, coupon = self.crud.validate_coupon(
             code=payload.code.upper(),

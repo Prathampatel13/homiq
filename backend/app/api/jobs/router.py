@@ -66,16 +66,15 @@ def create_job_post(
     "/",
     response_model=JobPostListResponse,
     summary="List job posts",
-    description="Lists active job posts. Technicians use this to discover open jobs. Optionally filter by search text.",
+    description="Lists active job posts. Open for public discovery and search.",
 )
 def list_job_posts(
     search: Optional[str] = None,
     offset: int = 0,
     limit: int = 100,
-    current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ) -> Any:
-    """List active job posts (any authenticated user)."""
+    """List active job posts."""
     return JobService(db).list_job_posts(search=search, offset=offset, limit=limit)
 
 
@@ -83,6 +82,12 @@ def list_job_posts(
     "/my",
     response_model=JobPostListResponse,
     summary="List my job posts",
+    description="**Company required.** Lists job posts created by the authenticated company.",
+)
+@router.get(
+    "/company/my",
+    response_model=JobPostListResponse,
+    summary="List my job posts alias",
     description="**Company required.** Lists job posts created by the authenticated company.",
 )
 def list_my_job_posts(
@@ -106,7 +111,6 @@ def list_my_job_posts(
 )
 def get_job_post(
     job_post_id: int,
-    current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ) -> Any:
     """Retrieve a job post by ID."""

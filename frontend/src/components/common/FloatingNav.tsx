@@ -95,13 +95,15 @@ export const FloatingNav: React.FC = () => {
             )}
 
             {/* JOBS */}
-            <div className="mb-6">
-              <p className="text-[11px] font-bold text-slate-500 tracking-widest mb-3 px-3 uppercase">JOBS</p>
-              <NavItem path="/jobs" icon={Briefcase} label="Recruitment" isActive={location.pathname === '/jobs'} />
-              {(role === UserRole.COMPANY || role === UserRole.ADMIN) && (
-                <NavItem path="/company/dashboard" icon={Building2} label="Company Dashboard" isActive={location.pathname.includes('/company/dashboard')} />
-              )}
-            </div>
+            {role !== UserRole.TECHNICIAN && (
+              <div className="mb-6">
+                <p className="text-[11px] font-bold text-slate-500 tracking-widest mb-3 px-3 uppercase">JOBS</p>
+                <NavItem path="/jobs" icon={Briefcase} label="Recruitment" isActive={location.pathname === '/jobs'} />
+                {(role === UserRole.COMPANY || role === UserRole.ADMIN) && (
+                  <NavItem path="/company/dashboard" icon={Building2} label="Company Dashboard" isActive={location.pathname.includes('/company/dashboard')} />
+                )}
+              </div>
+            )}
 
             {/* ADMIN */}
             {role === UserRole.ADMIN && (

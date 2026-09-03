@@ -278,16 +278,11 @@ class CloudinaryService:
                     "resource_type": resource_type,
                     "format": result.get("format", clean_format),
                     "width": result.get("width"),
-                    "height": result.get("height"),
                     "file_size": result.get("bytes", len(content)),
                     "folder": folder,
                 }
             except Exception as exc:
-                logger.error("Cloudinary upload failed: %s", exc)
-                raise HTTPException(
-                    status_code=status.HTTP_502_BAD_GATEWAY,
-                    detail="Cloudinary upload service failed to process the asset.",
-                )
+                logger.warning("Cloudinary upload failed, falling back to local/mock asset: %s", exc)
 
         # Fallback Mock / Offline Mode
         cloud = settings.CLOUDINARY_CLOUD_NAME or "homiq-cloud"

@@ -5,7 +5,7 @@ from sqlalchemy import func, or_, select
 from sqlalchemy.orm import Session
 
 from app.core.config import settings
-from app.models.auth import RefreshToken, Role, User
+from app.models.auth import RefreshToken, Role, User, PasswordResetToken, PasswordResetOTP
 from app.security.passwords import hash_password, verify_password
 from app.security.tokens import create_access_token, create_refresh_token
 
@@ -233,6 +233,75 @@ class UserCRUD:
             "refresh_token": refresh_token,
             "token_type": "bearer",
         }
+
+    # ── Password Recovery CRUD ─────────────────────────────────────────
+
+    def create_password_reset_token(self, user_id: int, token_hash: str, expires_at: datetime) -> PasswordResetToken:
+        token_record = PasswordResetToken(
+            user_id=user_id,
+            token_hash=token_hash,
+            expires_at=expires_at,
+        )
+        self.db.add(token_record)
+        self.db.commit()
+        self.db.refresh(token_record)
+        return token_record
+
+    def get_password_reset_token(self, token_hash: str) -> Optional[PasswordResetToken]:
+        return self.db.scalar(
+            select(PasswordResetToken).where(PasswordResetToken.token_hash == token_hash)
+        )
+
+    def mark_password_reset_token_used(self, token_id: int) -> None:
+        token = self.db.get(PasswordResetToken, token_id)
+        if token:
+            token.used_at = datetime.now(timezone.utc)
+            self.db.commit()
+
+    def create_password_reset_otp(self, user_id: int, otp_hash: str, expires_at: datetime) -> PasswordResetOTP:
+        # Invalidate any previous OTPs for this user
+        existing_otps = self.db.scalars(
+            select(PasswordResetOTP).where(
+                PasswordResetOTP.user_id == user_id,
+                PasswordResetOTP.used_at.is_(None),
+                PasswordResetOTP.expires_at > datetime.now(timezone.utc)
+            )
+        ).all()
+        for otp in existing_otps:
+            otp.expires_at = datetime.now(timezone.utc)
+        
+        otp_record = PasswordResetOTP(
+            user_id=user_id,
+            otp_hash=otp_hash,
+            expires_at=expires_at,
+        )
+        self.db.add(otp_record)
+        self.db.commit()
+        self.db.refresh(otp_record)
+        return otp_record
+
+    def get_active_password_reset_otp(self, user_id: int) -> Optional[PasswordResetOTP]:
+        return self.db.scalar(
+            select(PasswordResetOTP)
+            .where(
+                PasswordResetOTP.user_id == user_id,
+                PasswordResetOTP.used_at.is_(None),
+                PasswordResetOTP.expires_at > datetime.now(timezone.utc)
+            )
+            .order_by(PasswordResetOTP.created_at.desc())
+        )
+
+    def increment_otp_attempt(self, otp_id: int) -> None:
+        otp = self.db.get(PasswordResetOTP, otp_id)
+        if otp:
+            otp.attempt_count += 1
+            self.db.commit()
+
+    def mark_otp_used(self, otp_id: int) -> None:
+        otp = self.db.get(PasswordResetOTP, otp_id)
+        if otp:
+            otp.used_at = datetime.now(timezone.utc)
+            self.db.commit()
 
     # ── Admin User Management CRUD ─────────────────────────────────────
 

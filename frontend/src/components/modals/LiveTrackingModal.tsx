@@ -11,6 +11,7 @@ import {
   Car
 } from 'lucide-react';
 import { Booking } from '../../types';
+import { GoogleMap, useJsApiLoader, Marker } from '@react-google-maps/api';
 
 export interface LiveTrackingModalProps {
   booking: Booking | null;
@@ -18,7 +19,38 @@ export interface LiveTrackingModalProps {
   onClose: () => void;
 }
 
+const mapStyles = [
+  { elementType: "geometry", stylers: [{ color: "#1e293b" }] },
+  { elementType: "labels.text.stroke", stylers: [{ color: "#1e293b" }] },
+  { elementType: "labels.text.fill", stylers: [{ color: "#94a3b8" }] },
+  { featureType: "administrative.locality", elementType: "labels.text.fill", stylers: [{ color: "#cbd5e1" }] },
+  { featureType: "poi", elementType: "labels.text.fill", stylers: [{ color: "#94a3b8" }] },
+  { featureType: "poi.park", elementType: "geometry", stylers: [{ color: "#0f172a" }] },
+  { featureType: "poi.park", elementType: "labels.text.fill", stylers: [{ color: "#64748b" }] },
+  { featureType: "road", elementType: "geometry", stylers: [{ color: "#334155" }] },
+  { featureType: "road", elementType: "geometry.stroke", stylers: [{ color: "#1e293b" }] },
+  { featureType: "road", elementType: "labels.text.fill", stylers: [{ color: "#94a3b8" }] },
+  { featureType: "road.highway", elementType: "geometry", stylers: [{ color: "#475569" }] },
+  { featureType: "road.highway", elementType: "geometry.stroke", stylers: [{ color: "#1e293b" }] },
+  { featureType: "road.highway", elementType: "labels.text.fill", stylers: [{ color: "#f3f4f6" }] },
+  { featureType: "transit", elementType: "geometry", stylers: [{ color: "#1e293b" }] },
+  { featureType: "transit.station", elementType: "labels.text.fill", stylers: [{ color: "#cbd5e1" }] },
+  { featureType: "water", elementType: "geometry", stylers: [{ color: "#0f172a" }] },
+  { featureType: "water", elementType: "labels.text.fill", stylers: [{ color: "#475569" }] },
+  { featureType: "water", elementType: "labels.text.stroke", stylers: [{ color: "#1e293b" }] }
+];
+
+const containerStyle = {
+  width: '100%',
+  height: '100%'
+};
+
 export const LiveTrackingModal: React.FC<LiveTrackingModalProps> = ({ booking, isOpen, onClose }) => {
+  const { isLoaded } = useJsApiLoader({
+    id: 'google-map-script',
+    googleMapsApiKey: import.meta.env.VITE_GOOGLE_MAPS_API_KEY || ''
+  });
+
   const [progress, setProgress] = useState(0);
 
   // Simulate vehicle movement
@@ -42,8 +74,6 @@ export const LiveTrackingModal: React.FC<LiveTrackingModalProps> = ({ booking, i
     return () => clearInterval(interval);
   }, [isOpen]);
 
-  if (!isOpen || !booking) return null;
-
   // Assuming status is 'on_the_way' or similar, we calculate steps
   const steps = [
     { title: 'Booking Confirmed', time: '09:00 AM', done: true },
@@ -59,6 +89,24 @@ export const LiveTrackingModal: React.FC<LiveTrackingModalProps> = ({ booking, i
     return 'Master Technician';
   };
 
+  const defaultCenter = { lat: 28.6139, lng: 77.2090 }; // Default to New Delhi
+  
+  const homeLocation = React.useMemo(() => {
+    if (booking?.address?.latitude && booking?.address?.longitude) {
+      return { lat: booking.address.latitude, lng: booking.address.longitude };
+    }
+    return defaultCenter;
+  }, [booking?.address]);
+
+  const techLocation = React.useMemo(() => {
+    if ((booking?.technician as any)?.latitude && (booking?.technician as any)?.longitude) {
+      return { lat: (booking.technician as any).latitude, lng: (booking.technician as any).longitude };
+    }
+    return { lat: homeLocation.lat - 0.02, lng: homeLocation.lng - 0.02 };
+  }, [booking?.technician, homeLocation]);
+
+  if (!isOpen || !booking) return null;
+
   return (
     <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-dark-950/85 backdrop-blur-md animate-in fade-in duration-150">
       <div className="relative w-full max-w-4xl rounded-3xl bg-dark-900 border border-dark-750 p-6 sm:p-8 shadow-modal text-white max-h-[90vh] overflow-y-auto grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -72,44 +120,54 @@ export const LiveTrackingModal: React.FC<LiveTrackingModalProps> = ({ booking, i
         </button>
 
         {/* Map Area (Left side, takes 2 columns on desktop) */}
-        <div className="md:col-span-2 relative h-64 md:h-full min-h-[300px] rounded-2xl overflow-hidden bg-dark-950 border border-dark-750 flex items-center justify-center">
-          {/* Simulated Map Background Grid */}
-          <div className="absolute inset-0 bg-[linear-gradient(to_right,#1e293b_1px,transparent_1px),linear-gradient(to_bottom,#1e293b_1px,transparent_1px)] bg-[size:2rem_2rem] [mask-image:radial-gradient(ellipse_60%_60%_at_50%_50%,#000_70%,transparent_100%)] opacity-20"></div>
-          
-          {/* Map Route Line */}
-          <div className="absolute top-1/2 left-1/4 right-1/4 h-1 bg-dark-750 rounded-full overflow-hidden transform -translate-y-1/2">
-            <div 
-              className="h-full bg-sage-400 transition-all duration-300 ease-linear"
-              style={{ width: `${progress}%` }}
-            />
-          </div>
-
-          {/* Starting Point */}
-          <div className="absolute top-1/2 left-1/4 transform -translate-x-1/2 -translate-y-1/2 flex flex-col items-center">
-            <div className="w-4 h-4 bg-dark-800 border-2 border-slate-500 rounded-full z-10" />
-            <span className="text-[10px] font-mono text-slate-400 mt-2 bg-dark-950/80 px-2 py-1 rounded">Depot</span>
-          </div>
-
-          {/* Moving Vehicle */}
-          <div 
-            className="absolute top-1/2 transform -translate-y-1/2 z-20 transition-all duration-300 ease-linear"
-            style={{ left: `calc(25% + (${progress} * 0.5%))` }}
-          >
-            <div className="w-8 h-8 bg-sage-400 text-dark-950 rounded-full flex items-center justify-center shadow-[0_0_15px_rgba(74,222,128,0.3)] animate-pulse">
-              <Car className="w-4 h-4" />
+        <div className="md:col-span-2 relative h-64 md:h-full min-h-[300px] rounded-2xl overflow-hidden bg-dark-950 border border-dark-750 flex flex-col">
+          {!isLoaded ? (
+            <div className="flex-1 flex items-center justify-center text-sage-400/50 animate-pulse font-mono text-sm">
+              INITIALIZING RADAR...
             </div>
-          </div>
-
-          {/* Destination */}
-          <div className="absolute top-1/2 right-1/4 transform translate-x-1/2 -translate-y-1/2 flex flex-col items-center">
-            <div className="w-6 h-6 bg-dark-800 border-2 border-sage-400 rounded-full z-10 flex items-center justify-center">
-              <MapPin className="w-3 h-3 text-sage-400" />
-            </div>
-            <span className="text-[10px] font-mono text-sage-400 mt-2 bg-dark-950/80 px-2 py-1 rounded border border-sage-400/20">Destination</span>
-          </div>
+          ) : (
+            <GoogleMap
+              mapContainerStyle={containerStyle}
+              center={homeLocation}
+              zoom={13}
+              options={{
+                styles: mapStyles,
+                disableDefaultUI: true,
+                zoomControl: true,
+              }}
+            >
+              {/* Home Marker */}
+              <Marker 
+                position={homeLocation} 
+                icon={{
+                  path: "M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z",
+                  fillColor: "#4ade80",
+                  fillOpacity: 1,
+                  strokeWeight: 1,
+                  strokeColor: "#22c55e",
+                  scale: 1.5,
+                  anchor: new window.google.maps.Point(12, 24),
+                }} 
+              />
+              
+              {/* Technician Marker */}
+              <Marker 
+                position={techLocation} 
+                icon={{
+                  path: "M18.92 6.01C18.72 5.42 18.16 5 17.5 5h-11c-.66 0-1.21.42-1.42 1.01L3 12v8c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-1h12v1c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-8l-2.08-5.99zM6.5 16c-.83 0-1.5-.67-1.5-1.5S5.67 13 6.5 13s1.5.67 1.5 1.5S7.33 16 6.5 16zm11 0c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zM5 11l1.5-4.5h11L19 11H5z",
+                  fillColor: "#94a3b8",
+                  fillOpacity: 1,
+                  strokeWeight: 1,
+                  strokeColor: "#475569",
+                  scale: 1.2,
+                  anchor: new window.google.maps.Point(12, 12),
+                }} 
+              />
+            </GoogleMap>
+          )}
 
           {/* Overlay Status Box */}
-          <div className="absolute top-4 left-4 p-3 rounded-xl bg-dark-900/90 backdrop-blur border border-dark-750 shadow-lg">
+          <div className="absolute top-4 left-4 p-3 rounded-xl bg-dark-900/90 backdrop-blur border border-dark-750 shadow-lg z-10">
             <div className="flex items-center gap-2 mb-1">
               <Navigation2 className="w-4 h-4 text-sage-400" />
               <span className="text-xs font-bold text-white tracking-wide">LIVE GPS</span>

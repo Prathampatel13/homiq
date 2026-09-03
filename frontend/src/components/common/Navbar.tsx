@@ -53,14 +53,6 @@ export const Navbar: React.FC = () => {
     }
   }, [isDarkMode]);
 
-  const toggleTheme = () => {
-    setIsDarkMode((prev) => {
-      const newTheme = !prev;
-      localStorage.setItem('theme', newTheme ? 'dark' : 'light');
-      return newTheme;
-    });
-  };
-
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -111,15 +103,17 @@ export const Navbar: React.FC = () => {
               </Link>
             )}
             
-            <Link
-              to="/jobs"
-              className={`transition-colors duration-150 flex items-center gap-1.5 ${
-                isCurrent('/jobs') ? 'text-sage-400 font-semibold' : 'text-slate-300 hover:text-white'
-              }`}
-            >
-              <Briefcase className="w-4 h-4" />
-              <span>Recruitment</span>
-            </Link>
+            {role !== UserRole.TECHNICIAN && (
+              <Link
+                to="/jobs"
+                className={`transition-colors duration-150 flex items-center gap-1.5 ${
+                  isCurrent('/jobs') ? 'text-sage-400 font-semibold' : 'text-slate-300 hover:text-white'
+                }`}
+              >
+                <Briefcase className="w-4 h-4" />
+                <span>Recruitment</span>
+              </Link>
+            )}
 
             {isAuthenticated && (
               <Link
@@ -220,14 +214,6 @@ export const Navbar: React.FC = () => {
                   )}
                 </div>
 
-                {/* Theme Toggle */}
-                <button
-                  onClick={toggleTheme}
-                  className="p-2 rounded-xl bg-dark-850 hover:bg-dark-800 border border-dark-750 text-slate-300 hover:text-white transition-colors flex items-center justify-center"
-                  aria-label="Toggle theme"
-                >
-                  {isDarkMode ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
-                </button>
 
                 {role === UserRole.CUSTOMER && (
                   <button
@@ -348,13 +334,7 @@ export const Navbar: React.FC = () => {
               </div>
             ) : (
               <div className="flex items-center gap-2.5">
-                <button
-                  onClick={toggleTheme}
-                  className="p-2 rounded-xl bg-dark-850 hover:bg-dark-800 border border-dark-750 text-slate-300 hover:text-white transition-colors flex items-center justify-center"
-                  aria-label="Toggle theme"
-                >
-                  {isDarkMode ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
-                </button>
+
                 <Link
                   to="/login"
                   className="btn-secondary text-xs px-4 py-2"
@@ -405,14 +385,16 @@ export const Navbar: React.FC = () => {
               <span>Services</span>
             </Link>
           )}
-          <Link
-            to="/jobs"
-            onClick={() => setIsMenuOpen(false)}
-            className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-slate-200 hover:bg-dark-850"
-          >
-            <Briefcase className="w-4 h-4 text-sage-400" />
-            <span>Recruitment</span>
-          </Link>
+          {role !== UserRole.TECHNICIAN && (
+            <Link
+              to="/jobs"
+              onClick={() => setIsMenuOpen(false)}
+              className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-slate-200 hover:bg-dark-850"
+            >
+              <Briefcase className="w-4 h-4 text-sage-400" />
+              <span>Recruitment</span>
+            </Link>
+          )}
           {isAuthenticated ? (
             <>
               <Link

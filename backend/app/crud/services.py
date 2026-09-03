@@ -51,7 +51,7 @@ class ServicesCRUD:
         return True
 
     def list_categories(self) -> list[Category]:
-        result = self.db.execute(select(Category).order_by(Category.name))
+        result = self.db.execute(select(Category).order_by(Category.id))
         return list(result.scalars().all())
 
     # ── Services ───────────────────────────────────────────────────────

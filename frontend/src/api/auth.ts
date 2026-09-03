@@ -14,6 +14,11 @@ export const authApi = {
     return response.data;
   },
 
+  googleLogin: async (payload: { token: string; role?: string }): Promise<AuthResponse> => {
+    const response = await api.post<AuthResponse>('/auth/google', payload);
+    return response.data;
+  },
+
   register: async (payload: {
     email: string;
     password: string;
@@ -37,6 +42,16 @@ export const authApi = {
 
   forgotPassword: async (email: string): Promise<{ message: string }> => {
     const response = await api.post<{ message: string }>('/auth/forgot-password', { email });
+    return response.data;
+  },
+
+  sendResetOtp: async (email: string): Promise<{ message: string }> => {
+    const response = await api.post<{ message: string }>('/auth/send-reset-otp', { email });
+    return response.data;
+  },
+
+  verifyResetOtp: async (email: string, otp: string): Promise<{ reset_token: string; message: string }> => {
+    const response = await api.post<{ reset_token: string; message: string }>('/auth/verify-reset-otp', { email, otp });
     return response.data;
   },
 

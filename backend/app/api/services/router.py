@@ -102,8 +102,10 @@ def list_services(
     max_duration: int | None = None,
     page: int = 1,
     per_page: int = 20,
+    limit: int | None = None,
     db: Session = Depends(get_db),
 ):
+    effective_per_page = limit if limit is not None else per_page
     return ServiceService(db).list_services(
         search=search,
         category_id=category_id,
@@ -113,7 +115,7 @@ def list_services(
         min_duration=min_duration,
         max_duration=max_duration,
         page=page,
-        per_page=per_page,
+        per_page=effective_per_page,
     )
 
 

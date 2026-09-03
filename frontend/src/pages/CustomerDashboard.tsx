@@ -133,7 +133,7 @@ export const CustomerDashboard: React.FC = () => {
               </span>
             </div>
             <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-white">
-              Welcome back, {user?.full_name?.split(' ')[0] || 'Homeowner'}
+              Welcome back, {user?.full_name?.split(' ')[0] || 'Customer'}
             </h1>
             <p className="text-xs text-slate-400 mt-0.5">
               Live status, active technician dispatches, and smart home ecosystem health.

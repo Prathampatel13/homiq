@@ -12,3 +12,4 @@ from app.models.tracking import *
 from app.models.coupons import *
 from app.models.invoices import *
 from app.models.media import *
+from app.models.audit import *

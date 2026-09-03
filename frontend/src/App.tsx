@@ -21,6 +21,9 @@ import { ForgotPasswordPage } from './pages/ForgotPasswordPage';
 import { ResetPasswordPage } from './pages/ResetPasswordPage';
 import { NotificationsPage } from './pages/NotificationsPage';
 import { LiveTrackingPage } from './pages/LiveTrackingPage';
+import { ReviewsPage } from './pages/ReviewsPage';
+import { HistoryPage } from './pages/HistoryPage';
+import { AnalyticsPage } from './pages/AnalyticsPage';
 
 import { useAuthStore } from './store/useAuthStore';
 import { UserRole } from './types';
@@ -100,6 +103,30 @@ export const App: React.FC = () => {
                   element={
                     <ProtectedRoute>
                       <LiveTrackingPage />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/reviews"
+                  element={
+                    <ProtectedRoute>
+                      <ReviewsPage />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/history"
+                  element={
+                    <ProtectedRoute>
+                      <HistoryPage />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/analytics"
+                  element={
+                    <ProtectedRoute>
+                      <AnalyticsPage />
                     </ProtectedRoute>
                   }
                 />

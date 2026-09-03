@@ -123,9 +123,12 @@ def main():
 
     # Bookings
     print("\nPOST /bookings")
+    r_svc = client.get("/services/")
+    items = r_svc.json().get("items", []) if r_svc.status_code == 200 else []
+    service_id = items[0]["id"] if items else 101
     future = (datetime.date.today() + datetime.timedelta(days=3)).isoformat()
     r = client.post("/bookings", json={
-        "service_id": 1,
+        "service_id": service_id,
         "address_id": addr_id,
         "booking_date": future,
         "preferred_time": "10:30:00",

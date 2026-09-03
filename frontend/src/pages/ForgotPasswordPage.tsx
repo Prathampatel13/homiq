@@ -1,16 +1,19 @@
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
-import { Mail, AlertCircle, Loader2, CheckCircle2, ArrowLeft } from 'lucide-react';
+import { Link, useNavigate } from 'react-router-dom';
+import { Mail, AlertCircle, Loader2, CheckCircle2, ArrowLeft, KeyRound } from 'lucide-react';
 import { authApi } from '../api/auth';
 import { HomiQLogo } from '../components/brand/HomiQLogo';
 
 export const ForgotPasswordPage: React.FC = () => {
+  const navigate = useNavigate();
   const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
+  const [loadingOtp, setLoadingOtp] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
+  const [method, setMethod] = useState<'link' | 'otp' | null>(null);
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSendLink = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!email.trim()) return;
 
@@ -18,12 +21,32 @@ export const ForgotPasswordPage: React.FC = () => {
       setLoading(true);
       setError(null);
       await authApi.forgotPassword(email);
+      setMethod('link');
       setSuccess(true);
     } catch (err: any) {
       console.error('Forgot password error:', err);
       setError(err?.response?.data?.detail || 'Failed to send recovery email. Please check your address.');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleSendOtp = async () => {
+    if (!email.trim()) {
+      setError('Please enter your email first.');
+      return;
+    }
+
+    try {
+      setLoadingOtp(true);
+      setError(null);
+      await authApi.sendResetOtp(email);
+      navigate('/reset-password', { state: { email, method: 'otp' } });
+    } catch (err: any) {
+      console.error('Send OTP error:', err);
+      setError(err?.response?.data?.detail || 'Failed to send OTP. Please check your address.');
+    } finally {
+      setLoadingOtp(false);
     }
   };
 
@@ -41,7 +64,7 @@ export const ForgotPasswordPage: React.FC = () => {
 
       <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md px-4 sm:px-0">
         <div className="p-6 sm:p-8 rounded-3xl bg-dark-900 border border-dark-750 shadow-modal space-y-6">
-          {success ? (
+          {success && method === 'link' ? (
             <div className="text-center py-4 space-y-3">
               <div className="w-12 h-12 rounded-full bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center text-emerald-400 mx-auto">
                 <CheckCircle2 className="w-6 h-6" />
@@ -56,7 +79,7 @@ export const ForgotPasswordPage: React.FC = () => {
               </Link>
             </div>
           ) : (
-            <form onSubmit={handleSubmit} className="space-y-4">
+            <form onSubmit={handleSendLink} className="space-y-4">
               <div>
                 <label className="block text-xs font-semibold text-slate-300 mb-1.5">Registered Email</label>
                 <div className="relative">
@@ -79,16 +102,34 @@ export const ForgotPasswordPage: React.FC = () => {
                 </div>
               )}
 
-              <button
-                type="submit"
-                disabled={loading}
-                className="w-full btn-primary text-xs py-3 font-semibold flex items-center justify-center gap-1.5 shadow-subtle hover:shadow-metallic disabled:opacity-40"
-              >
-                {loading && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
-                <span>Send Reset Link</span>
-              </button>
+              <div className="flex flex-col gap-3 pt-2">
+                <button
+                  type="submit"
+                  disabled={loading || loadingOtp}
+                  className="w-full btn-primary text-xs py-3 font-semibold flex items-center justify-center gap-1.5 shadow-subtle hover:shadow-metallic disabled:opacity-40"
+                >
+                  {loading && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+                  <span>Send Reset Link</span>
+                </button>
+                
+                <div className="relative flex items-center py-1">
+                  <div className="flex-grow border-t border-dark-750"></div>
+                  <span className="mx-4 text-xs font-semibold text-slate-500 uppercase">Or</span>
+                  <div className="flex-grow border-t border-dark-750"></div>
+                </div>
 
-              <div className="pt-2 text-center">
+                <button
+                  type="button"
+                  onClick={handleSendOtp}
+                  disabled={loading || loadingOtp}
+                  className="w-full btn-secondary text-xs py-3 font-semibold flex items-center justify-center gap-1.5 disabled:opacity-40"
+                >
+                  {loadingOtp ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <KeyRound className="w-3.5 h-3.5" />}
+                  <span>Send 6-Digit OTP</span>
+                </button>
+              </div>
+
+              <div className="pt-4 text-center">
                 <Link to="/login" className="text-xs text-slate-400 hover:text-white inline-flex items-center gap-1">
                   <ArrowLeft className="w-3 h-3" />
                   <span>Back to Sign In</span>
@@ -101,3 +142,4 @@ export const ForgotPasswordPage: React.FC = () => {
     </div>
   );
 };
+

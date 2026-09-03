@@ -9,10 +9,12 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent))
 
-import psycopg
 from fastapi.testclient import TestClient
 
+from app.database.session import SessionLocal
 from app.main import app
+from app.models.auth import Role, User
+from app.models.payments import Payment
 from app.security.passwords import hash_password
 
 client = TestClient(app)
@@ -21,37 +23,37 @@ ADMIN_EMAIL = "smoke_admin@homiq.com"
 ADMIN_PASSWORD = "Admin@12345"
 
 # ── Ensure a known test admin exists in DB ─────────────────────────────
-conn = psycopg.connect("postgresql://postgres:postgres123@localhost:5432/homiq_db")
-cur = conn.cursor()
-cur.execute("SELECT id FROM roles WHERE name = 'admin'")
-role_row = cur.fetchone()
-if not role_row:
-    cur.execute(
-        "INSERT INTO roles (name, description, created_at) VALUES ('admin', 'Admin role', now()) RETURNING id"
-    )
-    role_id = cur.fetchone()[0]
-    conn.commit()
-else:
-    role_id = role_row[0]
+db = SessionLocal()
+try:
+    role = db.query(Role).filter(Role.name == "admin").first()
+    if not role:
+        role = Role(name="admin", description="Admin role")
+        db.add(role)
+        db.commit()
+        db.refresh(role)
 
-cur.execute("SELECT id FROM users WHERE email = %s", (ADMIN_EMAIL,))
-existing = cur.fetchone()
-pwd_hash = hash_password(ADMIN_PASSWORD)
-if existing:
-    cur.execute(
-        "UPDATE users SET password_hash=%s, is_superuser=TRUE, is_active=TRUE WHERE id=%s",
-        (pwd_hash, existing[0]),
-    )
-    user_id = existing[0]
-else:
-    cur.execute(
-        "INSERT INTO users (email, phone, full_name, password_hash, is_active, is_verified, is_superuser, role_id, created_at, updated_at)"
-        " VALUES (%s, %s, %s, %s, TRUE, TRUE, TRUE, %s, now(), now()) RETURNING id",
-        (ADMIN_EMAIL, "0000000000", "Smoke Admin", pwd_hash, role_id),
-    )
-    user_id = cur.fetchone()[0]
-conn.commit()
-conn.close()
+    user = db.query(User).filter(User.email == ADMIN_EMAIL).first()
+    pwd_hash = hash_password(ADMIN_PASSWORD)
+    if user:
+        user.password_hash = pwd_hash
+        user.is_superuser = True
+        user.is_active = True
+        user.role_id = role.id
+    else:
+        user = User(
+            email=ADMIN_EMAIL,
+            phone="0000000000",
+            full_name="Smoke Admin",
+            password_hash=pwd_hash,
+            is_active=True,
+            is_verified=True,
+            is_superuser=True,
+            role_id=role.id,
+        )
+        db.add(user)
+    db.commit()
+finally:
+    db.close()
 
 print(f"▶ Admin login ({ADMIN_EMAIL})")
 r = client.post("/auth/login", json={"identifier": ADMIN_EMAIL, "password": ADMIN_PASSWORD})
@@ -71,13 +73,19 @@ print(dd.status_code)
 assert dd.status_code == 200
 
 print("\n▶ POST /payments/verify (invalid signature → expect 400)")
-conn = psycopg.connect("postgresql://postgres:postgres123@localhost:5432/homiq_db")
-cur = conn.cursor()
-cur.execute("SELECT razorpay_order_id FROM payments WHERE razorpay_order_id IS NOT NULL ORDER BY id DESC LIMIT 1")
-row = cur.fetchone()
-conn.close()
-if row:
-    order_id = row[0]
+db = SessionLocal()
+try:
+    payment = (
+        db.query(Payment)
+        .filter(Payment.razorpay_order_id.isnot(None))
+        .order_by(Payment.id.desc())
+        .first()
+    )
+    order_id = payment.razorpay_order_id if payment else None
+finally:
+    db.close()
+
+if order_id:
     r = client.post("/payments/verify", json={
         "razorpay_order_id": order_id,
         "razorpay_payment_id": "pay_invalid_test",

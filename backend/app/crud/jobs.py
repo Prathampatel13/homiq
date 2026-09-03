@@ -198,14 +198,16 @@ class JobCRUD:
     def update_application_status(
         self, application_id: int, status: str
     ) -> Optional[JobApplication]:
-        result = self.db.execute(
+        stmt = (
             update(JobApplication)
             .where(JobApplication.id == application_id)
             .values(status=status)
             .returning(JobApplication)
         )
+        result = self.db.execute(stmt)
+        item = result.scalar_one_or_none()
         self.db.commit()
-        return result.scalar_one_or_none()
+        return item
 
     def delete_application(self, application_id: int) -> bool:
         application = self.get_application(application_id)

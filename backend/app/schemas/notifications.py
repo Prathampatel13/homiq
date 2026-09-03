@@ -3,7 +3,8 @@ from __future__ import annotations
 from datetime import datetime
 from typing import Optional
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
+from typing import Any, Optional
 
 
 class NotificationCreate(BaseModel):
@@ -32,7 +33,16 @@ class NotificationListResponse(BaseModel):
 
 
 class NotificationMarkRead(BaseModel):
-    notification_ids: list[int] = Field(..., min_length=1, description="List of notification IDs to mark as read")
+    notification_ids: list[int] = Field(default_factory=list)
+    ids: Optional[list[int]] = None
+
+    @model_validator(mode="before")
+    @classmethod
+    def handle_ids_alias(cls, data: Any) -> Any:
+        if isinstance(data, dict):
+            if not data.get("notification_ids") and data.get("ids"):
+                data["notification_ids"] = data["ids"]
+        return data
 
 
 # ─── Notification System Extensions ─────────────────────────────────────

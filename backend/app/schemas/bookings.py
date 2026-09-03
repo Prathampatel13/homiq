@@ -200,9 +200,21 @@ class QRGenerateResponse(BaseModel):
     message: str = "QR code generated successfully"
 
 
+from pydantic import model_validator
+from typing import Any
+
 class QRScanRequest(BaseModel):
-    verification_token: str
+    verification_token: str = ""
+    qr_token: Optional[str] = None
     device_info: Optional[str] = None
+
+    @model_validator(mode="before")
+    @classmethod
+    def handle_token_alias(cls, data: Any) -> Any:
+        if isinstance(data, dict):
+            if not data.get("verification_token") and data.get("qr_token"):
+                data["verification_token"] = data["qr_token"]
+        return data
 
 
 class QRScanResponse(BaseModel):
@@ -221,7 +233,16 @@ class OTPGenerateResponse(BaseModel):
 
 
 class OTPVerifyRequest(BaseModel):
-    otp_code: str = Field(..., min_length=6, max_length=6, pattern="^[0-9]{6}$")
+    otp_code: str = ""
+    otp: Optional[str] = None
+
+    @model_validator(mode="before")
+    @classmethod
+    def handle_otp_alias(cls, data: Any) -> Any:
+        if isinstance(data, dict):
+            if not data.get("otp_code") and data.get("otp"):
+                data["otp_code"] = str(data["otp"])
+        return data
 
 
 class OTPVerifyResponse(BaseModel):

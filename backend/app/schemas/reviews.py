@@ -8,7 +8,7 @@ from pydantic import BaseModel, Field, field_validator
 
 class ReviewCreate(BaseModel):
     booking_id: int = Field(..., gt=0)
-    technician_id: int = Field(..., gt=0)
+    technician_id: Optional[int] = Field(None, gt=0)
     rating: int = Field(..., ge=1, le=5, description="Rating from 1 to 5")
     comment: Optional[str] = Field(None, max_length=2000)
 

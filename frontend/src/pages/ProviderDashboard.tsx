@@ -16,12 +16,14 @@ import {
   Phone, 
   AlertCircle,
   Eye,
-  CheckSquare
+  CheckSquare,
+  Bell
 } from 'lucide-react';
 import { technicianApi } from '../api/technician';
 import { bookingsApi } from '../api/bookings';
+import { notificationsApi } from '../api/notifications';
 import { useAuthStore } from '../store/useAuthStore';
-import { Booking, TechnicianProfile } from '../types';
+import { Booking, TechnicianProfile, NotificationItem } from '../types';
 import { StatusBadge } from '../components/ui/StatusBadge';
 import { EmptyState } from '../components/ui/EmptyState';
 import { LoadingState } from '../components/ui/LoadingState';
@@ -34,7 +36,10 @@ export const ProviderDashboard: React.FC = () => {
   const [isOnline, setIsOnline] = useState<boolean>(true);
   const [jobs, setJobs] = useState<Booking[]>([]);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<'today' | 'active' | 'pending' | 'all' | 'earnings' | 'documents'>('today');
+  const [activeTab, setActiveTab] = useState<'today' | 'active' | 'pending' | 'all' | 'earnings' | 'documents' | 'notifications'>('today');
+
+  const [notifications, setNotifications] = useState<NotificationItem[]>([]);
+  const [unreadCount, setUnreadCount] = useState(0);
 
   const [verifyBooking, setVerifyBooking] = useState<Booking | null>(null);
   const [detailsBooking, setDetailsBooking] = useState<Booking | null>(null);
@@ -43,10 +48,11 @@ export const ProviderDashboard: React.FC = () => {
   const loadTechnicianData = async () => {
     try {
       setLoading(true);
-      const [profRes, jobsRes, activeRes] = await Promise.allSettled([
+      const [profRes, jobsRes, activeRes, notifRes] = await Promise.allSettled([
         technicianApi.getProfile(),
         technicianApi.getMyJobs(),
         technicianApi.getActiveBookings(),
+        notificationsApi.getNotifications({ limit: 50 }),
       ]);
 
       if (profRes.status === 'fulfilled' && profRes.value) {
@@ -67,6 +73,12 @@ export const ProviderDashboard: React.FC = () => {
         });
       }
       setJobs(allJobs);
+
+      if (notifRes.status === 'fulfilled') {
+        const nList = Array.isArray(notifRes.value) ? notifRes.value : (notifRes.value as any)?.items || [];
+        setNotifications(nList);
+        setUnreadCount(nList.filter((n: NotificationItem) => !n.is_read).length);
+      }
     } catch (err) {
       console.error('Failed to load technician workspace:', err);
     } finally {
@@ -159,14 +171,27 @@ export const ProviderDashboard: React.FC = () => {
           <div className="flex items-center gap-3 self-start sm:self-auto">
             <button
               onClick={handleToggleOnline}
-              className={`px-4 py-2.5 rounded-xl text-xs font-mono font-bold flex items-center gap-2 transition-all ${
+              className={`px-4 py-2 rounded-full text-xs font-mono font-bold flex items-center gap-2.5 transition-all duration-300 ${
                 isOnline
-                  ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 shadow-accent'
-                  : 'bg-dark-800 text-slate-400 border border-dark-750'
+                  ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/40 shadow-[0_0_15px_rgba(16,185,129,0.15)] hover:bg-emerald-500/20'
+                  : 'bg-dark-800 text-slate-400 border border-dark-700 hover:bg-dark-750 hover:text-slate-300'
               }`}
             >
-              <Power className="w-4 h-4" />
-              <span>{isOnline ? 'ONLINE • RECEIVING DISPATCHES' : 'OFFLINE • ON BREAK'}</span>
+              <div className="relative flex items-center justify-center">
+                <Power className="w-4 h-4 z-10" />
+                {isOnline && (
+                  <span className="absolute w-4 h-4 bg-emerald-400/30 rounded-full animate-ping"></span>
+                )}
+              </div>
+              <span className="tracking-wide">
+                {isOnline ? (
+                  <>
+                    <span className="text-white">ONLINE</span> <span className="text-emerald-500/50 mx-1">•</span> <span className="text-emerald-300/90 font-medium tracking-normal text-[11px]">RECEIVING DISPATCHES</span>
+                  </>
+                ) : (
+                  'OFFLINE • ON BREAK'
+                )}
+              </span>
             </button>
           </div>
         </div>
@@ -181,6 +206,7 @@ export const ProviderDashboard: React.FC = () => {
             { id: 'pending', label: 'Incoming Dispatches', count: pendingJobs.length },
             { id: 'all', label: 'All Services', count: jobs.length },
             { id: 'earnings', label: 'Earnings & Payouts' },
+            { id: 'notifications', label: 'Alerts', count: unreadCount },
             { id: 'documents', label: 'KYC & Credentials' },
           ].map((tab) => (
             <button
@@ -359,6 +385,79 @@ export const ProviderDashboard: React.FC = () => {
                 <span className="text-[10px] text-slate-400 font-mono mt-1 block">Top 5% Tier Network</span>
               </div>
             </div>
+          </div>
+        ) : activeTab === 'notifications' ? (
+          <div className="space-y-4 max-w-3xl">
+            <div className="flex items-center justify-between">
+              <h3 className="text-base font-bold text-white tracking-tight">Recent Alerts</h3>
+              {unreadCount > 0 && (
+                <button 
+                  onClick={async () => {
+                    await notificationsApi.markAllRead();
+                    setNotifications(notifications.map(n => ({ ...n, is_read: true })));
+                    setUnreadCount(0);
+                  }}
+                  className="text-xs font-mono text-sage-400 hover:text-sage-300 transition-colors"
+                >
+                  MARK ALL READ
+                </button>
+              )}
+            </div>
+            {notifications.length > 0 ? (
+              <div className="space-y-3">
+                {notifications.map((notif) => (
+                  <div 
+                    key={notif.id}
+                    className={`p-5 rounded-2xl border flex gap-4 transition-all ${
+                      notif.is_read 
+                        ? 'bg-dark-900 border-dark-750 opacity-70' 
+                        : 'bg-dark-850 border-sage-500/30 shadow-card'
+                    }`}
+                  >
+                    <div className="mt-1">
+                      {notif.is_read ? (
+                        <Bell className="w-5 h-5 text-slate-500" />
+                      ) : (
+                        <div className="relative">
+                          <Bell className="w-5 h-5 text-sage-400" />
+                          <span className="absolute -top-1 -right-1 w-2 h-2 rounded-full bg-emerald-500 shadow-accent"></span>
+                        </div>
+                      )}
+                    </div>
+                    <div className="flex-1">
+                      <p className={`text-sm font-semibold ${notif.is_read ? 'text-slate-300' : 'text-white'}`}>
+                        {notif.title}
+                      </p>
+                      <p className="text-xs text-slate-400 mt-1 leading-relaxed">
+                        {notif.message}
+                      </p>
+                      <div className="flex items-center justify-between mt-3">
+                        <span className="text-[10px] font-mono text-slate-500">
+                          {new Date(notif.created_at).toLocaleString()}
+                        </span>
+                        {!notif.is_read && (
+                          <button
+                            onClick={async () => {
+                              await notificationsApi.markRead(notif.id);
+                              setNotifications(notifications.map(n => n.id === notif.id ? { ...n, is_read: true } : n));
+                              setUnreadCount(prev => Math.max(0, prev - 1));
+                            }}
+                            className="text-[10px] font-bold font-mono text-sage-400 hover:text-sage-300"
+                          >
+                            MARK READ
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <EmptyState
+                title="NO NOTIFICATIONS"
+                description="You are all caught up. New assignments and alerts will appear here."
+              />
+            )}
           </div>
         ) : (
           <div className="p-6 rounded-3xl bg-dark-900 border border-dark-750 space-y-4">

@@ -1,7 +1,7 @@
 from datetime import datetime
-from typing import Optional
+from typing import Any, Optional
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
 
 
 class CategoryBase(BaseModel):
@@ -28,7 +28,7 @@ class CategoryResponse(CategoryBase):
 class ServiceBase(BaseModel):
     name: str = Field(..., min_length=1, max_length=255)
     description: Optional[str] = Field(None, max_length=2000)
-    base_price: float = Field(..., ge=0)
+    base_price: float = Field(0.0, ge=0)
     duration_minutes: Optional[int] = Field(
         0,
         ge=0,
@@ -40,6 +40,14 @@ class ServiceBase(BaseModel):
     is_active: Optional[bool] = Field(
         True, description="Whether the service is active and visible to customers."
     )
+
+    @model_validator(mode="before")
+    @classmethod
+    def handle_price_aliases(cls, data: Any) -> Any:
+        if isinstance(data, dict):
+            if "base_price" not in data and "price" in data:
+                data["base_price"] = data["price"]
+        return data
 
 
 class ServiceCreate(ServiceBase):

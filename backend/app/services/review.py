@@ -81,7 +81,13 @@ class ReviewService:
             )
 
         # Verify technician exists
-        technician = self.technician_crud.get_by_technician_id(payload.technician_id)
+        tech_id = payload.technician_id or booking.technician_id
+        if not tech_id:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="No technician assigned to this booking.",
+            )
+        technician = self.technician_crud.get_by_technician_id(tech_id)
         if not technician:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
@@ -89,14 +95,15 @@ class ReviewService:
             )
 
         data = payload.model_dump()
+        data["technician_id"] = tech_id
         data["customer_id"] = customer_id
         review = self.crud.create(data)
 
         # Update technician average rating
-        avg_rating = self.crud.average_rating(payload.technician_id)
-        review_count = self.crud.count_reviews(technician_id=payload.technician_id)
+        avg_rating = self.crud.average_rating(tech_id)
+        review_count = self.crud.count_reviews(technician_id=tech_id)
         self.technician_crud.update(
-            payload.technician_id,
+            tech_id,
             {"rating": round(avg_rating, 2), "reviews_count": review_count},
         )
 

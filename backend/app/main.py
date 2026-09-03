@@ -33,9 +33,12 @@ from app.middleware.security import SecurityHeadersMiddleware
 from fastapi.middleware.gzip import GZipMiddleware
 
 from app.core.config import BASE_DIR, settings
-from app.database.session import get_db
+from app.database.base import Base
+from app.database.session import engine, get_db
 from app.models.auth import User
 from app.security.deps import get_current_user
+
+Base.metadata.create_all(bind=engine)
 
 app = FastAPI(
     title="HomiQ Backend",

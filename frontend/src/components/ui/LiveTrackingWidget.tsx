@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { 
   MapPin, 
   Navigation2, 
@@ -11,12 +11,44 @@ import {
 } from 'lucide-react';
 import { Booking } from '../../types';
 import { BookingMediaSection } from '../media/BookingMediaSection';
+import { GoogleMap, useJsApiLoader, Marker } from '@react-google-maps/api';
 
 export interface LiveTrackingWidgetProps {
   booking: Booking;
 }
 
+const mapStyles = [
+  { elementType: "geometry", stylers: [{ color: "#1e293b" }] },
+  { elementType: "labels.text.stroke", stylers: [{ color: "#1e293b" }] },
+  { elementType: "labels.text.fill", stylers: [{ color: "#94a3b8" }] },
+  { featureType: "administrative.locality", elementType: "labels.text.fill", stylers: [{ color: "#cbd5e1" }] },
+  { featureType: "poi", elementType: "labels.text.fill", stylers: [{ color: "#94a3b8" }] },
+  { featureType: "poi.park", elementType: "geometry", stylers: [{ color: "#0f172a" }] },
+  { featureType: "poi.park", elementType: "labels.text.fill", stylers: [{ color: "#64748b" }] },
+  { featureType: "road", elementType: "geometry", stylers: [{ color: "#334155" }] },
+  { featureType: "road", elementType: "geometry.stroke", stylers: [{ color: "#1e293b" }] },
+  { featureType: "road", elementType: "labels.text.fill", stylers: [{ color: "#94a3b8" }] },
+  { featureType: "road.highway", elementType: "geometry", stylers: [{ color: "#475569" }] },
+  { featureType: "road.highway", elementType: "geometry.stroke", stylers: [{ color: "#1e293b" }] },
+  { featureType: "road.highway", elementType: "labels.text.fill", stylers: [{ color: "#f3f4f6" }] },
+  { featureType: "transit", elementType: "geometry", stylers: [{ color: "#1e293b" }] },
+  { featureType: "transit.station", elementType: "labels.text.fill", stylers: [{ color: "#cbd5e1" }] },
+  { featureType: "water", elementType: "geometry", stylers: [{ color: "#0f172a" }] },
+  { featureType: "water", elementType: "labels.text.fill", stylers: [{ color: "#475569" }] },
+  { featureType: "water", elementType: "labels.text.stroke", stylers: [{ color: "#1e293b" }] }
+];
+
+const containerStyle = {
+  width: '100%',
+  height: '100%'
+};
+
 export const LiveTrackingWidget: React.FC<LiveTrackingWidgetProps> = ({ booking }) => {
+  const { isLoaded } = useJsApiLoader({
+    id: 'google-map-script',
+    googleMapsApiKey: import.meta.env.VITE_GOOGLE_MAPS_API_KEY || ''
+  });
+
   const [progress, setProgress] = useState(0);
 
   // Status mapping
@@ -75,56 +107,78 @@ export const LiveTrackingWidget: React.FC<LiveTrackingWidgetProps> = ({ booking 
 
   const technicianUserId = (booking.technician as any)?.user_id || (booking.technician as any)?.id;
 
+  const defaultCenter = { lat: 28.6139, lng: 77.2090 }; // Default to New Delhi if missing
+  
+  const homeLocation = useMemo(() => {
+    if (booking.address?.latitude && booking.address?.longitude) {
+      return { lat: booking.address.latitude, lng: booking.address.longitude };
+    }
+    return defaultCenter;
+  }, [booking.address]);
+
+  const techLocation = useMemo(() => {
+    if ((booking.technician as any)?.latitude && (booking.technician as any)?.longitude) {
+      return { lat: (booking.technician as any).latitude, lng: (booking.technician as any).longitude };
+    }
+    // Simulate technician slightly offset from home if no location yet
+    return { lat: homeLocation.lat - 0.02, lng: homeLocation.lng - 0.02 };
+  }, [booking.technician, homeLocation]);
+
   return (
     <div className="w-full bg-dark-900 border border-dark-750 rounded-3xl overflow-hidden shadow-card mb-8">
       <div className="grid grid-cols-1 lg:grid-cols-3">
         
         {/* Map Area */}
-        <div className="lg:col-span-2 relative h-64 lg:h-auto min-h-[350px] bg-dark-950 flex flex-col items-center justify-center overflow-hidden border-b lg:border-b-0 lg:border-r border-dark-750">
-          {/* Simulated Map Background */}
-          <div className="absolute inset-0 bg-[linear-gradient(to_right,#1e293b_1px,transparent_1px),linear-gradient(to_bottom,#1e293b_1px,transparent_1px)] bg-[size:2rem_2rem] [mask-image:radial-gradient(ellipse_80%_80%_at_50%_50%,#000_70%,transparent_100%)] opacity-30"></div>
-          
-          {/* Map Route Line */}
-          <div className="absolute top-1/2 left-[15%] right-[15%] h-1.5 bg-dark-800 rounded-full overflow-hidden transform -translate-y-1/2">
-            <div 
-              className="h-full bg-sage-500 transition-all duration-300 ease-linear shadow-[0_0_10px_rgba(74,222,128,0.5)]"
-              style={{ width: `${progress}%` }}
-            />
-          </div>
-
-          {/* Starting Point */}
-          <div className="absolute top-1/2 left-[15%] transform -translate-x-1/2 -translate-y-1/2 flex flex-col items-center">
-            <div className="w-5 h-5 bg-dark-800 border-4 border-slate-600 rounded-full z-10" />
-            <span className="text-xs font-mono font-bold text-slate-400 mt-3 bg-dark-950/90 px-3 py-1.5 rounded-lg border border-dark-800 shadow-sm backdrop-blur-sm">Dispatch</span>
-          </div>
-
-          {/* Moving Vehicle */}
-          {currentLevel >= 2 && currentLevel < 4 && (
-            <div 
-              className="absolute top-1/2 transform -translate-y-1/2 z-20 transition-all duration-300 ease-linear"
-              style={{ left: `calc(15% + (${progress} * 0.7%))` }}
-            >
-              <div className="relative">
-                <div className="absolute -inset-2 bg-sage-400/20 rounded-full blur-md animate-pulse"></div>
-                <div className="relative w-10 h-10 bg-sage-400 text-dark-950 rounded-full flex items-center justify-center shadow-[0_0_20px_rgba(74,222,128,0.4)] ring-4 ring-dark-950">
-                  <Car className="w-5 h-5" />
-                </div>
-              </div>
+        <div className="lg:col-span-2 relative h-[400px] lg:h-auto min-h-[400px] bg-dark-950 flex flex-col overflow-hidden border-b lg:border-b-0 lg:border-r border-dark-750">
+          {!isLoaded ? (
+            <div className="flex-1 flex items-center justify-center text-sage-400/50 animate-pulse font-mono text-sm">
+              INITIALIZING RADAR...
             </div>
+          ) : (
+            <GoogleMap
+              mapContainerStyle={containerStyle}
+              center={homeLocation}
+              zoom={13}
+              options={{
+                styles: mapStyles,
+                disableDefaultUI: true,
+                zoomControl: true,
+              }}
+            >
+              {/* Home Marker */}
+              <Marker 
+                position={homeLocation} 
+                icon={{
+                  path: "M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z",
+                  fillColor: "#4ade80",
+                  fillOpacity: 1,
+                  strokeWeight: 1,
+                  strokeColor: "#22c55e",
+                  scale: 1.5,
+                  anchor: new window.google.maps.Point(12, 24),
+                }} 
+              />
+              
+              {/* Technician Marker (Only show if assigned) */}
+              {currentLevel >= 2 && currentLevel < 6 && (
+                <Marker 
+                  position={techLocation} 
+                  icon={{
+                    path: "M18.92 6.01C18.72 5.42 18.16 5 17.5 5h-11c-.66 0-1.21.42-1.42 1.01L3 12v8c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-1h12v1c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-8l-2.08-5.99zM6.5 16c-.83 0-1.5-.67-1.5-1.5S5.67 13 6.5 13s1.5.67 1.5 1.5S7.33 16 6.5 16zm11 0c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zM5 11l1.5-4.5h11L19 11H5z",
+                    fillColor: "#94a3b8",
+                    fillOpacity: 1,
+                    strokeWeight: 1,
+                    strokeColor: "#475569",
+                    scale: 1.2,
+                    anchor: new window.google.maps.Point(12, 12),
+                  }} 
+                />
+              )}
+            </GoogleMap>
           )}
 
-          {/* Destination */}
-          <div className="absolute top-1/2 right-[15%] transform translate-x-1/2 -translate-y-1/2 flex flex-col items-center">
-            <div className={`w-7 h-7 border-4 rounded-full z-10 flex items-center justify-center ${currentLevel >= 4 ? 'bg-sage-400 border-sage-500 shadow-[0_0_20px_rgba(74,222,128,0.5)]' : 'bg-dark-800 border-sage-400 shadow-[0_0_15px_rgba(74,222,128,0.2)]'}`}>
-              <div className={`w-2 h-2 rounded-full ${currentLevel >= 4 ? 'bg-white' : 'bg-sage-400'}`} />
-            </div>
-            <span className={`text-xs font-mono font-bold mt-3 px-3 py-1.5 rounded-lg border shadow-sm backdrop-blur-sm ${currentLevel >= 4 ? 'bg-sage-400/20 text-sage-400 border-sage-400/50' : 'bg-dark-950/90 text-sage-400 border-sage-400/30'}`}>
-              Your Home
-            </span>
-          </div>
-
           {/* Overlay Status Box */}
-          <div className="absolute top-5 left-5 p-4 rounded-2xl bg-dark-900/95 backdrop-blur-md border border-dark-750 shadow-xl">
+          <div className="absolute top-5 left-5 p-4 rounded-2xl bg-dark-900/95 backdrop-blur-md border border-dark-750 shadow-xl z-10">
             <div className="flex items-center gap-2.5 mb-1.5">
               <div className={`w-2 h-2 rounded-full ${currentLevel === 3 ? 'bg-sage-400 animate-pulse' : currentLevel >= 4 ? 'bg-sage-400' : 'bg-blue-400'}`} />
               <span className="text-sm font-bold text-white tracking-wide uppercase">Live Status</span>
@@ -137,12 +191,6 @@ export const LiveTrackingWidget: React.FC<LiveTrackingWidgetProps> = ({ booking 
                currentLevel === 5 ? 'SERVICE IN PROGRESS' :
                'SERVICE COMPLETED'}
             </div>
-          </div>
-          
-          {/* Work Evidence embedded below map if on desktop, or stacked on mobile */}
-          <div className="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-dark-950 to-transparent hidden lg:block">
-            {/* We will render BookingMediaSection in the sidebar instead to fit the grid, 
-                but actually the sidebar might get too long. Let's put it at the bottom of the whole widget. */}
           </div>
         </div>
 

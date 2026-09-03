@@ -72,61 +72,228 @@ def refresh_token(refresh_token: str, db: Session = Depends(get_db)) -> Token:
     return Token(**tokens)
 
 
-from jose import jwt
+from google.oauth2 import id_token
+from google.auth.transport import requests as google_requests
+import secrets
+import string
+from app.schemas.auth import GoogleLoginRequest
+
+import requests
+
+@router.post("/google", response_model=Token)
+def google_login(payload: GoogleLoginRequest, db: Session = Depends(get_db)) -> Token:
+    if not settings.GOOGLE_CLIENT_ID:
+        raise HTTPException(status_code=500, detail="Google authentication is not configured")
+        
+    idinfo = None
+    try:
+        # Try verifying as ID token first
+        idinfo = id_token.verify_oauth2_token(
+            payload.token, 
+            google_requests.Request(), 
+            settings.GOOGLE_CLIENT_ID
+        )
+    except ValueError:
+        # If it fails, assume it's an access token and fetch user info
+        try:
+            response = requests.get(
+                "https://www.googleapis.com/oauth2/v3/userinfo",
+                headers={"Authorization": f"Bearer {payload.token}"},
+                timeout=10
+            )
+            if response.status_code == 200:
+                idinfo = response.json()
+        except Exception as e:
+            pass
+            
+    if not idinfo:
+        raise HTTPException(status_code=401, detail="Invalid Google token")
+
+    email = idinfo.get("email")
+    if not email:
+        raise HTTPException(status_code=400, detail="Email not found in Google token")
+
+    crud = UserCRUD(db)
+    user = crud.get_user_by_email(email)
+    
+    if not user:
+        full_name = idinfo.get("name", email.split("@")[0])
+        random_password = ''.join(secrets.choice(string.ascii_letters + string.digits) for _ in range(32))
+        
+        user = crud.create_user(
+            email=email,
+            password=random_password,
+            full_name=full_name,
+            phone=None,
+            role_name=payload.role or "customer",
+        )
+        if idinfo.get("picture"):
+            crud.update_avatar_url(user.id, idinfo.get("picture"))
+
+    tokens = crud.create_tokens(user)
+    tokens["user"] = {
+        "id": user.id,
+        "email": user.email,
+        "full_name": user.full_name,
+        "phone": user.phone,
+        "role": f"ROLE_{user.role.name.upper()}" if user.role else "ROLE_CUSTOMER",
+        "is_active": user.is_active,
+        "is_verified": user.is_verified,
+    }
+    return Token(**tokens)
+
+
 from datetime import datetime, timedelta, timezone
+import secrets
+from jose import jwt
+
 from app.core.config import settings
-from app.services.email import send_email_in_background
+from app.services.email import send_password_reset_link_email, send_password_reset_otp_email
+from app.schemas.auth import SendResetOtpRequest, VerifyResetOtpRequest, VerifyResetOtpResponse, ResetPasswordWithOtpRequest
+from app.security.passwords import generate_secure_otp, hash_password, verify_password, validate_password_strength
+
 
 @router.post("/forgot-password")
 def forgot_password(payload: ForgotPasswordRequest, db: Session = Depends(get_db)) -> dict[str, str]:
+    # Rate limit check should go here in a production setup (if implemented as middleware/dependency, else manually)
+    
     crud = UserCRUD(db)
     user = crud.get_user_by_email(payload.email)
     if user:
-        expire = datetime.now(timezone.utc) + timedelta(hours=1)
-        reset_token = jwt.encode(
-            {"sub": str(user.id), "type": "reset", "exp": expire},
-            settings.SECRET_KEY,
-            algorithm=settings.ALGORITHM
-        )
-        reset_link = f"http://localhost:5173/reset-password?token={reset_token}"
+        # Generate secure random token
+        raw_token = secrets.token_urlsafe(32)
+        token_hash = hash_password(raw_token)
+        expires_at = datetime.now(timezone.utc) + timedelta(minutes=settings.PASSWORD_RESET_TOKEN_EXPIRE_MINUTES)
         
-        html_body = f"""
-        <h3>Reset Your Password</h3>
-        <p>Hi {user.full_name},</p>
-        <p>You requested a password reset. Click the link below to set a new password:</p>
-        <p><a href="{reset_link}">{reset_link}</a></p>
-        <p>This link expires in 1 hour.</p>
-        <p>If you didn't request this, you can safely ignore this email.</p>
-        """
-        send_email_in_background(
-            subject="Password Reset - HomiQ",
-            email_to=user.email,
-            body=html_body
-        )
+        crud.create_password_reset_token(user.id, token_hash, expires_at)
         
+        full_token = f"{user.id}:{raw_token}"
+        send_password_reset_link_email(user.email, user.full_name, full_token)
+        
+    # Always return success to prevent enumeration
     return {"message": "If an account with that email exists, password reset instructions have been sent."}
+
+
+@router.post("/send-reset-otp")
+def send_reset_otp(payload: SendResetOtpRequest, db: Session = Depends(get_db)) -> dict[str, str]:
+    crud = UserCRUD(db)
+    user = crud.get_user_by_email(payload.email)
+    
+    if user:
+        # Check cooldown (if last OTP sent within cooldown, we should silently ignore or allow depending on rate limits, 
+        # but to prevent enumeration, we just silently succeed or if we want to be strict, we'd have a rate limiter)
+        
+        raw_otp = generate_secure_otp(settings.PASSWORD_RESET_OTP_LENGTH)
+        otp_hash = hash_password(raw_otp)
+        expires_at = datetime.now(timezone.utc) + timedelta(minutes=settings.PASSWORD_RESET_OTP_EXPIRE_MINUTES)
+        
+        crud.create_password_reset_otp(user.id, otp_hash, expires_at)
+        send_password_reset_otp_email(user.email, user.full_name, raw_otp)
+        
+    return {"message": "If an account with that email exists, an OTP has been sent."}
+
+
+@router.post("/verify-reset-otp", response_model=VerifyResetOtpResponse)
+def verify_reset_otp(payload: VerifyResetOtpRequest, db: Session = Depends(get_db)) -> VerifyResetOtpResponse:
+    crud = UserCRUD(db)
+    user = crud.get_user_by_email(payload.email)
+    
+    if not user:
+        raise HTTPException(status_code=400, detail="Invalid OTP or expired.")
+        
+    active_otp = crud.get_active_password_reset_otp(user.id)
+    if not active_otp:
+        raise HTTPException(status_code=400, detail="Invalid OTP or expired.")
+        
+    if active_otp.attempt_count >= settings.PASSWORD_RESET_OTP_MAX_ATTEMPTS:
+        raise HTTPException(status_code=400, detail="Too many invalid attempts. Please request a new OTP.")
+        
+    if not verify_password(payload.otp, active_otp.otp_hash):
+        crud.increment_otp_attempt(active_otp.id)
+        raise HTTPException(status_code=400, detail="Invalid OTP or expired.")
+        
+    crud.mark_otp_used(active_otp.id)
+    
+    # Issue a short-lived token to authorize the password reset operation
+    expire = datetime.now(timezone.utc) + timedelta(minutes=10)
+    reset_auth_token = jwt.encode(
+        {"sub": str(user.id), "type": "otp_reset_auth", "exp": expire},
+        settings.SECRET_KEY,
+        algorithm=settings.ALGORITHM
+    )
+    
+    return VerifyResetOtpResponse(reset_token=reset_auth_token)
 
 
 @router.post("/reset-password")
 def reset_password(payload: ResetPasswordRequest, db: Session = Depends(get_db)) -> dict[str, str]:
-    from jose import JWTError
-    try:
-        payload_data = jwt.decode(payload.token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
-        if payload_data.get("type") != "reset":
-            raise HTTPException(status_code=400, detail="Invalid token type")
-        user_id = int(payload_data.get("sub"))
-    except JWTError:
-        raise HTTPException(status_code=400, detail="Invalid or expired reset token")
-        
     crud = UserCRUD(db)
-    user = crud.get_user_by_id(user_id)
+    user = None
+    
+    # Validate password strength
+    is_valid, msg = validate_password_strength(payload.new_password)
+    if not is_valid:
+        raise HTTPException(status_code=400, detail=msg)
+
+    # 1. Check if token is a valid reset link token (DB hash)
+    # Since we can't search by raw token, we must decode it if it was a JWT, but now it's a raw secrets token.
+    # Wait, the frontend sends raw_token in payload.token.
+    # We don't have user_id, so we'd have to find the token in DB.
+    # Wait, token_hash = hash_password(token) uses a random salt. We can't do a DB lookup by token!
+    # Ah! bcrypt hash cannot be searched in the DB because of the random salt.
+    # If the token is raw URL-safe string, we must either:
+    # A) include the user_id in the token: f"{user.id}:{raw_token}"
+    # B) use a deterministic hash like SHA256 for the token storage so we can do a DB lookup.
+    
+    # Let's check if it's an OTP authorized JWT token
+    if payload.token:
+        try:
+            # First try parsing as JWT (OTP auth token)
+            payload_data = jwt.decode(payload.token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
+            if payload_data.get("type") == "otp_reset_auth":
+                user_id = int(payload_data.get("sub"))
+                user = crud.get_user_by_id(user_id)
+        except Exception:
+            pass
+            
+        if not user:
+            # Try finding the reset link token. Since it was hashed with bcrypt, this is problematic.
+            # Let's fix this in a moment: reset link token needs to be `user_id:raw_token` format.
+            if ":" in payload.token:
+                user_id_str, raw_token = payload.token.split(":", 1)
+                try:
+                    user_id = int(user_id_str)
+                    user = crud.get_user_by_id(user_id)
+                    if user:
+                        # Find tokens for user
+                        from sqlalchemy import select
+                        from app.models.auth import PasswordResetToken
+                        tokens = db.scalars(select(PasswordResetToken).where(
+                            PasswordResetToken.user_id == user_id,
+                            PasswordResetToken.used_at.is_(None),
+                            PasswordResetToken.expires_at > datetime.now(timezone.utc)
+                        )).all()
+                        
+                        valid_token_record = None
+                        for t in tokens:
+                            if verify_password(raw_token, t.token_hash):
+                                valid_token_record = t
+                                break
+                        
+                        if valid_token_record:
+                            crud.mark_password_reset_token_used(valid_token_record.id)
+                        else:
+                            user = None
+                except ValueError:
+                    pass
+
     if not user:
-        raise HTTPException(status_code=404, detail="User not found")
+        raise HTTPException(status_code=400, detail="Invalid or expired reset token.")
         
-    user.hashed_password = hash_password(payload.new_password)
-    db.commit()
+    crud.update_password(user.id, payload.new_password)
     
     return {"message": "Password successfully updated"}
+
 
 
 @router.get("/me")

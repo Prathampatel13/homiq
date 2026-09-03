@@ -28,6 +28,7 @@ dist-ssr/
 *.log
 *.sqlite
 *.sqlite3
+*.db
 backend/uploads/*
 !backend/uploads/.gitkeep
 

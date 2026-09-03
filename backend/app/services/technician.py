@@ -29,8 +29,8 @@ from app.schemas.technician import (
     TechnicianUpdate,
 )
 
-ALLOWED_IMAGE_TYPES = {"image/jpeg", "image/png", "image/gif", "image/webp"}
-MAX_IMAGE_SIZE = 5 * 1024 * 1024  # 5 MB
+ALLOWED_IMAGE_TYPES = {"image/jpeg", "image/png", "image/gif", "image/webp", "application/pdf"}
+MAX_IMAGE_SIZE = 10 * 1024 * 1024  # 10 MB
 
 
 class TechnicianService:
