@@ -1,5 +1,6 @@
-services:
-  # ── 1. FastAPI Web Backend Service ─────────────────────────────────────────
+﻿services:
+  # ── 1. FastAPI Web Backend Service (100% Free Tier) ──────────────────────
+  # This single web service runs FastAPI and Celery simultaneously using start_prod.sh.
   - type: web
     name: homiq-backend
     env: docker
@@ -10,71 +11,10 @@ services:
       - key: ENV
         value: production
       - key: DATABASE_URL
-        fromDatabase:
-          name: homiq-postgres
-          property: connectionString
+        sync: false # Set this to your Neon.tech Postgres URL in Render Dashboard
       - key: REDIS_URL
-        fromService:
-          type: redis
-          name: homiq-redis
-          property: connectionString
+        sync: false # Set this to your Upstash Redis URL in Render Dashboard
       - key: REDIS_BROKER_URL
-        fromService:
-          type: redis
-          name: homiq-redis
-          property: connectionString
+        sync: false # Set this to your Upstash Redis URL in Render Dashboard
       - key: SECRET_KEY
         generateValue: true
-
-  # ── 2. Celery Background Worker Service ─────────────────────────────────────
-  - type: worker
-    name: homiq-celery-worker
-    env: docker
-    dockerfilePath: ./Dockerfile
-    dockerCommand: celery -A app.core.celery_app worker --loglevel=info
-    autoDeploy: true
-    envVars:
-      - key: ENV
-        value: production
-      - key: DATABASE_URL
-        fromDatabase:
-          name: homiq-postgres
-          property: connectionString
-      - key: REDIS_URL
-        fromService:
-          type: redis
-          name: homiq-redis
-          property: connectionString
-
-  # ── 3. Celery Beat Scheduler Service ───────────────────────────────────────
-  - type: worker
-    name: homiq-celery-beat
-    env: docker
-    dockerfilePath: ./Dockerfile
-    dockerCommand: celery -A app.core.celery_app beat --loglevel=info
-    autoDeploy: true
-    envVars:
-      - key: ENV
-        value: production
-      - key: DATABASE_URL
-        fromDatabase:
-          name: homiq-postgres
-          property: connectionString
-      - key: REDIS_URL
-        fromService:
-          type: redis
-          name: homiq-redis
-          property: connectionString
-
-# ── Databases & Managed Services ─────────────────────────────────────────────
-databases:
-  - name: homiq-postgres
-    databaseName: homiq_db
-    user: homiq_user
-    plan: starter
-
-services:
-  - type: redis
-    name: homiq-redis
-    plan: starter
-    ipAllowList: []

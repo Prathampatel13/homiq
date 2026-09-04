@@ -52,6 +52,9 @@ COPY --chown=homiq:homiq . /app
 # Ensure uploads directory exists and is owned by homiq user
 RUN mkdir -p /app/uploads && chown -R homiq:homiq /app
 
+# Ensure start script is executable
+RUN chmod +x /app/start_prod.sh
+
 USER homiq
 
 EXPOSE 8000
@@ -59,4 +62,4 @@ EXPOSE 8000
 HEALTHCHECK --interval=30s --timeout=10s --start-period=15s --retries=3 \
   CMD curl -f http://localhost:8000/health || exit 1
 
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
+CMD ["/app/start_prod.sh"]
