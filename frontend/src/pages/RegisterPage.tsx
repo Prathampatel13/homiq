@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { User, Mail, Lock, Phone, AlertCircle, Loader2, ArrowRight, ShieldCheck, Building2, Wrench, Eye, EyeOff } from 'lucide-react';
 import { authApi } from '../api/auth';
+import { API_BASE_URL } from '../api/axios';
 import { useAuthStore } from '../store/useAuthStore';
 import { HomiQLogo } from '../components/brand/HomiQLogo';
 
@@ -54,7 +55,7 @@ export const RegisterPage: React.FC = () => {
       } else if (Array.isArray(detail)) {
         setError(detail.map((d: any) => `${d.loc ? d.loc.slice(-1) + ': ' : ''}${d.msg || 'Invalid field'}`).join(', '));
       } else if (err?.message === 'Network Error' || !err?.response) {
-        setError(`Network Error: Cannot reach backend at ${authApi ? import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000' : ''}. Check if the backend is awake or VITE_API_BASE_URL is set.`);
+        setError(`Network Error: Cannot reach backend at ${API_BASE_URL}. Check if the backend is awake or VITE_API_BASE_URL is set.`);
       } else {
         setError(err?.response?.data?.message || `Failed to create account (${err?.response?.status || 'Error'}). Please check your inputs.`);
       }
