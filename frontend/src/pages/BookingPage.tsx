@@ -81,27 +81,21 @@ export const BookingPage: React.FC = () => {
         setServices(allServices);
 
         if (isAuthenticated) {
-          // Fallback static addresses
-          const addrsRes = [
-            {
-              id: 1,
-              customer_id: 1,
-              full_name: 'Pratham Patel',
-              phone: '+91-9876543210',
-              house_no: '123 Main Street',
-              area: 'Andheri West',
-              city: 'Mumbai',
-              state: 'Maharashtra',
-              pincode: '400001',
-              country: 'India',
-              is_default: true,
-              latitude: 18.9220,
-              longitude: 72.8347
+          try {
+            const addrsRes = await customerApi.getAddresses();
+            if (Array.isArray(addrsRes)) {
+              setAddresses(addrsRes);
+              if (addrsRes.length > 0) {
+                const defaultAddr = addrsRes.find((a: any) => a.is_default) || addrsRes[0];
+                setSelectedAddress(defaultAddr);
+              } else {
+                setSelectedAddress(null);
+              }
             }
-          ];
-          setAddresses(addrsRes as any);
-          if (addrsRes.length > 0) {
-            setSelectedAddress(addrsRes[0] as any);
+          } catch (addrErr) {
+            console.error("Failed to load customer addresses:", addrErr);
+            setAddresses([]);
+            setSelectedAddress(null);
           }
         }
 
@@ -124,11 +118,17 @@ export const BookingPage: React.FC = () => {
     loadBookingRequirements();
   }, [isAuthenticated, searchParams]);
 
-  const handleDeleteAddress = (e: React.MouseEvent, addressId: number) => {
+  const handleDeleteAddress = async (e: React.MouseEvent, addressId: number) => {
     e.stopPropagation();
-    setAddresses(prev => prev.filter(a => a.id !== addressId));
-    if (selectedAddress?.id === addressId) {
-      setSelectedAddress(null);
+    if (!window.confirm('Delete this saved address?')) return;
+    try {
+      await customerApi.deleteAddress(addressId);
+      setAddresses(prev => prev.filter(a => a.id !== addressId));
+      if (selectedAddress?.id === addressId) {
+        setSelectedAddress(null);
+      }
+    } catch (err) {
+      console.error('Failed to delete address:', err);
     }
   };
 

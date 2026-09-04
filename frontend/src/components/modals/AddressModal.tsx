@@ -55,7 +55,15 @@ export const AddressModal: React.FC<AddressModalProps> = ({
 
       let saved: CustomerAddress;
       if (initialData?.id) {
-        saved = await customerApi.updateAddress(initialData.id, payload);
+        try {
+          saved = await customerApi.updateAddress(initialData.id, payload);
+        } catch (updateErr: any) {
+          if (updateErr?.response?.status === 404) {
+            saved = await customerApi.createAddress(payload);
+          } else {
+            throw updateErr;
+          }
+        }
       } else {
         saved = await customerApi.createAddress(payload);
       }
