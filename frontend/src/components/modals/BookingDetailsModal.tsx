@@ -163,7 +163,7 @@ export const BookingDetailsModal: React.FC<BookingDetailsModalProps> = ({
 
         {/* Action Buttons */}
         <div className="flex flex-wrap items-center justify-end gap-3 pt-4 border-t border-dark-750">
-          {onOpenVerify && ['assigned', 'accepted', 'in_progress', 'arrived', 'on_the_way'].includes(booking.status) && (
+          {onOpenVerify && booking.status === 'arrived' && (
             <button
               onClick={() => {
                 onClose();
@@ -172,7 +172,7 @@ export const BookingDetailsModal: React.FC<BookingDetailsModalProps> = ({
               className="btn-accent text-xs px-4 py-2.5 flex items-center gap-1.5"
             >
               <ShieldCheck className="w-4 h-4" />
-              <span>SmartVerify Handshake</span>
+              <span>SmartVerify™ Code</span>
             </button>
           )}
 

@@ -339,8 +339,8 @@ export const ProviderDashboard: React.FC = () => {
                           </button>
                         )}
 
-                        {/* In Progress -> Complete */}
-                        {job.status === 'in_progress' && (
+                        {/* Confirmed / In Progress -> Complete */}
+                        {(job.status === 'confirmed' || job.status === 'in_progress') && (
                           <button
                             onClick={() => handleJobAction(job.id, 'complete')}
                             disabled={actionLoading === job.id}
