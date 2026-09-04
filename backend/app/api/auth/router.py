@@ -5,7 +5,7 @@ from sqlalchemy.orm import Session
 from app.crud.user import UserCRUD
 from app.database.session import get_db
 from app.models.auth import User
-from app.schemas.auth import ForgotPasswordRequest, LoginRequest, RegisterRequest, ResetPasswordRequest, Token
+from app.schemas.auth import ForgotPasswordRequest, LoginRequest, RegisterRequest, ResetPasswordRequest, Token, RefreshRequest
 from app.security.deps import get_current_user
 from app.security.passwords import hash_password
 from app.security.tokens import create_access_token, create_refresh_token
@@ -60,9 +60,9 @@ def login(payload: LoginRequest, db: Session = Depends(get_db)) -> Token:
 
 
 @router.post("/refresh", response_model=Token)
-def refresh_token(refresh_token: str, db: Session = Depends(get_db)) -> Token:
+def refresh_token(payload: RefreshRequest, db: Session = Depends(get_db)) -> Token:
     crud = UserCRUD(db)
-    record = crud.get_refresh_token(refresh_token)
+    record = crud.get_refresh_token(payload.refresh_token)
     if not record:
         raise HTTPException(status_code=401, detail="Invalid refresh token")
     user = crud.get_user_by_id(record.user_id)
@@ -71,76 +71,6 @@ def refresh_token(refresh_token: str, db: Session = Depends(get_db)) -> Token:
     tokens = crud.create_tokens(user)
     return Token(**tokens)
 
-
-from google.oauth2 import id_token
-from google.auth.transport import requests as google_requests
-import secrets
-import string
-from app.schemas.auth import GoogleLoginRequest
-
-import requests
-
-@router.post("/google", response_model=Token)
-def google_login(payload: GoogleLoginRequest, db: Session = Depends(get_db)) -> Token:
-    if not settings.GOOGLE_CLIENT_ID:
-        raise HTTPException(status_code=500, detail="Google authentication is not configured")
-        
-    idinfo = None
-    try:
-        # Try verifying as ID token first
-        idinfo = id_token.verify_oauth2_token(
-            payload.token, 
-            google_requests.Request(), 
-            settings.GOOGLE_CLIENT_ID
-        )
-    except ValueError:
-        # If it fails, assume it's an access token and fetch user info
-        try:
-            response = requests.get(
-                "https://www.googleapis.com/oauth2/v3/userinfo",
-                headers={"Authorization": f"Bearer {payload.token}"},
-                timeout=10
-            )
-            if response.status_code == 200:
-                idinfo = response.json()
-        except Exception as e:
-            pass
-            
-    if not idinfo:
-        raise HTTPException(status_code=401, detail="Invalid Google token")
-
-    email = idinfo.get("email")
-    if not email:
-        raise HTTPException(status_code=400, detail="Email not found in Google token")
-
-    crud = UserCRUD(db)
-    user = crud.get_user_by_email(email)
-    
-    if not user:
-        full_name = idinfo.get("name", email.split("@")[0])
-        random_password = ''.join(secrets.choice(string.ascii_letters + string.digits) for _ in range(32))
-        
-        user = crud.create_user(
-            email=email,
-            password=random_password,
-            full_name=full_name,
-            phone=None,
-            role_name=payload.role or "customer",
-        )
-        if idinfo.get("picture"):
-            crud.update_avatar_url(user.id, idinfo.get("picture"))
-
-    tokens = crud.create_tokens(user)
-    tokens["user"] = {
-        "id": user.id,
-        "email": user.email,
-        "full_name": user.full_name,
-        "phone": user.phone,
-        "role": f"ROLE_{user.role.name.upper()}" if user.role else "ROLE_CUSTOMER",
-        "is_active": user.is_active,
-        "is_verified": user.is_verified,
-    }
-    return Token(**tokens)
 
 
 from datetime import datetime, timedelta, timezone

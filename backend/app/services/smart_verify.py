@@ -1,9 +1,12 @@
 """
 SmartVerify Service Layer for HomiQ Backend.
 
-Handles secure QR code generation, cryptographic token signing/encryption,
-technician scanning verification, 6-digit OTP lifecycle, attempt limiting,
-state machine transitions, and audit trail logging.
+Handles the dual-verification flow:
+1. PIN generation (Customer receives)
+2. PIN verification (Technician enters)
+3. QR generation (Technician shows)
+4. QR scanning (Customer scans)
+5. Dual confirmation (Both confirm)
 """
 
 from __future__ import annotations
@@ -20,39 +23,41 @@ from typing import Any, Optional
 from fastapi import HTTPException, status
 from sqlalchemy import select
 from sqlalchemy.orm import Session
+from passlib.context import CryptContext
 
 from app.core.config import settings
 from app.crud.qr import QRVerificationCRUD
 from app.models.auth import User
 from app.models.bookings import Booking, BookingStatus, BookingStatusLog
 from app.schemas.bookings import (
-    OTPGenerateResponse,
-    OTPVerifyRequest,
-    OTPVerifyResponse,
+    GeneratePinResponse,
+    VerifyPinRequest,
+    VerifyPinResponse,
     QRGenerateResponse,
     QRScanRequest,
     QRScanResponse,
+    DualConfirmResponse,
     SmartVerifyStatusResponse,
 )
 
 # Configuration defaults
 QR_EXPIRY_MINUTES = 15
-OTP_EXPIRY_MINUTES = 5
-MAX_OTP_ATTEMPTS = 3
+PIN_EXPIRY_MINUTES = 15
+MAX_PIN_ATTEMPTS = 5
 TOKEN_SECRET_KEY = getattr(settings, "SECRET_KEY", "homiq_smartverify_secret_key_2026")
 
+pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 class SmartVerifyService:
-    """Service layer enforcing SmartVerify QR and OTP security rules."""
+    """Service layer enforcing SmartVerify dual-verification security rules."""
 
     def __init__(self, db: Session):
         self.db = db
         self.crud = QRVerificationCRUD(db)
 
-    # ─── TOKEN ENCRYPTION & SIGNING HELPERS ─────────────────────────────────
+    # ─── ENCRYPTION & LOGGING HELPERS ─────────────────────────────────
 
     def _generate_signature(self, payload_str: str) -> str:
-        """Generate HMAC-SHA256 signature for QR payload string."""
         return hmac.new(
             TOKEN_SECRET_KEY.encode(),
             payload_str.encode(),
@@ -60,12 +65,8 @@ class SmartVerifyService:
         ).hexdigest()
 
     def _build_encrypted_qr_data(
-        self,
-        booking: Booking,
-        token: str,
-        expires_at: datetime,
+        self, booking: Booking, token: str, expires_at: datetime
     ) -> tuple[str, str]:
-        """Build tamper-resistant, signed QR payload data string."""
         raw_payload = {
             "booking_id": booking.id,
             "booking_uuid": booking.booking_number,
@@ -78,17 +79,11 @@ class SmartVerifyService:
         json_str = json.dumps(raw_payload, sort_keys=True)
         signature = self._generate_signature(json_str)
 
-        envelope = {
-            "data": raw_payload,
-            "sig": signature,
-        }
-        encoded_data = base64.urlsafe_b64encode(
-            json.dumps(envelope).encode()
-        ).decode()
+        envelope = {"data": raw_payload, "sig": signature}
+        encoded_data = base64.urlsafe_b64encode(json.dumps(envelope).encode()).decode()
         return encoded_data, token
 
     def _verify_qr_data(self, qr_code_data: str) -> dict[str, Any]:
-        """Decode and verify HMAC signature of QR code payload."""
         try:
             decoded_bytes = base64.urlsafe_b64decode(qr_code_data.encode())
             envelope = json.loads(decoded_bytes.decode())
@@ -109,14 +104,8 @@ class SmartVerifyService:
             )
 
     def _log_audit_event(
-        self,
-        booking_id: int,
-        old_status: Optional[BookingStatus],
-        new_status: BookingStatus,
-        user_id: Optional[int],
-        note: str,
+        self, booking_id: int, old_status: Optional[BookingStatus], new_status: BookingStatus, user_id: Optional[int], note: str
     ) -> None:
-        """Create audit log entry in booking_status_logs."""
         log_entry = BookingStatusLog(
             booking_id=booking_id,
             old_status=old_status,
@@ -127,75 +116,115 @@ class SmartVerifyService:
         self.db.add(log_entry)
         self.db.commit()
 
-    # ─── 1. GENERATE QR ──────────────────────────────────────────────────────
+    # ─── 1. GENERATE PIN (Backend/Customer) ──────────────────────────
 
-    def generate_qr(self, current_user: User, booking_id: int) -> QRGenerateResponse:
-        """Generate a secure, single-use, time-limited QR token for a booking."""
+    def generate_pin(self, current_user: User, booking_id: int) -> GeneratePinResponse:
         booking = self.db.get(Booking, booking_id)
         if not booking:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="Booking not found",
-            )
+            raise HTTPException(status_code=404, detail="Booking not found")
 
-        # Access check: Customer owning booking or Admin
         if not current_user.is_superuser:
             if not current_user.customer or booking.customer_id != current_user.customer.id:
-                raise HTTPException(
-                    status_code=status.HTTP_403_FORBIDDEN,
-                    detail="Only the booking owner can generate the verification QR code",
-                )
+                raise HTTPException(status_code=403, detail="Only customer can generate PIN")
 
-        # Assignment check: QR can only be generated after technician assignment
-        if not booking.technician_id:
-            raise HTTPException(
-                status_code=status.HTTP_409_CONFLICT,
-                detail="QR code cannot be generated before a technician is assigned",
+        if booking.status not in [BookingStatus.ARRIVED, BookingStatus.WAITING_QR]:
+            raise HTTPException(status_code=409, detail="Technician must arrive before generating PIN")
+
+        pin_code = f"{random.randint(100000, 999999)}"
+        pin_hash = pwd_context.hash(pin_code)
+        now = datetime.now(timezone.utc)
+        expires_at = now + timedelta(minutes=PIN_EXPIRY_MINUTES)
+
+        qr_record = self.crud.get_by_booking_id(booking_id)
+        if not qr_record:
+            qr_record = self.crud.create_qr_verification(
+                booking_id=booking.id,
+                technician_id=booking.technician_id,
+                token="",
+                expires_at=expires_at,
             )
 
-        # Status check
-        allowed_statuses = [
-            BookingStatus.ACCEPTED,
-            BookingStatus.ASSIGNED,
-            BookingStatus.ON_THE_WAY,
-            BookingStatus.ARRIVED,
-            BookingStatus.WAITING_QR,
-        ]
-        if booking.status not in allowed_statuses:
-            raise HTTPException(
-                status_code=status.HTTP_409_CONFLICT,
-                detail=f"Cannot generate QR code for booking in '{booking.status.value}' status",
-            )
+        self.crud.update_pin(qr_record.id, pin_hash, expires_at)
+        
+        # We can change status to WAITING_QR or keep ARRIVED
+        if booking.status == BookingStatus.ARRIVED:
+            booking.status = BookingStatus.WAITING_QR
+            self.db.commit()
+
+        self._log_audit_event(booking.id, booking.status, booking.status, current_user.id, "PIN Generated for Customer")
+
+        return GeneratePinResponse(
+            booking_id=booking.id,
+            message="PIN generated successfully",
+            pin_expires_at=expires_at,
+            pin_code=pin_code
+        )
+
+    # ─── 2. VERIFY PIN (Technician) ──────────────────────────────────
+
+    def verify_pin(self, current_user: User, booking_id: int, payload: VerifyPinRequest) -> VerifyPinResponse:
+        booking = self.db.get(Booking, booking_id)
+        if not booking:
+            raise HTTPException(status_code=404, detail="Booking not found")
+
+        if not current_user.is_superuser:
+            if not current_user.technician or booking.technician_id != current_user.technician.id:
+                raise HTTPException(status_code=403, detail="Only assigned technician can verify PIN")
+
+        qr_record = self.crud.get_by_booking_id(booking_id)
+        if not qr_record or not qr_record.customer_pin_hash:
+            raise HTTPException(status_code=400, detail="PIN not generated yet")
+
+        now = datetime.now(timezone.utc)
+        if qr_record.pin_expires_at and qr_record.pin_expires_at.tzinfo is None:
+            now = now.replace(tzinfo=None)
+
+        if qr_record.pin_expires_at and qr_record.pin_expires_at < now:
+            raise HTTPException(status_code=400, detail="PIN expired")
+
+        if qr_record.pin_attempt_count >= MAX_PIN_ATTEMPTS:
+            raise HTTPException(status_code=400, detail="Too many failed PIN attempts")
+
+        if not pwd_context.verify(payload.pin, qr_record.customer_pin_hash):
+            self.crud.increment_pin_attempt(qr_record.id)
+            raise HTTPException(status_code=400, detail="Invalid PIN")
+
+        self.crud.mark_pin_verified(qr_record.id)
+        self._log_audit_event(booking.id, booking.status, booking.status, current_user.id, "Customer PIN Verified by Technician")
+
+        return VerifyPinResponse(
+            booking_id=booking.id,
+            message="PIN verified successfully",
+            verified_at=now
+        )
+
+    # ─── 3. GENERATE QR (Technician) ─────────────────────────────────
+
+    def generate_qr(self, current_user: User, booking_id: int) -> QRGenerateResponse:
+        booking = self.db.get(Booking, booking_id)
+        if not booking:
+            raise HTTPException(status_code=404, detail="Booking not found")
+
+        if not current_user.is_superuser:
+            if not current_user.technician or booking.technician_id != current_user.technician.id:
+                raise HTTPException(status_code=403, detail="Only assigned technician can generate QR")
+
+        qr_record = self.crud.get_by_booking_id(booking_id)
+        if not qr_record or not qr_record.customer_pin_verified_at:
+            raise HTTPException(status_code=400, detail="PIN must be verified before generating QR")
 
         now = datetime.now(timezone.utc)
         expires_at = now + timedelta(minutes=QR_EXPIRY_MINUTES)
         token = f"SMARTVERIFY_{booking.id}_{secrets.token_hex(16)}"
 
-        # Save to DB
-        qr_record = self.crud.create_qr_verification(
-            booking_id=booking.id,
-            technician_id=booking.technician_id,
-            token=token,
-            expires_at=expires_at,
-        )
+        qr_record.token = token
+        qr_record.expires_at = expires_at
+        qr_record.used = False
+        self.db.commit()
+        self.db.refresh(qr_record)
 
-        # Encrypt payload string
         qr_code_data, _ = self._build_encrypted_qr_data(booking, token, expires_at)
-
-        # Update booking status to WAITING_QR if currently arrived/accepted/assigned
-        old_status = booking.status
-        if booking.status != BookingStatus.WAITING_QR:
-            booking.status = BookingStatus.WAITING_QR
-            self.db.commit()
-            self.db.refresh(booking)
-
-        self._log_audit_event(
-            booking.id,
-            old_status,
-            BookingStatus.WAITING_QR,
-            current_user.id,
-            "SmartVerify QR Code Generated",
-        )
+        self._log_audit_event(booking.id, booking.status, booking.status, current_user.id, "Technician QR Generated")
 
         return QRGenerateResponse(
             booking_id=booking.id,
@@ -203,30 +232,17 @@ class SmartVerifyService:
             verification_token=token,
             expires_at=expires_at,
             version="1.0",
-            message="QR code generated successfully",
+            message="QR code generated successfully"
         )
-
-    # ─── 2. GET QR ───────────────────────────────────────────────────────────
 
     def get_qr(self, current_user: User, booking_id: int) -> QRGenerateResponse:
-        """Retrieve active QR details for a booking."""
         booking = self.db.get(Booking, booking_id)
         if not booking:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="Booking not found",
-            )
-
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Booking not found")
         qr_record = self.crud.get_active_by_booking(booking_id)
         if not qr_record:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="No active QR code found for this booking. Please generate a new QR code.",
-            )
-
-        qr_code_data, token = self._build_encrypted_qr_data(
-            booking, qr_record.token, qr_record.expires_at
-        )
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="No active QR code found")
+        qr_code_data, token = self._build_encrypted_qr_data(booking, qr_record.token, qr_record.expires_at)
         return QRGenerateResponse(
             booking_id=booking.id,
             qr_code_data=qr_code_data,
@@ -236,274 +252,133 @@ class SmartVerifyService:
             message="Active QR code retrieved successfully",
         )
 
-    # ─── 3. SCAN QR ──────────────────────────────────────────────────────────
+    # ─── 4. SCAN QR (Customer) ───────────────────────────────────────
 
-    def scan_qr(
-        self,
-        current_user: User,
-        booking_id: int,
-        payload: QRScanRequest,
-    ) -> QRScanResponse:
-        """Technician scans and validates QR code."""
+    def scan_qr(self, current_user: User, booking_id: int, payload: QRScanRequest) -> QRScanResponse:
         booking = self.db.get(Booking, booking_id)
         if not booking:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="Booking not found",
-            )
+            raise HTTPException(status_code=404, detail="Booking not found")
 
-        # Assigned technician or admin check
         if not current_user.is_superuser:
-            if not current_user.technician or booking.technician_id != current_user.technician.id:
-                raise HTTPException(
-                    status_code=status.HTTP_403_FORBIDDEN,
-                    detail="Only the assigned technician can scan the QR code",
-                )
+            if not current_user.customer or booking.customer_id != current_user.customer.id:
+                raise HTTPException(status_code=403, detail="Only customer can scan QR")
 
-        # Lookup QR record
         qr_record = self.crud.get_by_token(payload.verification_token)
         if not qr_record or qr_record.booking_id != booking.id:
-            self._log_audit_event(
-                booking.id,
-                booking.status,
-                booking.status,
-                current_user.id,
-                "Verification Failed: Invalid QR token",
-            )
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Invalid QR verification token",
-            )
+            raise HTTPException(status_code=400, detail="Invalid QR token")
 
-        # Expiry check
         now = datetime.now(timezone.utc)
-        if qr_record.expires_at.tzinfo is None:
+        if qr_record.expires_at and qr_record.expires_at.tzinfo is None:
             now = now.replace(tzinfo=None)
-        if qr_record.expires_at < now:
-            self._log_audit_event(
-                booking.id,
-                booking.status,
-                booking.status,
-                current_user.id,
-                "Verification Failed: QR code expired",
-            )
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="QR code has expired. Please ask customer to regenerate QR.",
-            )
 
-        # Single-use check
+        if qr_record.expires_at and qr_record.expires_at < now:
+            raise HTTPException(status_code=400, detail="QR code expired")
+
         if qr_record.used:
-            self._log_audit_event(
-                booking.id,
-                booking.status,
-                booking.status,
-                current_user.id,
-                "Verification Failed: QR code already used",
-            )
-            raise HTTPException(
-                status_code=status.HTTP_409_CONFLICT,
-                detail="QR code has already been scanned and used",
-            )
+            raise HTTPException(status_code=409, detail="QR already used")
 
-        # Mark QR as used
         self.crud.mark_used(qr_record.id, device_info=payload.device_info)
+        self.crud.mark_qr_scanned(qr_record.id)
 
-        # Update booking status to QR_VERIFIED
         old_status = booking.status
         booking.status = BookingStatus.QR_VERIFIED
         self.db.commit()
         self.db.refresh(booking)
 
-        self._log_audit_event(
-            booking.id,
-            old_status,
-            BookingStatus.QR_VERIFIED,
-            current_user.id,
-            "SmartVerify QR Scanned & Verified",
-        )
-
-        # Auto-generate 6-digit OTP for customer verification step
-        otp_code = f"{random.randint(100000, 999999)}"
-        otp_expires = now + timedelta(minutes=OTP_EXPIRY_MINUTES)
-        self.crud.update_verification_code(qr_record.id, otp_code, otp_expires)
+        self._log_audit_event(booking.id, old_status, BookingStatus.QR_VERIFIED, current_user.id, "Technician QR Scanned by Customer")
 
         return QRScanResponse(
             booking_id=booking.id,
             scanned_at=now,
-            technician_id=current_user.technician.id if current_user.technician else booking.technician_id,
+            technician_id=booking.technician_id,
             status="qr_verified",
-            message="QR code scanned successfully. 6-digit OTP sent to customer.",
+            message="QR scanned successfully"
         )
 
-    # ─── 4. GENERATE OTP ─────────────────────────────────────────────────────
+    # ─── 5. DUAL CONFIRM (Both) ──────────────────────────────────────
 
-    def generate_otp(self, current_user: User, booking_id: int) -> OTPGenerateResponse:
-        """Generate 6-digit OTP code with 5-minute expiry."""
+    def customer_confirm(self, current_user: User, booking_id: int) -> DualConfirmResponse:
         booking = self.db.get(Booking, booking_id)
         if not booking:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="Booking not found",
-            )
+            raise HTTPException(status_code=404, detail="Booking not found")
 
-        now = datetime.now(timezone.utc)
-        qr_record = self.crud.get_by_booking_id(booking_id)
-        if not qr_record:
-            token = f"SMARTVERIFY_{booking.id}_{secrets.token_hex(16)}"
-            qr_record = self.crud.create_qr_verification(
-                booking_id=booking.id,
-                technician_id=booking.technician_id or 1,
-                token=token,
-                expires_at=now + timedelta(minutes=QR_EXPIRY_MINUTES),
-            )
-
-        otp_code = f"{random.randint(100000, 999999)}"
-        otp_expires = now + timedelta(minutes=OTP_EXPIRY_MINUTES)
-
-        self.crud.update_verification_code(qr_record.id, otp_code, otp_expires)
-
-        self._log_audit_event(
-            booking.id,
-            booking.status,
-            booking.status,
-            current_user.id,
-            "SmartVerify OTP Generated",
-        )
-
-        return OTPGenerateResponse(
-            booking_id=booking.id,
-            otp_code=otp_code,
-            expires_at=otp_expires,
-            message="OTP generated successfully",
-        )
-
-    # ─── 5. VERIFY OTP ───────────────────────────────────────────────────────
-
-    def verify_otp(
-        self,
-        current_user: User,
-        booking_id: int,
-        payload: OTPVerifyRequest,
-    ) -> OTPVerifyResponse:
-        """Customer verifies 6-digit OTP to start service."""
-        booking = self.db.get(Booking, booking_id)
-        if not booking:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="Booking not found",
-            )
-
-        # Access check: Customer owning booking or Admin
         if not current_user.is_superuser:
             if not current_user.customer or booking.customer_id != current_user.customer.id:
-                raise HTTPException(
-                    status_code=status.HTTP_403_FORBIDDEN,
-                    detail="Only the booking owner can confirm the OTP",
-                )
-
-        # Status check
-        if booking.status not in [BookingStatus.QR_VERIFIED, BookingStatus.WAITING_QR, BookingStatus.ARRIVED]:
-            raise HTTPException(
-                status_code=status.HTTP_409_CONFLICT,
-                detail=f"Cannot verify OTP for booking in '{booking.status.value}' status",
-            )
+                raise HTTPException(status_code=403, detail="Only customer can confirm")
 
         qr_record = self.crud.get_by_booking_id(booking_id)
-        if not qr_record or not qr_record.verification_code:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="No active OTP found. Please generate OTP first.",
-            )
+        if not qr_record or not qr_record.technician_qr_verified_at:
+            raise HTTPException(status_code=400, detail="Must scan QR first")
 
-        now = datetime.now(timezone.utc)
-        if qr_record.expires_at.tzinfo is None:
-            now = now.replace(tzinfo=None)
-        if qr_record.expires_at < now:
-            self._log_audit_event(
-                booking.id,
-                booking.status,
-                booking.status,
-                current_user.id,
-                "Verification Failed: OTP expired",
-            )
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="OTP has expired. Please generate a new OTP.",
-            )
+        self.crud.mark_customer_confirmed(qr_record.id)
+        self.db.refresh(qr_record)
 
-        if qr_record.verification_code != payload.otp_code:
-            self._log_audit_event(
-                booking.id,
-                booking.status,
-                booking.status,
-                current_user.id,
-                f"Verification Failed: Invalid OTP entered ({payload.otp_code})",
-            )
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Invalid OTP code. Please check and try again.",
-            )
+        if qr_record.verification_status == "verified":
+            booking.status = BookingStatus.IN_PROGRESS # Or READY_TO_START
+            self.db.commit()
+            self._log_audit_event(booking.id, BookingStatus.QR_VERIFIED, BookingStatus.IN_PROGRESS, current_user.id, "SmartVerify Completed")
 
-        # Invalidate OTP after successful verification
-        qr_record.verification_code = ""
-        self.db.commit()
-
-        # Update booking status to IN_PROGRESS
-        old_status = booking.status
-        booking.status = BookingStatus.IN_PROGRESS
-        self.db.commit()
-        self.db.refresh(booking)
-
-        self._log_audit_event(
-            booking.id,
-            old_status,
-            BookingStatus.IN_PROGRESS,
-            current_user.id,
-            "SmartVerify OTP Verified - Service Started",
-        )
-
-        return OTPVerifyResponse(
+        return DualConfirmResponse(
             booking_id=booking.id,
-            verified_at=now,
-            status="in_progress",
-            message="OTP verified successfully. Service is now in progress.",
+            message="Customer confirmed",
+            verification_status=qr_record.verification_status
         )
 
-    # ─── 6. GET VERIFICATION STATUS ──────────────────────────────────────────
-
-    def get_verification_status(
-        self,
-        current_user: User,
-        booking_id: int,
-    ) -> SmartVerifyStatusResponse:
-        """Get SmartVerify verification status for a booking."""
+    def technician_confirm(self, current_user: User, booking_id: int) -> DualConfirmResponse:
         booking = self.db.get(Booking, booking_id)
         if not booking:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="Booking not found",
-            )
+            raise HTTPException(status_code=404, detail="Booking not found")
+
+        if not current_user.is_superuser:
+            if not current_user.technician or booking.technician_id != current_user.technician.id:
+                raise HTTPException(status_code=403, detail="Only technician can confirm")
 
         qr_record = self.crud.get_by_booking_id(booking_id)
-        now = datetime.now(timezone.utc)
+        if not qr_record or not qr_record.technician_qr_verified_at:
+            raise HTTPException(status_code=400, detail="Must scan QR first")
 
-        is_qr_generated = qr_record is not None
-        is_qr_scanned = qr_record.used if qr_record else False
-        is_otp_generated = bool(qr_record and qr_record.verification_code)
-        is_otp_verified = booking.status == BookingStatus.IN_PROGRESS
+        self.crud.mark_technician_confirmed(qr_record.id)
+        self.db.refresh(qr_record)
 
-        qr_expires = qr_record.expires_at if qr_record else None
-        otp_expires = qr_record.expires_at if (qr_record and is_otp_generated) else None
+        if qr_record.verification_status == "verified":
+            booking.status = BookingStatus.IN_PROGRESS # Or READY_TO_START
+            self.db.commit()
+            self._log_audit_event(booking.id, BookingStatus.QR_VERIFIED, BookingStatus.IN_PROGRESS, current_user.id, "SmartVerify Completed")
+
+        return DualConfirmResponse(
+            booking_id=booking.id,
+            message="Technician confirmed",
+            verification_status=qr_record.verification_status
+        )
+
+    # ─── 6. STATUS GETTER ────────────────────────────────────────────
+
+    def get_verification_status(self, current_user: User, booking_id: int) -> SmartVerifyStatusResponse:
+        booking = self.db.get(Booking, booking_id)
+        if not booking:
+            raise HTTPException(status_code=404, detail="Booking not found")
+
+        qr_record = self.crud.get_by_booking_id(booking_id)
+
+        is_pin_generated = bool(qr_record and qr_record.customer_pin_hash)
+        is_pin_verified = bool(qr_record and qr_record.customer_pin_verified_at)
+        is_qr_generated = bool(qr_record and qr_record.token)
+        is_qr_scanned = bool(qr_record and qr_record.technician_qr_verified_at)
+        is_customer_confirmed = bool(qr_record and qr_record.customer_confirmed_at)
+        is_technician_confirmed = bool(qr_record and qr_record.technician_confirmed_at)
+        is_fully_verified = bool(qr_record and qr_record.verification_status == "verified")
 
         return SmartVerifyStatusResponse(
             booking_id=booking.id,
             booking_status=booking.status.value if hasattr(booking.status, "value") else str(booking.status),
+            is_pin_generated=is_pin_generated,
+            is_pin_verified=is_pin_verified,
             is_qr_generated=is_qr_generated,
             is_qr_scanned=is_qr_scanned,
-            is_otp_generated=is_otp_generated,
-            is_otp_verified=is_otp_verified,
-            qr_expires_at=qr_expires,
-            otp_expires_at=otp_expires,
-            attempts_remaining=3,
+            is_customer_confirmed=is_customer_confirmed,
+            is_technician_confirmed=is_technician_confirmed,
+            is_fully_verified=is_fully_verified,
+            qr_expires_at=qr_record.expires_at if qr_record else None,
+            pin_expires_at=qr_record.pin_expires_at if qr_record else None,
+            attempts_remaining=MAX_PIN_ATTEMPTS - (qr_record.pin_attempt_count if qr_record else 0),
         )

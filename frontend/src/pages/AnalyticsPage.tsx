@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { technicianApi } from '../api/technician';
 import { useAuthStore } from '../store/useAuthStore';
 import { UserRole } from '../types';
-import { BarChart3, DollarSign, Briefcase, Star, TrendingUp, CheckCircle2 } from 'lucide-react';
+import { BarChart3, IndianRupee, Briefcase, Star, TrendingUp, CheckCircle2 } from 'lucide-react';
 import { LoadingState } from '../components/ui/LoadingState';
 
 export const AnalyticsPage: React.FC = () => {
@@ -59,7 +59,7 @@ export const AnalyticsPage: React.FC = () => {
             <div className="flex items-center justify-between mb-4">
               <span className="text-xs font-mono text-slate-400 uppercase">Total Earnings</span>
               <div className="w-8 h-8 rounded-lg bg-emerald-500/10 flex items-center justify-center">
-                <DollarSign className="w-4 h-4 text-emerald-400" />
+                <IndianRupee className="w-4 h-4 text-emerald-400" />
               </div>
             </div>
             <div>

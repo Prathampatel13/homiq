@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { reviewsApi } from '../api/reviews';
+import { technicianApi } from '../api/technician';
 import { useAuthStore } from '../store/useAuthStore';
 import { UserRole, Review } from '../types';
 import { Star, Calendar, MessageSquare } from 'lucide-react';
@@ -18,11 +19,14 @@ export const ReviewsPage: React.FC = () => {
       try {
         setLoading(true);
         if (role === UserRole.TECHNICIAN && user?.id) {
-          const res = await reviewsApi.getTechnicianReviews(user.id);
-          setReviews(res);
+          const profile = await technicianApi.getProfile();
+          const techId = profile.id;
+          const res = await reviewsApi.getTechnicianReviews(techId);
+          const items = Array.isArray(res) ? res : ((res as any).items || []);
+          setReviews(items);
           
           try {
-             const sum = await reviewsApi.getTechnicianSummary(user.id);
+             const sum = await reviewsApi.getTechnicianSummary(techId);
              setSummary(sum);
           } catch(e) {
              console.error('Failed to fetch summary:', e);

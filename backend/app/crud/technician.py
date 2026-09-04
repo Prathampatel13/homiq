@@ -105,9 +105,7 @@ class TechnicianCRUD:
         status: Optional[str] = None,
     ) -> int:
         """Count bookings assigned to a technician, optionally filtered by status."""
-        stmt = select(func.count(Booking.id)).where(
-            Booking.technician_id == technician_id
-        )
+        stmt = select(func.count(Booking.id)).where(Booking.technician_id == technician_id)
         if status:
             stmt = stmt.where(Booking.status == status)
         return self.db.scalar(stmt) or 0
@@ -187,7 +185,7 @@ class TechnicianCRUD:
                 joinedload(Booking.address),
             )
             .where(
-                Booking.technician_id == technician_id,
+                # Booking.technician_id == technician_id,
                 Booking.status.in_(history_statuses),
             )
             .order_by(Booking.created_at.desc())
@@ -209,7 +207,7 @@ class TechnicianCRUD:
             BookingStatus.REJECTED,
         ]
         stmt = select(func.count(Booking.id)).where(
-            Booking.technician_id == technician_id,
+            # Booking.technician_id == technician_id,
             Booking.status.in_(history_statuses),
         )
         return self.db.scalar(stmt) or 0

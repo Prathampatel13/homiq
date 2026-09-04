@@ -64,35 +64,11 @@ class CustomerService:
     async def upload_profile_image(
         self, current_user: User, file: UploadFile
     ) -> ProfileImageResponse:
-        customer = self._get_customer_or_404(current_user.id)
-
-        if file.content_type not in ALLOWED_IMAGE_TYPES:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail=f"Invalid image type. Allowed: {', '.join(ALLOWED_IMAGE_TYPES)}",
-            )
-
-        contents = await file.read()
-        if len(contents) > MAX_IMAGE_SIZE:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Image too large. Maximum size is 5 MB.",
-            )
-        await file.seek(0)
-
-        upload_dir = Path(BASE_DIR) / settings.UPLOAD_DIR
-        os.makedirs(upload_dir, exist_ok=True)
-
-        ext = file.filename.split(".")[-1] if file.filename else "jpg"
-        filename = f"customer_{current_user.id}_{uuid4().hex}.{ext}"
-        file_path = upload_dir / filename
-
-        with open(file_path, "wb") as buffer:
-            shutil.copyfileobj(file.file, buffer)
-
-        relative_path = f"{settings.UPLOAD_DIR}/{filename}".replace("\\", "/")
-        self.crud.update(customer.id, {"profile_image": relative_path})
-
+        from app.services.media import MediaService
+        
+        res = MediaService(self.db).update_user_avatar(current_user, file)
+        relative_path = res.data["secure_url"]
+        
         return ProfileImageResponse(profile_image=relative_path)
 
     # ── Addresses ─────────────────────────────────────────────────────

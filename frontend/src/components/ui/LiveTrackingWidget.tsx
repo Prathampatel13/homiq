@@ -105,6 +105,13 @@ export const LiveTrackingWidget: React.FC<LiveTrackingWidgetProps> = ({ booking 
     return 'Master Technician';
   };
 
+  const getTechPhone = (tech: any) => {
+    if (!tech) return '';
+    if (typeof tech.phone_number === 'string' && tech.phone_number.trim() !== '') return tech.phone_number;
+    if (tech.user?.phone_number && tech.user.phone_number.trim() !== '') return tech.user.phone_number;
+    return '+1234567890';
+  };
+
   const technicianUserId = (booking.technician as any)?.user_id || (booking.technician as any)?.id;
 
   const defaultCenter = { lat: 28.6139, lng: 77.2090 }; // Default to New Delhi if missing
@@ -177,21 +184,7 @@ export const LiveTrackingWidget: React.FC<LiveTrackingWidgetProps> = ({ booking 
             </GoogleMap>
           )}
 
-          {/* Overlay Status Box */}
-          <div className="absolute top-5 left-5 p-4 rounded-2xl bg-dark-900/95 backdrop-blur-md border border-dark-750 shadow-xl z-10">
-            <div className="flex items-center gap-2.5 mb-1.5">
-              <div className={`w-2 h-2 rounded-full ${currentLevel === 3 ? 'bg-sage-400 animate-pulse' : currentLevel >= 4 ? 'bg-sage-400' : 'bg-blue-400'}`} />
-              <span className="text-sm font-bold text-white tracking-wide uppercase">Live Status</span>
-            </div>
-            <div className="text-xs font-mono text-slate-400">
-              {currentLevel < 2 ? 'WAITING FOR TECHNICIAN' :
-               currentLevel === 2 ? 'PREPARING TO DISPATCH' :
-               currentLevel === 3 ? 'ON THE WAY' :
-               currentLevel === 4 ? 'TECHNICIAN ARRIVED' :
-               currentLevel === 5 ? 'SERVICE IN PROGRESS' :
-               'SERVICE COMPLETED'}
-            </div>
-          </div>
+
         </div>
 
         {/* Sidebar Tracking Info */}
@@ -220,10 +213,17 @@ export const LiveTrackingWidget: React.FC<LiveTrackingWidgetProps> = ({ booking 
                 </div>
               </div>
               <div className="flex gap-3">
-                <button className="flex-1 py-2.5 rounded-xl bg-dark-800 hover:bg-dark-750 border border-dark-700 text-xs font-bold text-white transition-colors flex items-center justify-center gap-2 disabled:opacity-50" disabled={!booking.technician}>
-                  <Phone className="w-4 h-4" />
-                  Call Tech
-                </button>
+                {booking.technician ? (
+                  <a href={`tel:${getTechPhone(booking.technician)}`} className="flex-1 py-2.5 rounded-xl bg-dark-800 hover:bg-dark-750 border border-dark-700 text-xs font-bold text-white transition-colors flex items-center justify-center gap-2">
+                    <Phone className="w-4 h-4" />
+                    {getTechPhone(booking.technician)}
+                  </a>
+                ) : (
+                  <button className="flex-1 py-2.5 rounded-xl bg-dark-800 hover:bg-dark-750 border border-dark-700 text-xs font-bold text-white transition-colors flex items-center justify-center gap-2 disabled:opacity-50" disabled={true}>
+                    <Phone className="w-4 h-4" />
+                    Call Tech
+                  </button>
+                )}
                 <button className="flex-1 py-2.5 rounded-xl bg-sage-400/10 hover:bg-sage-400/20 border border-sage-400/20 text-xs font-bold text-sage-400 transition-colors flex items-center justify-center gap-2 disabled:opacity-50" disabled={!booking.technician}>
                   <MessageSquare className="w-4 h-4" />
                   Message

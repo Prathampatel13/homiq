@@ -14,10 +14,6 @@ export const authApi = {
     return response.data;
   },
 
-  googleLogin: async (payload: { token: string; role?: string }): Promise<AuthResponse> => {
-    const response = await api.post<AuthResponse>('/auth/google', payload);
-    return response.data;
-  },
 
   register: async (payload: {
     email: string;
@@ -31,7 +27,7 @@ export const authApi = {
   },
 
   refreshToken: async (token: string): Promise<AuthResponse> => {
-    const response = await api.post<AuthResponse>(`/auth/refresh?refresh_token=${encodeURIComponent(token)}`);
+    const response = await api.post<AuthResponse>('/auth/refresh', { refresh_token: token });
     return response.data;
   },
 

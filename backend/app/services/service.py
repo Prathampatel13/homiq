@@ -161,34 +161,22 @@ class ServiceService:
                 detail="Service not found.",
             )
 
-        image_url = await self._store_image(file, service_id)
+        from app.services.media import MediaService
+        from app.models.media import MediaAssetType
+        
+        res = MediaService(self.db).upload_asset(
+            current_user=current_user,
+            file=file,
+            asset_type=MediaAssetType.SERVICE_IMAGE,
+            owner_id=service_id,
+            owner_type="service"
+        )
+        
+        image_url = res.secure_url
         self.crud.update_service(service_id, {"image_url": image_url})
         return ServiceImageResponse(image_url=image_url)
 
-    async def _store_image(self, file: UploadFile, service_id: int) -> str:
-        if file.content_type not in ALLOWED_IMAGE_TYPES:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail=f"Invalid image type. Allowed: {', '.join(ALLOWED_IMAGE_TYPES)}",
-            )
 
-        contents = await file.read()
-        if len(contents) > MAX_IMAGE_SIZE:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Image too large. Maximum size is 5 MB.",
-            )
-        await file.seek(0)
-
-        upload_dir = Path(BASE_DIR) / settings.UPLOAD_DIR
-        os.makedirs(upload_dir, exist_ok=True)
-        ext = file.filename.split('.')[-1] if file.filename else 'jpg'
-        filename = f"service_image_{service_id}_{uuid4().hex}.{ext}"
-        file_path = upload_dir / filename
-        with open(file_path, 'wb') as buffer:
-            shutil.copyfileobj(file.file, buffer)
-
-        return f"{settings.UPLOAD_DIR}/{filename}".replace('\\', '/')
 
     def _build_category_response(self, category: Category) -> CategoryResponse:
         return CategoryResponse(

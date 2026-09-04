@@ -12,6 +12,7 @@ import {
 } from 'lucide-react';
 import { bookingsApi } from '../../api/bookings';
 import { Booking } from '../../types';
+import { QRCodeSVG } from 'qrcode.react';
 
 export interface SmartVerifyModalProps {
   booking: Booking;
@@ -52,8 +53,8 @@ export const SmartVerifyModal: React.FC<SmartVerifyModalProps> = ({
             setOtpCode(String(booking.id * 1000 + 421).padStart(6, '0'));
           }
 
-          if (qrRes.status === 'fulfilled' && (qrRes.value as any)?.qr_code_url) {
-            setQrDataUrl((qrRes.value as any).qr_code_url);
+          if (qrRes.status === 'fulfilled' && ((qrRes.value as any)?.qr_code_url || (qrRes.value as any)?.qr_code_data)) {
+            setQrDataUrl((qrRes.value as any).qr_code_data || (qrRes.value as any).qr_code_url);
           }
         }
       } catch (err) {
@@ -203,7 +204,7 @@ export const SmartVerifyModal: React.FC<SmartVerifyModalProps> = ({
               <div className="space-y-6 text-center">
                 <div className="p-6 rounded-2xl bg-white flex flex-col items-center justify-center max-w-[240px] mx-auto shadow-modal">
                   {qrDataUrl ? (
-                    <img src={qrDataUrl} alt="SmartVerify QR Code" className="w-44 h-44 object-contain" />
+                    <QRCodeSVG value={qrDataUrl} size={176} className="text-dark-900" />
                   ) : (
                     <div className="w-44 h-44 bg-slate-900 rounded-xl flex flex-col items-center justify-center p-4 text-white text-center">
                       <QrCode className="w-16 h-16 text-sage-400 mb-2 animate-pulse" />

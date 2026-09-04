@@ -111,6 +111,61 @@ class QRVerificationCRUD:
         self.db.refresh(record)
         return record
 
+    def update_pin(self, qr_id: int, pin_hash: str, expires_at: datetime) -> Optional[QRVerification]:
+        record = self.get_by_id(qr_id)
+        if record:
+            record.customer_pin_hash = pin_hash
+            record.pin_expires_at = expires_at
+            record.pin_attempt_count = 0
+            self.db.commit()
+            self.db.refresh(record)
+        return record
+
+    def increment_pin_attempt(self, qr_id: int) -> Optional[QRVerification]:
+        record = self.get_by_id(qr_id)
+        if record:
+            record.pin_attempt_count += 1
+            self.db.commit()
+            self.db.refresh(record)
+        return record
+
+    def mark_pin_verified(self, qr_id: int) -> Optional[QRVerification]:
+        record = self.get_by_id(qr_id)
+        if record:
+            record.customer_pin_verified_at = datetime.now(timezone.utc)
+            self.db.commit()
+            self.db.refresh(record)
+        return record
+
+    def mark_qr_scanned(self, qr_id: int) -> Optional[QRVerification]:
+        record = self.get_by_id(qr_id)
+        if record:
+            record.technician_qr_verified_at = datetime.now(timezone.utc)
+            self.db.commit()
+            self.db.refresh(record)
+        return record
+
+    def mark_customer_confirmed(self, qr_id: int) -> Optional[QRVerification]:
+        record = self.get_by_id(qr_id)
+        if record:
+            record.customer_confirmed_at = datetime.now(timezone.utc)
+            self._check_dual_confirm(record)
+        return record
+
+    def mark_technician_confirmed(self, qr_id: int) -> Optional[QRVerification]:
+        record = self.get_by_id(qr_id)
+        if record:
+            record.technician_confirmed_at = datetime.now(timezone.utc)
+            self._check_dual_confirm(record)
+        return record
+
+    def _check_dual_confirm(self, record: QRVerification):
+        if record.customer_confirmed_at and record.technician_confirmed_at:
+            record.verified_at = datetime.now(timezone.utc)
+            record.verification_status = "verified"
+        self.db.commit()
+        self.db.refresh(record)
+
     def delete_by_booking(self, booking_id: int) -> None:
         """Delete all QR records associated with a booking."""
         records = self.db.scalars(

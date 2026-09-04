@@ -298,7 +298,7 @@ export const ProviderDashboard: React.FC = () => {
                         </button>
 
                         {/* Accept */}
-                        {job.status === 'assigned' && (
+                        {(job.status === 'assigned' || job.status === 'pending') && (
                           <button
                             onClick={() => handleJobAction(job.id, 'accept')}
                             disabled={actionLoading === job.id}

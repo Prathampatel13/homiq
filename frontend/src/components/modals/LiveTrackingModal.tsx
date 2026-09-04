@@ -100,7 +100,7 @@ export const LiveTrackingModal: React.FC<LiveTrackingModalProps> = ({ booking, i
 
   const techLocation = React.useMemo(() => {
     if ((booking?.technician as any)?.latitude && (booking?.technician as any)?.longitude) {
-      return { lat: (booking.technician as any).latitude, lng: (booking.technician as any).longitude };
+      return { lat: (booking?.technician as any)?.latitude, lng: (booking?.technician as any)?.longitude };
     }
     return { lat: homeLocation.lat - 0.02, lng: homeLocation.lng - 0.02 };
   }, [booking?.technician, homeLocation]);

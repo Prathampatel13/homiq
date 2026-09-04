@@ -41,29 +41,38 @@ export const bookingsApi = {
     return response.data;
   },
 
-  // SmartVerify Cryptographic Flows
-  generateQr: async (id: number): Promise<{ verification_token: string; qr_code_url?: string; expires_in?: number }> => {
-    const response = await api.post<{ verification_token: string; qr_code_url?: string; expires_in?: number }>(`/bookings/${id}/generate-qr`);
+  generatePin: async (id: number): Promise<{ message: string; pin_expires_at: string; pin_code: string }> => {
+    const response = await api.post<{ message: string; pin_expires_at: string; pin_code: string }>(`/bookings/${id}/generate-pin`);
     return response.data;
   },
 
-  getQr: async (id: number): Promise<{ verification_token: string; qr_code_url?: string; is_valid: boolean }> => {
-    const response = await api.get<{ verification_token: string; qr_code_url?: string; is_valid: boolean }>(`/bookings/${id}/qr`);
+  verifyPin: async (id: number, pin: string): Promise<{ message: string; verified_at: string }> => {
+    const response = await api.post<{ message: string; verified_at: string }>(`/bookings/${id}/verify-pin`, { pin });
     return response.data;
   },
 
-  scanQr: async (id: number, verification_token: string): Promise<Booking> => {
-    const response = await api.post<Booking>(`/bookings/${id}/scan-qr`, { verification_token });
+  generateQr: async (id: number): Promise<{ verification_token: string; qr_code_data: string; expires_at: string }> => {
+    const response = await api.post<{ verification_token: string; qr_code_data: string; expires_at: string }>(`/bookings/${id}/qr`);
     return response.data;
   },
 
-  generateOtp: async (id: number): Promise<{ otp_code: string; expires_in?: number }> => {
-    const response = await api.post<{ otp_code: string; expires_in?: number }>(`/bookings/${id}/generate-otp`);
+  getQr: async (id: number): Promise<{ verification_token: string; qr_code_data: string; expires_at: string }> => {
+    const response = await api.get<{ verification_token: string; qr_code_data: string; expires_at: string }>(`/bookings/${id}/qr`);
     return response.data;
   },
 
-  verifyOtp: async (id: number, otp_code: string): Promise<Booking> => {
-    const response = await api.post<Booking>(`/bookings/${id}/verify-otp`, { otp_code });
+  scanQr: async (id: number, verification_token: string): Promise<{ message: string; status: string }> => {
+    const response = await api.post<{ message: string; status: string }>(`/bookings/${id}/scan-qr`, { verification_token });
+    return response.data;
+  },
+
+  customerConfirm: async (id: number): Promise<{ message: string; verification_status: string }> => {
+    const response = await api.post<{ message: string; verification_status: string }>(`/bookings/${id}/customer-confirm`);
+    return response.data;
+  },
+
+  technicianConfirm: async (id: number): Promise<{ message: string; verification_status: string }> => {
+    const response = await api.post<{ message: string; verification_status: string }>(`/bookings/${id}/technician-confirm`);
     return response.data;
   },
 

@@ -40,7 +40,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
       const orderRes = await paymentsApi.createOrder(booking.id);
 
       const options = {
-        key: import.meta.env.VITE_RAZORPAY_KEY_ID,
+        key: orderRes.key_id || import.meta.env.VITE_RAZORPAY_KEY_ID,
         amount: orderRes.amount,
         currency: orderRes.currency,
         name: "HomiQ",

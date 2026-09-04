@@ -68,16 +68,25 @@ class TechnicianService:
     async def upload_profile_image(
         self, current_user: User, file: UploadFile
     ) -> ProfileImageResponse:
-        technician = self._get_technician_or_404(current_user.id)
-        relative_path = await self._store_image(file, current_user.id, "technician_profile")
-        self.crud.update(technician.id, {"profile_image": relative_path})
+        from app.services.media import MediaService
+        res = MediaService(self.db).update_user_avatar(current_user, file)
+        relative_path = res.data["secure_url"]
         return ProfileImageResponse(profile_image=relative_path)
 
     async def upload_government_id(
         self, current_user: User, file: UploadFile
     ) -> GovernmentIdImageResponse:
+        from app.services.media import MediaService
+        from app.models.media import MediaAssetType
         technician = self._get_technician_or_404(current_user.id)
-        relative_path = await self._store_image(file, current_user.id, "technician_gov_id")
+        res = MediaService(self.db).upload_asset(
+            current_user=current_user,
+            file=file,
+            asset_type=MediaAssetType.IDENTITY_DOCUMENT,
+            owner_id=technician.id,
+            owner_type="technician"
+        )
+        relative_path = res.secure_url
         self.crud.update(technician.id, {"government_id_image": relative_path})
         return GovernmentIdImageResponse(government_id_image=relative_path)
 
@@ -235,11 +244,7 @@ class TechnicianService:
         from app.services.booking import BookingService
 
         technician = self._get_technician_or_404(current_user.id)
-        if self.crud.has_active_booking(technician.id, exclude_booking_id=booking_id):
-            raise HTTPException(
-                status_code=status.HTTP_409_CONFLICT,
-                detail="Technician already has an active booking in progress",
-            )
+
 
         booking_service = BookingService(self.db)
         booking_service.accept_booking(
@@ -448,29 +453,6 @@ class TechnicianService:
             address=address_data,
         )
 
-    async def _store_image(self, file: UploadFile, user_id: int, prefix: str) -> str:
-        if file.content_type not in ALLOWED_IMAGE_TYPES:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail=f"Invalid image type. Allowed: {', '.join(ALLOWED_IMAGE_TYPES)}",
-            )
-
-        contents = await file.read()
-        if len(contents) > MAX_IMAGE_SIZE:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Image too large. Maximum size is 5 MB.",
-            )
-        await file.seek(0)
-
-        upload_dir = Path(BASE_DIR) / settings.UPLOAD_DIR
-        os.makedirs(upload_dir, exist_ok=True)
-        ext = file.filename.split(".")[-1] if file.filename else "jpg"
-        filename = f"{prefix}_{user_id}_{uuid4().hex}.{ext}"
-        file_path = upload_dir / filename
-        with open(file_path, "wb") as buffer:
-            shutil.copyfileobj(file.file, buffer)
-        return f"{settings.UPLOAD_DIR}/{filename}".replace("\\", "/")
 
     def _build_response(self, user: User, technician: Any) -> TechnicianResponse:
         return TechnicianResponse(

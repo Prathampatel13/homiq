@@ -578,7 +578,9 @@ class BookingService:
     # Allowed lifecycle transitions for non-admin users.
     # Pending -> Assigned is performed exclusively by the admin assign flow.
     _ALLOWED_TRANSITIONS: dict[BookingStatus, set[BookingStatus]] = {
-        BookingStatus.PENDING: set(),
+        BookingStatus.PENDING: {
+            BookingStatus.ACCEPTED,
+        },
         BookingStatus.ASSIGNED: {
             BookingStatus.ACCEPTED,
             BookingStatus.REJECTED,
@@ -722,12 +724,21 @@ class BookingService:
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="Booking not found",
             )
+            
+        if current_user.is_superuser:
+            return booking
 
         is_owner = booking.customer and booking.customer.user_id == current_user.id
-        is_technician = (
+        is_assigned_technician = (
             booking.technician and booking.technician.user_id == current_user.id
         )
-        if not (is_owner or is_technician or current_user.is_superuser):
+        
+        is_unassigned_tech = False
+        if not booking.technician_id:
+            if self.technician_crud.get_by_user_id(current_user.id):
+                is_unassigned_tech = True
+
+        if not (is_owner or is_assigned_technician or is_unassigned_tech):
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail="Not authorized to access this booking",
@@ -901,7 +912,15 @@ class BookingService:
     ) -> BookingResponse:
         """Accept an assigned booking (technician or admin)."""
         booking = self._get_booking_for(current_user, booking_id)
-        self._ensure_technician_role(current_user, booking)
+        
+        if not booking.technician_id and not current_user.is_superuser:
+            technician = self.technician_crud.get_by_user_id(current_user.id)
+            if technician:
+                self.crud.update_booking(booking.id, {"technician_id": technician.id})
+                self.db.refresh(booking)
+        else:
+            self._ensure_technician_role(current_user, booking)
+            
         self._ensure_transition_change(booking, BookingStatus.ACCEPTED)
 
         reason = payload.reason if payload else None

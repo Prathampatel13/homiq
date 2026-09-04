@@ -44,17 +44,17 @@ class TechnicianDashboardService:
 
         # ── Job Stats ──────────────────────────────────────────────────
         total_assigned = self.db.scalar(
-            select(func.count(Booking.id)).where(Booking.technician_id == technician_id)
+            select(func.count(Booking.id))
         ) or 0
         accepted = self.db.scalar(
             select(func.count(Booking.id)).where(
-                Booking.technician_id == technician_id,
+                # Booking.technician_id == technician_id,
                 Booking.status == BookingStatus.ACCEPTED,
             )
         ) or 0
         in_progress = self.db.scalar(
             select(func.count(Booking.id)).where(
-                Booking.technician_id == technician_id,
+                # Booking.technician_id == technician_id,
                 Booking.status.in_([
                     BookingStatus.ON_THE_WAY,
                     BookingStatus.ARRIVED,
@@ -66,13 +66,13 @@ class TechnicianDashboardService:
         ) or 0
         completed = self.db.scalar(
             select(func.count(Booking.id)).where(
-                Booking.technician_id == technician_id,
+                # Booking.technician_id == technician_id,
                 Booking.status == BookingStatus.COMPLETED,
             )
         ) or 0
         cancelled = self.db.scalar(
             select(func.count(Booking.id)).where(
-                Booking.technician_id == technician_id,
+                # Booking.technician_id == technician_id,
                 Booking.status == BookingStatus.CANCELLED,
             )
         ) or 0
@@ -83,7 +83,7 @@ class TechnicianDashboardService:
                 select(func.coalesce(func.sum(Payment.amount), 0))
                 .join(Booking, Payment.booking_id == Booking.id)
                 .where(
-                    Booking.technician_id == technician_id,
+                    # Booking.technician_id == technician_id,
                     Payment.status == PayStatus.PAID,
                 )
             ) or 0.0
@@ -94,7 +94,7 @@ class TechnicianDashboardService:
             self.db.scalar(
                 select(func.coalesce(func.sum(Booking.final_price), 0))
                 .where(
-                    Booking.technician_id == technician_id,
+                    # Booking.technician_id == technician_id,
                     Booking.status == BookingStatus.COMPLETED,
                     Booking.payment_status == BookingPayStatus.PENDING,
                 )
@@ -140,7 +140,7 @@ class TechnicianDashboardService:
         stmt = (
             select(Booking)
             .where(
-                Booking.technician_id == technician_id,
+                # Booking.technician_id == technician_id,
                 Booking.booking_date == date.today(),
             )
             .order_by(Booking.preferred_time.asc(), Booking.created_at.desc())
@@ -167,7 +167,7 @@ class TechnicianDashboardService:
         stmt = (
             select(Booking)
             .where(
-                Booking.technician_id == technician_id,
+                # Booking.technician_id == technician_id,
                 Booking.status.in_([
                     BookingStatus.ASSIGNED,
                     BookingStatus.ACCEPTED,

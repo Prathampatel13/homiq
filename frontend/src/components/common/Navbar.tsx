@@ -267,17 +267,6 @@ export const Navbar: React.FC = () => {
                       <button
                         onClick={() => {
                           setIsProfileOpen(false);
-                          navigate('/wallet');
-                        }}
-                        className="w-full flex items-center gap-2 px-3 py-2 text-xs font-medium text-slate-300 hover:text-white hover:bg-dark-850 rounded-xl transition-colors text-left mt-0.5"
-                      >
-                        <Wallet className="w-4 h-4 text-sage-400" />
-                        <span>Wallet</span>
-                      </button>
-
-                      <button
-                        onClick={() => {
-                          setIsProfileOpen(false);
                           navigate('/history');
                         }}
                         className="w-full flex items-center gap-2 px-3 py-2 text-xs font-medium text-slate-300 hover:text-white hover:bg-dark-850 rounded-xl transition-colors text-left mt-0.5"
@@ -297,27 +286,18 @@ export const Navbar: React.FC = () => {
                         <span>Review</span>
                       </button>
 
-                      <button
-                        onClick={() => {
-                          setIsProfileOpen(false);
-                          navigate('/analytics');
-                        }}
-                        className="w-full flex items-center gap-2 px-3 py-2 text-xs font-medium text-slate-300 hover:text-white hover:bg-dark-850 rounded-xl transition-colors text-left mt-0.5"
-                      >
-                        <BarChart3 className="w-4 h-4 text-sage-400" />
-                        <span>Analytics</span>
-                      </button>
-
-                      <button
-                        onClick={() => {
-                          setIsProfileOpen(false);
-                          navigate('/settings');
-                        }}
-                        className="w-full flex items-center gap-2 px-3 py-2 text-xs font-medium text-slate-300 hover:text-white hover:bg-dark-850 rounded-xl transition-colors text-left mt-0.5"
-                      >
-                        <Settings className="w-4 h-4 text-sage-400" />
-                        <span>Settings</span>
-                      </button>
+                      {role !== UserRole.CUSTOMER && (
+                        <button
+                          onClick={() => {
+                            setIsProfileOpen(false);
+                            navigate('/analytics');
+                          }}
+                          className="w-full flex items-center gap-2 px-3 py-2 text-xs font-medium text-slate-300 hover:text-white hover:bg-dark-850 rounded-xl transition-colors text-left mt-0.5"
+                        >
+                          <BarChart3 className="w-4 h-4 text-sage-400" />
+                          <span>Analytics</span>
+                        </button>
+                      )}
 
                       <div className="h-px bg-dark-750 my-1 mx-3" />
 

@@ -107,6 +107,18 @@ class ReviewService:
             {"rating": round(avg_rating, 2), "reviews_count": review_count},
         )
 
+        # Transition booking to CLOSED now that the review is submitted
+        old_status = booking.status
+        if old_status != BookingStatus.CLOSED:
+            self.booking_crud.update_status(booking.id, BookingStatus.CLOSED)
+            self.booking_crud.create_status_log(
+                booking_id=booking.id,
+                old_status=old_status,
+                new_status=BookingStatus.CLOSED,
+                changed_by_user_id=current_user.id,
+                reason="Customer submitted a review",
+            )
+
         return ReviewResponse.model_validate(review)
 
     # ── Get ────────────────────────────────────────────────────────────

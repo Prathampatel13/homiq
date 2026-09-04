@@ -27,9 +27,9 @@ class LoginRequest(BaseModel):
     password: str
 
 
-class GoogleLoginRequest(BaseModel):
-    token: str
-    role: Optional[str] = "customer"
+class RefreshRequest(BaseModel):
+    refresh_token: str
+
 
 
 class ForgotPasswordRequest(BaseModel):

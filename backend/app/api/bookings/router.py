@@ -767,53 +767,80 @@ def complete_service(
     return BookingService(db).complete_service(current_user, booking_id, payload)
 
 
-# ─── SMARTVERIFY QR & OTP ENDPOINTS ──────────────────────────────────────
+# SmartVerify Dual Verification Flow
 
+from app.schemas.bookings import (
+    GeneratePinResponse,
+    VerifyPinRequest,
+    VerifyPinResponse,
+    QRGenerateResponse,
+    QRScanRequest,
+    QRScanResponse,
+    DualConfirmResponse,
+    SmartVerifyStatusResponse,
+)
 
 @router.post(
-    "/{booking_id}/generate-qr",
+    "/{booking_id}/generate-pin",
+    response_model=GeneratePinResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Generate verification PIN",
+)
+def generate_pin(
+    booking_id: int,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> Any:
+    from app.services.smart_verify import SmartVerifyService
+    return SmartVerifyService(db).generate_pin(current_user, booking_id)
+
+@router.post(
+    "/{booking_id}/verify-pin",
+    response_model=VerifyPinResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Verify customer PIN",
+)
+def verify_pin(
+    booking_id: int,
+    payload: VerifyPinRequest,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> Any:
+    from app.services.smart_verify import SmartVerifyService
+    return SmartVerifyService(db).verify_pin(current_user, booking_id, payload)
+
+@router.post(
+    "/{booking_id}/qr",
     response_model=QRGenerateResponse,
     status_code=status.HTTP_201_CREATED,
     summary="Generate verification QR code",
-    description=(
-        "Generates a single-use, time-limited, encrypted verification QR token "
-        "for a booking. Booking must be assigned to a technician."
-    ),
 )
 def generate_qr(
     booking_id: int,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ) -> Any:
-    """Generate SmartVerify QR code (Customer only)."""
+    from app.services.smart_verify import SmartVerifyService
     return SmartVerifyService(db).generate_qr(current_user, booking_id)
-
 
 @router.get(
     "/{booking_id}/qr",
     response_model=QRGenerateResponse,
     summary="Get active verification QR code",
-    description="Retrieves active QR code data and token for a booking.",
 )
 def get_qr(
     booking_id: int,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ) -> Any:
-    """Get active QR code (Customer or Assigned Technician)."""
+    from app.services.smart_verify import SmartVerifyService
     return SmartVerifyService(db).get_qr(current_user, booking_id)
-
 
 @router.post(
     "/{booking_id}/scan-qr",
     response_model=QRScanResponse,
     status_code=status.HTTP_200_OK,
     summary="Scan and verify QR code",
-    description=(
-        "Scans and verifies the QR code. Only the assigned technician "
-        "can scan the QR code. On success, transitions booking to 'qr_verified' "
-        "and sends 6-digit OTP to customer."
-    ),
 )
 def scan_qr(
     booking_id: int,
@@ -821,58 +848,48 @@ def scan_qr(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ) -> Any:
-    """Scan and verify QR code (Assigned Technician only)."""
+    from app.services.smart_verify import SmartVerifyService
     return SmartVerifyService(db).scan_qr(current_user, booking_id, payload)
 
-
 @router.post(
-    "/{booking_id}/generate-otp",
-    response_model=OTPGenerateResponse,
+    "/{booking_id}/customer-confirm",
+    response_model=DualConfirmResponse,
     status_code=status.HTTP_200_OK,
-    summary="Generate 6-digit OTP",
-    description="Generates a 6-digit OTP code for service start verification (5-min TTL).",
+    summary="Customer confirm service start",
 )
-def generate_otp(
+def customer_confirm(
     booking_id: int,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ) -> Any:
-    """Generate 6-digit OTP."""
-    return SmartVerifyService(db).generate_otp(current_user, booking_id)
-
+    from app.services.smart_verify import SmartVerifyService
+    return SmartVerifyService(db).customer_confirm(current_user, booking_id)
 
 @router.post(
-    "/{booking_id}/verify-otp",
-    response_model=OTPVerifyResponse,
+    "/{booking_id}/technician-confirm",
+    response_model=DualConfirmResponse,
     status_code=status.HTTP_200_OK,
-    summary="Verify OTP and start service",
-    description=(
-        "Verifies the 6-digit OTP entered by customer. On success, invalidates OTP "
-        "and transitions booking status to 'in_progress'."
-    ),
+    summary="Technician confirm service start",
 )
-def verify_otp(
+def technician_confirm(
     booking_id: int,
-    payload: OTPVerifyRequest,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ) -> Any:
-    """Verify OTP and start service (Customer only)."""
-    return SmartVerifyService(db).verify_otp(current_user, booking_id, payload)
-
+    from app.services.smart_verify import SmartVerifyService
+    return SmartVerifyService(db).technician_confirm(current_user, booking_id)
 
 @router.get(
     "/{booking_id}/verification-status",
     response_model=SmartVerifyStatusResponse,
     summary="Get verification status",
-    description="Returns current SmartVerify step and verification status flags for a booking.",
 )
 def get_verification_status(
     booking_id: int,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ) -> Any:
-    """Get SmartVerify status."""
+    from app.services.smart_verify import SmartVerifyService
     return SmartVerifyService(db).get_verification_status(current_user, booking_id)
 
 

@@ -252,14 +252,37 @@ class OTPVerifyResponse(BaseModel):
     message: str = "OTP verified successfully. Service is now in progress."
 
 
+class GeneratePinResponse(BaseModel):
+    booking_id: int
+    message: str
+    pin_expires_at: datetime
+    pin_code: Optional[str] = None # Added for convenience to display to customer
+
+class VerifyPinRequest(BaseModel):
+    pin: str
+
+class VerifyPinResponse(BaseModel):
+    booking_id: int
+    message: str
+    verified_at: datetime
+
+class DualConfirmResponse(BaseModel):
+    booking_id: int
+    message: str
+    verification_status: str
+
 class SmartVerifyStatusResponse(BaseModel):
     booking_id: int
     booking_status: str
     is_qr_generated: bool = False
     is_qr_scanned: bool = False
-    is_otp_generated: bool = False
-    is_otp_verified: bool = False
+    is_pin_generated: bool = False
+    is_pin_verified: bool = False
+    is_customer_confirmed: bool = False
+    is_technician_confirmed: bool = False
+    is_fully_verified: bool = False
     qr_expires_at: Optional[datetime] = None
-    otp_expires_at: Optional[datetime] = None
+    pin_expires_at: Optional[datetime] = None
     attempts_remaining: int = 3
+
 
