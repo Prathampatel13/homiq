@@ -247,12 +247,17 @@ export interface JobApplication {
 
 export interface VerificationStatus {
   booking_id: number;
-  current_status: string;
-  qr_generated: boolean;
-  qr_verified: boolean;
-  otp_verified: boolean;
-  service_started: boolean;
-  is_completed: boolean;
+  booking_status: string;
+  is_pin_generated: boolean;
+  is_pin_verified: boolean;
+  is_qr_generated: boolean;
+  is_qr_scanned: boolean;
+  is_customer_confirmed: boolean;
+  is_technician_confirmed: boolean;
+  is_fully_verified: boolean;
+  qr_expires_at?: string;
+  pin_expires_at?: string;
+  attempts_remaining: number;
 }
 
 export interface ChatMessage {
