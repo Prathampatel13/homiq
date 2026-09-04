@@ -1,4 +1,4 @@
-﻿services:
+services:
   # HomiQ Backend — Single Free Web Service
   # Runs FastAPI with in-memory fallbacks (no Redis/Celery required).
   # Database: External Neon.tech free PostgreSQL.

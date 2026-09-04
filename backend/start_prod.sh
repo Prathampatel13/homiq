@@ -1,4 +1,4 @@
-﻿#!/usr/bin/env bash
+#!/usr/bin/env bash
 # ==============================================================================
 # HomiQ Production Startup Script (Free Tier Optimized)
 # Runs Alembic migrations then starts FastAPI via Uvicorn.
