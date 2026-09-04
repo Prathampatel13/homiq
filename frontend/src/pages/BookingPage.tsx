@@ -27,6 +27,7 @@ import { useAuthStore } from '../store/useAuthStore';
 import { Service, ServiceCategory, CustomerAddress, Booking } from '../types';
 import { AddressModal } from '../components/modals/AddressModal';
 import { LoadingState } from '../components/ui/LoadingState';
+import { triggerLocalSync } from '../services/realtime';
 
 const STEPS = [
   { id: 1, name: 'Service' },
@@ -180,6 +181,7 @@ export const BookingPage: React.FC = () => {
       const bookings = await Promise.all(bookingPromises);
       const newBooking = bookings[0];
       setConfirmedBooking(newBooking);
+      triggerLocalSync();
 
       // Auto-initiate payment order
       try {

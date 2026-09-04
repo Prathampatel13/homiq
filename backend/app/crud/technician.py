@@ -1,6 +1,6 @@
 from typing import Any, Optional
 
-from sqlalchemy import func, select, update
+from sqlalchemy import func, select, update, or_, and_
 from sqlalchemy.orm import Session, joinedload
 
 from app.models.auth import User
@@ -48,30 +48,32 @@ class TechnicianCRUD:
         self.db.commit()
         return True
 
+    def update_user_name(self, user_id: int, full_name: str) -> None:
+        self.db.execute(
+            update(User)
+            .where(User.id == user_id)
+            .values(full_name=full_name)
+        )
+        self.db.commit()
+
     def list_technicians(
         self,
         specialization: Optional[str] = None,
         availability: Optional[bool] = None,
         online: Optional[bool] = None,
     ) -> list[Technician]:
-        stmt = select(Technician)
+        stmt = (
+            select(Technician)
+            .options(joinedload(Technician.user))
+            .order_by(Technician.rating.desc())
+        )
         if specialization:
             stmt = stmt.where(Technician.specialization.ilike(f"%{specialization}%"))
         if availability is not None:
             stmt = stmt.where(Technician.availability == availability)
         if online is not None:
             stmt = stmt.where(Technician.is_online == online)
-
-        result = self.db.execute(
-            stmt.order_by(Technician.rating.desc(), Technician.reviews_count.desc())
-        )
-        return list(result.scalars().all())
-
-    def update_user_name(self, user_id: int, full_name: str) -> None:
-        user = self.db.get(User, user_id)
-        if user:
-            user.full_name = full_name
-            self.db.commit()
+        return list(self.db.execute(stmt).scalars().all())
 
     # ── Technician Jobs ────────────────────────────────────────────────
 
@@ -82,7 +84,7 @@ class TechnicianCRUD:
         offset: int = 0,
         limit: int = 100,
     ) -> list[Booking]:
-        """Return bookings assigned to a technician, optionally filtered by status."""
+        """Return bookings assigned to a technician or unassigned pending dispatches."""
         stmt = (
             select(Booking)
             .options(
@@ -90,13 +92,26 @@ class TechnicianCRUD:
                 joinedload(Booking.service),
                 joinedload(Booking.address),
             )
-            .where(Booking.technician_id == technician_id)
             .order_by(Booking.created_at.desc())
             .offset(offset)
             .limit(limit)
         )
+
+        unassigned_filter = and_(
+            Booking.technician_id.is_(None),
+            Booking.status.in_([BookingStatus.PENDING, BookingStatus.ASSIGNED]),
+        )
+        base_filter = or_(Booking.technician_id == technician_id, unassigned_filter)
+
         if status:
-            stmt = stmt.where(Booking.status == status)
+            st = status.lower()
+            if st in ["pending", "assigned"]:
+                stmt = stmt.where(base_filter).where(Booking.status == status)
+            else:
+                stmt = stmt.where(Booking.technician_id == technician_id).where(Booking.status == status)
+        else:
+            stmt = stmt.where(base_filter)
+
         return list(self.db.execute(stmt).scalars().all())
 
     def count_technician_jobs(
@@ -104,10 +119,24 @@ class TechnicianCRUD:
         technician_id: int,
         status: Optional[str] = None,
     ) -> int:
-        """Count bookings assigned to a technician, optionally filtered by status."""
-        stmt = select(func.count(Booking.id)).where(Booking.technician_id == technician_id)
+        """Count bookings assigned to a technician or unassigned pending dispatches."""
+        stmt = select(func.count(Booking.id))
+
+        unassigned_filter = and_(
+            Booking.technician_id.is_(None),
+            Booking.status.in_([BookingStatus.PENDING, BookingStatus.ASSIGNED]),
+        )
+        base_filter = or_(Booking.technician_id == technician_id, unassigned_filter)
+
         if status:
-            stmt = stmt.where(Booking.status == status)
+            st = status.lower()
+            if st in ["pending", "assigned"]:
+                stmt = stmt.where(base_filter).where(Booking.status == status)
+            else:
+                stmt = stmt.where(Booking.technician_id == technician_id).where(Booking.status == status)
+        else:
+            stmt = stmt.where(base_filter)
+
         return self.db.scalar(stmt) or 0
 
     def get_active_bookings(

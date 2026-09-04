@@ -29,6 +29,7 @@ import { EmptyState } from '../components/ui/EmptyState';
 import { LoadingState } from '../components/ui/LoadingState';
 import { TechnicianVerifyModal } from '../components/modals/TechnicianVerifyModal';
 import { BookingDetailsModal } from '../components/modals/BookingDetailsModal';
+import { useRealTimeSync, triggerLocalSync } from '../services/realtime';
 
 export const ProviderDashboard: React.FC = () => {
   const { user } = useAuthStore();
@@ -45,9 +46,9 @@ export const ProviderDashboard: React.FC = () => {
   const [detailsBooking, setDetailsBooking] = useState<Booking | null>(null);
   const [actionLoading, setActionLoading] = useState<number | null>(null);
 
-  const loadTechnicianData = async () => {
+  const loadTechnicianData = async (isBackground = false) => {
     try {
-      setLoading(true);
+      if (!isBackground) setLoading(true);
       const [profRes, jobsRes, activeRes, notifRes] = await Promise.allSettled([
         technicianApi.getProfile(),
         technicianApi.getMyJobs(),
@@ -82,13 +83,18 @@ export const ProviderDashboard: React.FC = () => {
     } catch (err) {
       console.error('Failed to load technician workspace:', err);
     } finally {
-      setLoading(false);
+      if (!isBackground) setLoading(false);
     }
   };
 
   useEffect(() => {
-    loadTechnicianData();
+    loadTechnicianData(false);
   }, []);
+
+  // Real-time synchronization across dashboards & tabs
+  useRealTimeSync(() => {
+    loadTechnicianData(true);
+  }, 6000);
 
   const handleToggleOnline = async () => {
     try {
@@ -125,7 +131,8 @@ export const ProviderDashboard: React.FC = () => {
           await technicianApi.completeService(bookingId);
           break;
       }
-      await loadTechnicianData();
+      triggerLocalSync();
+      await loadTechnicianData(true);
     } catch (err: any) {
       console.error(`Failed to execute ${action}:`, err);
       alert(err?.response?.data?.detail || `Action ${action} failed`);
@@ -480,7 +487,8 @@ export const ProviderDashboard: React.FC = () => {
           isOpen={!!verifyBooking}
           onClose={() => setVerifyBooking(null)}
           onVerified={() => {
-            loadTechnicianData();
+            triggerLocalSync();
+            loadTechnicianData(true);
           }}
         />
       )}

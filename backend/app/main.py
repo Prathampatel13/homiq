@@ -71,6 +71,15 @@ app = FastAPI(
     redoc_url="/redoc",
 )
 
+@app.on_event("startup")
+async def startup_event():
+    import asyncio
+    from app.core.websockets import manager
+    try:
+        manager.loop = asyncio.get_running_loop()
+    except Exception:
+        pass
+
 app.add_middleware(GZipMiddleware, minimum_size=500)
 app.add_middleware(SecurityHeadersMiddleware)
 app.add_middleware(

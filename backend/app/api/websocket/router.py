@@ -31,6 +31,52 @@ logger = logging.getLogger("homiq.websockets.router")
 router = APIRouter(tags=["Real-Time WebSockets"])
 
 
+# ── 0. UNIFIED REAL-TIME WEBSOCKET ────────────────────────────────────────
+
+@router.websocket("/ws/live")
+async def ws_live_endpoint(
+    websocket: WebSocket,
+    token: str = Query(..., description="JWT Access Token"),
+):
+    """Unified Live Real-Time WebSocket for all roles (Customer, Technician, Admin)."""
+    db = SessionLocal()
+    try:
+        user = authenticate_ws_token(token, db)
+        if not user:
+            await websocket.close(code=status.WS_1008_POLICY_VIOLATION)
+            return
+
+        from app.crud.customer import CustomerCRUD
+        from app.crud.technician import TechnicianCRUD
+
+        cust = CustomerCRUD(db).get_by_user_id(user.id)
+        tech = TechnicianCRUD(db).get_by_user_id(user.id)
+
+        role = "customer"
+        identifier = cust.id if cust else user.id
+        if user.is_superuser or (user.role and user.role.name.lower() == "admin"):
+            role = "admin"
+            identifier = None
+        elif tech or (user.role and user.role.name.lower() == "technician"):
+            role = "technician"
+            identifier = tech.id if tech else user.id
+
+        await manager.connect(websocket, role=role, identifier=identifier)
+        try:
+            while True:
+                data_text = await websocket.receive_text()
+                try:
+                    data = json.loads(data_text)
+                    if data.get("type") == "ping":
+                        await websocket.send_text(json.dumps({"type": "pong"}))
+                except Exception:
+                    pass
+        except WebSocketDisconnect:
+            manager.disconnect(websocket)
+    finally:
+        db.close()
+
+
 # ── 1. CUSTOMER WEBSOCKET ──────────────────────────────────────────────────
 
 @router.websocket("/ws/customer/{customer_id}")

@@ -27,6 +27,7 @@ import { AnalyticsPage } from './pages/AnalyticsPage';
 
 import { useAuthStore } from './store/useAuthStore';
 import { UserRole } from './types';
+import { realTimeManager } from './services/realtime';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -63,6 +64,17 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, allowedRoles 
 };
 
 export const App: React.FC = () => {
+  const { isAuthenticated } = useAuthStore();
+
+  React.useEffect(() => {
+    const token = localStorage.getItem('homiq_access_token');
+    if (isAuthenticated && token) {
+      realTimeManager.connect(token);
+    } else {
+      realTimeManager.disconnect();
+    }
+  }, [isAuthenticated]);
+
   return (
     <QueryClientProvider client={queryClient}>
       <ToastProvider>

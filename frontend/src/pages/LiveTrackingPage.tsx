@@ -5,34 +5,40 @@ import { bookingsApi } from '../api/bookings';
 import { Booking } from '../types';
 import { LoadingState } from '../components/ui/LoadingState';
 import { LiveTrackingWidget } from '../components/ui/LiveTrackingWidget';
+import { useRealTimeSync } from '../services/realtime';
 
 export const LiveTrackingPage: React.FC = () => {
   const navigate = useNavigate();
   const [activeBooking, setActiveBooking] = useState<Booking | null>(null);
   const [loading, setLoading] = useState(true);
 
+  const fetchActiveBooking = async (isBackground = false) => {
+    try {
+      if (!isBackground) setLoading(true);
+      const res = await bookingsApi.getBookings({ limit: 20 });
+      const bList = Array.isArray(res) ? res : (res as any)?.items || [];
+      
+      // Find the most recent active booking
+      const active = bList.find((b: Booking) => 
+        ['assigned', 'accepted', 'in_progress', 'arrived', 'start_trip', 'pending', 'confirmed', 'on_the_way'].includes(b.status)
+      );
+      
+      setActiveBooking(active || null);
+    } catch (err) {
+      console.error('Failed to fetch active booking for tracking:', err);
+    } finally {
+      if (!isBackground) setLoading(false);
+    }
+  };
+
   useEffect(() => {
-    const fetchActiveBooking = async () => {
-      try {
-        setLoading(true);
-        const res = await bookingsApi.getBookings({ limit: 20 });
-        const bList = Array.isArray(res) ? res : (res as any)?.items || [];
-        
-        // Find the most recent active booking
-        const active = bList.find((b: Booking) => 
-          ['assigned', 'accepted', 'in_progress', 'arrived', 'start_trip', 'pending', 'confirmed', 'on_the_way'].includes(b.status)
-        );
-        
-        setActiveBooking(active || null);
-      } catch (err) {
-        console.error('Failed to fetch active booking for tracking:', err);
-      } finally {
-        setLoading(false);
-      }
-    };
-    
-    fetchActiveBooking();
+    fetchActiveBooking(false);
   }, []);
+
+  // Real-time tracking synchronization
+  useRealTimeSync(() => {
+    fetchActiveBooking(true);
+  }, 4000);
 
   if (loading) {
     return <LoadingState message="Locating active dispatch..." />;

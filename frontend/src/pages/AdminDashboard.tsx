@@ -30,6 +30,7 @@ import { Service, ServiceCategory, Booking, User as UserType, TechnicianProfile 
 import { StatusBadge } from '../components/ui/StatusBadge';
 import { EmptyState } from '../components/ui/EmptyState';
 import { LoadingState } from '../components/ui/LoadingState';
+import { useRealTimeSync } from '../services/realtime';
 
 export const AdminDashboard: React.FC = () => {
   const [stats, setStats] = useState<AdminDashboardData | null>(null);
@@ -51,9 +52,9 @@ export const AdminDashboard: React.FC = () => {
   const [serviceCategory, setServiceCategory] = useState<number>(1);
   const [formLoading, setFormLoading] = useState(false);
 
-  const loadAdminData = async () => {
+  const loadAdminData = async (isBackground = false) => {
     try {
-      setLoading(true);
+      if (!isBackground) setLoading(true);
       const [dashStats, userList, techList, servList, catList, bookList] = await Promise.allSettled([
         adminApi.getDashboard(),
         adminApi.getUsers(),
@@ -87,13 +88,18 @@ export const AdminDashboard: React.FC = () => {
     } catch (err) {
       console.error('Failed to load admin operations data:', err);
     } finally {
-      setLoading(false);
+      if (!isBackground) setLoading(false);
     }
   };
 
   useEffect(() => {
-    loadAdminData();
+    loadAdminData(false);
   }, []);
+
+  // Real-time synchronization
+  useRealTimeSync(() => {
+    loadAdminData(true);
+  }, 8000);
 
   const handleUserToggle = async (userId: number, currentActive: boolean) => {
     try {
@@ -193,7 +199,7 @@ export const AdminDashboard: React.FC = () => {
           </div>
 
           <button
-            onClick={loadAdminData}
+            onClick={() => loadAdminData(false)}
             className="btn-secondary text-xs px-4 py-2.5 flex items-center gap-2 self-start sm:self-auto"
           >
             <RefreshCw className="w-3.5 h-3.5" />

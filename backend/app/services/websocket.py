@@ -59,9 +59,13 @@ class WebSocketService:
         if booking.customer_id:
             await manager.broadcast_to_customer(booking.customer_id, data)
 
-        # Broadcast to Technician
+        # Broadcast to Assigned Technician
         if booking.technician_id:
             await manager.broadcast_to_technician(booking.technician_id, data)
+
+        # If unassigned or status affects dispatch availability, notify ALL technicians
+        if not booking.technician_id or new_status in ["pending", "accepted", "cancelled", "rejected"]:
+            await manager.broadcast_to_all_technicians(data)
 
         # Broadcast to Admin
         await manager.broadcast_to_admin(data)
@@ -69,6 +73,23 @@ class WebSocketService:
         # Broadcast to Location & Chat rooms
         await manager.broadcast_to_room(f"location_{booking_id}", data)
         await manager.broadcast_to_room(f"chat_{booking_id}", data)
+
+    def broadcast_booking_update(
+        self,
+        booking_id: int,
+        old_status: str,
+        new_status: str,
+        message: Optional[str] = None,
+    ):
+        """Synchronous thread-safe trigger for booking status broadcast."""
+        manager.broadcast_sync(
+            self.publish_booking_status_update(
+                booking_id=booking_id,
+                old_status=old_status,
+                new_status=new_status,
+                message=message,
+            )
+        )
 
     async def publish_location_update(
         self,

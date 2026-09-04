@@ -37,6 +37,7 @@ import { BookingDetailsModal } from '../components/modals/BookingDetailsModal';
 import { AddressModal } from '../components/modals/AddressModal';
 import { PaymentModal } from '../components/modals/PaymentModal';
 import { ReviewModal } from '../components/modals/ReviewModal';
+import { useRealTimeSync, triggerLocalSync } from '../services/realtime';
 
 export const CustomerDashboard: React.FC = () => {
   const navigate = useNavigate();
@@ -47,7 +48,6 @@ export const CustomerDashboard: React.FC = () => {
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
   const [loading, setLoading] = useState(true);
 
-
   // Modals state
   const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null);
   const [verifyModalBooking, setVerifyModalBooking] = useState<Booking | null>(null);
@@ -56,9 +56,9 @@ export const CustomerDashboard: React.FC = () => {
   const [addressModalOpen, setAddressModalOpen] = useState(false);
   const [editingAddress, setEditingAddress] = useState<CustomerAddress | null>(null);
 
-  const loadDashboardData = async () => {
+  const loadDashboardData = async (isBackground = false) => {
     try {
-      setLoading(true);
+      if (!isBackground) setLoading(true);
       const [bookingsRes, addressesRes, notifsRes] = await Promise.allSettled([
         bookingsApi.getBookings({ limit: 50 }),
         customerApi.getAddresses(),
@@ -83,13 +83,18 @@ export const CustomerDashboard: React.FC = () => {
     } catch (err) {
       console.error('Failed to load customer DASHBOARD:', err);
     } finally {
-      setLoading(false);
+      if (!isBackground) setLoading(false);
     }
   };
 
   useEffect(() => {
-    loadDashboardData();
+    loadDashboardData(false);
   }, []);
+
+  // Real-time synchronization across dashboards & tabs
+  useRealTimeSync(() => {
+    loadDashboardData(true);
+  }, 6000);
 
   const activeBooking = bookings.find((b) => 
     ['assigned', 'accepted', 'in_progress', 'arrived', 'start_trip', 'pending', 'confirmed', 'on_the_way'].includes(b.status)

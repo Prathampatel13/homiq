@@ -43,12 +43,19 @@ class ConnectionManager:
         self.admin_connections: Set[WebSocket] = set()
         self.room_connections: Dict[str, Set[WebSocket]] = {}
         self.last_heartbeat: Dict[WebSocket, datetime] = {}
+        self.loop: Optional[asyncio.AbstractEventLoop] = None
 
     async def connect(self, websocket: WebSocket, role: str, identifier: Optional[Any] = None):
         """Accept WebSocket connection and register in role/room maps."""
         await websocket.accept()
         self.active_connections.add(websocket)
         self.last_heartbeat[websocket] = datetime.now(timezone.utc)
+
+        if self.loop is None or self.loop.is_closed():
+            try:
+                self.loop = asyncio.get_running_loop()
+            except RuntimeError:
+                pass
 
         if role == "admin":
             self.admin_connections.add(websocket)
@@ -137,6 +144,19 @@ class ConnectionManager:
         for ws in sockets:
             await self.send_json(ws, data)
 
+    async def broadcast_to_all_technicians(self, data: dict[str, Any]):
+        """Broadcast payload to all active sockets of all online technicians."""
+        all_tech_sockets: Set[WebSocket] = set()
+        for sockets in self.technician_connections.values():
+            all_tech_sockets.update(sockets)
+        for ws in all_tech_sockets.copy():
+            await self.send_json(ws, data)
+
+    async def broadcast_all(self, data: dict[str, Any]):
+        """Broadcast payload to all connected websockets."""
+        for ws in self.active_connections.copy():
+            await self.send_json(ws, data)
+
     async def broadcast_to_admin(self, data: dict[str, Any]):
         """Broadcast platform-wide updates to all connected admins."""
         sockets = self.admin_connections.copy()
@@ -148,6 +168,23 @@ class ConnectionManager:
         sockets = self.room_connections.get(room, set()).copy()
         for ws in sockets:
             await self.send_json(ws, data)
+
+    def broadcast_sync(self, coro):
+        """Schedule a coroutine from synchronous thread safely."""
+        try:
+            if self.loop and self.loop.is_running():
+                asyncio.run_coroutine_threadsafe(coro, self.loop)
+            else:
+                try:
+                    loop = asyncio.get_running_loop()
+                    loop.create_task(coro)
+                except RuntimeError:
+                    # No running event loop in this thread; run in fresh loop
+                    new_loop = asyncio.new_event_loop()
+                    new_loop.run_until_complete(coro)
+                    new_loop.close()
+        except Exception as exc:
+            logger.warning(f"Failed to dispatch async websocket broadcast: {exc}")
 
 
 manager = ConnectionManager()

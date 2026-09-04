@@ -17,14 +17,17 @@ Implements all booking business rules:
 - Every status change is recorded in the booking audit trail
 """
 
-from __future__ import annotations
-
+import logging
 from datetime import date
 from typing import Any, Optional
 
 from fastapi import HTTPException, status
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session, joinedload
+
+from app.services.websocket import WebSocketService
+
+logger = logging.getLogger("homiq.services.booking")
 
 from app.crud.booking import BookingCRUD
 from app.crud.customer import CustomerCRUD
@@ -169,6 +172,19 @@ class BookingService:
         data["booking_number"] = self._generate_booking_number(payload.booking_date)
 
         booking = self.crud.create_booking(data)
+
+        # Broadcast new booking dispatch to online technicians and admin in real-time
+        try:
+            ws_service = WebSocketService(self.db)
+            ws_service.broadcast_booking_update(
+                booking_id=booking.id,
+                old_status="",
+                new_status="pending",
+                message=f"New dispatch: {service.name} (Booking #{booking.booking_number})",
+            )
+        except Exception as exc:
+            logger.warning(f"Failed to broadcast new booking websocket event: {exc}")
+
         return BookingResponse.model_validate(booking)
 
     # ─── READ (single) ─────────────────────────────────────────────────
@@ -711,6 +727,20 @@ class BookingService:
             changed_by_user_id=current_user.id,
             reason=reason,
         )
+
+        # Broadcast real-time status update to Customer, Technician, and Admin
+        try:
+            ws_service = WebSocketService(self.db)
+            old_val = old_status.value if hasattr(old_status, "value") else str(old_status)
+            new_val = new_status.value if hasattr(new_status, "value") else str(new_status)
+            ws_service.broadcast_booking_update(
+                booking_id=booking.id,
+                old_status=old_val,
+                new_status=new_val,
+                message=reason or f"Booking #{booking.booking_number} is now {new_val}",
+            )
+        except Exception as exc:
+            logger.warning(f"Failed to broadcast status update websocket event: {exc}")
 
         return booking
 
