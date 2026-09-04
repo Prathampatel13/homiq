@@ -91,41 +91,6 @@ class WebSocketService:
             )
         )
 
-    async def publish_location_update(
-        self,
-        booking_id: int,
-        technician_id: int,
-        latitude: float,
-        longitude: float,
-        speed: float = 0.0,
-        heading: float = 0.0,
-        eta_minutes: Optional[int] = None,
-    ):
-        """Broadcast technician GPS location stream to customer and admin."""
-        payload = LocationPayload(
-            booking_id=booking_id,
-            technician_id=technician_id,
-            latitude=latitude,
-            longitude=longitude,
-            speed=speed,
-            heading=heading,
-            eta_minutes=eta_minutes,
-        )
-
-        msg = WSMessage(
-            event_type=WSEventTypeEnum.LOCATION_UPDATE,
-            payload=payload.model_dump(),
-        )
-
-        data = msg.model_dump()
-        await manager.broadcast_to_room(f"location_{booking_id}", data)
-
-        booking = self.db.get(Booking, booking_id)
-        if booking and booking.customer_id:
-            await manager.broadcast_to_customer(booking.customer_id, data)
-
-        await manager.broadcast_to_admin(data)
-
     async def publish_chat_message(
         self,
         booking_id: int,

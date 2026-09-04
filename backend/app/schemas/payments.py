@@ -14,6 +14,11 @@ class PaymentCreateOrder(BaseModel):
     notes: Optional[dict[str, Any]] = None
 
 
+class DemoPayRequest(BaseModel):
+    booking_id: int
+    payment_method: str = "online_demo"
+
+
 class StandardOrderCreateRequest(BaseModel):
     amount: int = Field(..., ge=100, description="Amount in paise (minimum 100 paise)")
     currency: str = Field(default="INR", description="Currency code (e.g. INR)")

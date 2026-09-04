@@ -252,15 +252,18 @@ export const CustomerDashboard: React.FC = () => {
                   <span>View Details</span>
                 </button>
 
-                <button
-                  onClick={() => navigate('/live-tracking')}
-                  className="btn-accent text-xs px-5 py-2.5 font-semibold flex items-center gap-1.5 shadow-accent bg-sage-400 text-dark-950 hover:bg-sage-300"
-                >
-                  <Navigation2 className="w-4 h-4" />
-                  <span>Live Tracking</span>
-                </button>
 
-                {['assigned', 'accepted', 'in_progress', 'arrived', 'on_the_way'].includes(activeBooking.status) && (
+                {['confirmed', 'in_progress', 'completed'].includes(activeBooking.status) && activeBooking.payment_status !== 'paid' && (
+                  <button
+                    onClick={() => setPaymentModalBooking(activeBooking)}
+                    className="btn-primary text-xs px-5 py-2.5 font-semibold flex items-center gap-1.5 shadow-subtle"
+                  >
+                    <CreditCard className="w-4 h-4" />
+                    <span>Pay Now</span>
+                  </button>
+                )}
+
+                {['arrived'].includes(activeBooking.status) && (
                   <button
                     onClick={() => setVerifyModalBooking(activeBooking)}
                     className="btn-accent text-xs px-5 py-2.5 font-semibold flex items-center gap-1.5 shadow-accent"
@@ -403,7 +406,7 @@ export const CustomerDashboard: React.FC = () => {
                         </td>
                         <td className="py-3.5 px-4">
                           <StatusBadge 
-                            status={b.status === 'completed' && b.payment_status !== 'paid' ? 'waiting_payment' : b.status} 
+                            status={['confirmed', 'in_progress', 'completed'].includes(b.status) && b.payment_status !== 'paid' ? 'waiting_payment' : b.status} 
                             size="sm" 
                           />
                         </td>
@@ -425,7 +428,7 @@ export const CustomerDashboard: React.FC = () => {
                               Review
                             </button>
                           )}
-                          {b.status === 'completed' && b.payment_status !== 'paid' && (
+                          {['confirmed', 'in_progress', 'completed'].includes(b.status) && b.payment_status !== 'paid' && (
                             <button
                               onClick={() => setPaymentModalBooking(b)}
                               className="px-2.5 py-1 rounded-lg bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-400 border border-emerald-500/30 text-[11px]"

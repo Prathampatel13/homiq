@@ -37,51 +37,16 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
       setLoading(true);
       setError(null);
 
-      const orderRes = await paymentsApi.createOrder(booking.id);
-
-      const options = {
-        key: orderRes.key_id || import.meta.env.VITE_RAZORPAY_KEY_ID,
-        amount: orderRes.amount,
-        currency: orderRes.currency,
-        name: "HomiQ",
-        description: `Payment for Booking #${booking.booking_number || booking.id}`,
-        order_id: orderRes.id,
-        handler: async function (response: any) {
-          try {
-            await paymentsApi.verifyPayment({
-              razorpay_order_id: response.razorpay_order_id,
-              razorpay_payment_id: response.razorpay_payment_id,
-              razorpay_signature: response.razorpay_signature,
-            });
-            setSuccess(true);
-            setTimeout(() => {
-              onSuccess();
-              onClose();
-            }, 1800);
-          } catch (err: any) {
-            console.error('Verification failure:', err);
-            setError(err?.response?.data?.detail || 'Payment verification failed.');
-          }
-        },
-        modal: {
-          ondismiss: function() {
-            setError('Payment cancelled by user.');
-          }
-        },
-        theme: {
-          color: "#0f172a"
-        }
-      };
-
-      const rzp = new (window as any).Razorpay(options);
-      rzp.on('payment.failed', function (response: any) {
-        console.error('Payment failed:', response.error);
-        setError(response.error.description || 'Payment failed.');
-      });
-      rzp.open();
+      await paymentsApi.demoPay(booking.id);
+      
+      setSuccess(true);
+      setTimeout(() => {
+        onSuccess();
+        onClose();
+      }, 1800);
     } catch (err: any) {
       console.error('Payment failure:', err);
-      setError(err?.response?.data?.detail || 'Payment authorization failed. Please try again.');
+      setError(err?.response?.data?.detail || 'Demo Payment failed. Please try again.');
     } finally {
       setLoading(false);
     }

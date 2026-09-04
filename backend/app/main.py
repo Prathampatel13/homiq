@@ -18,7 +18,6 @@ from app.api.coupons.router import router as coupons_router
 from app.api.invoices.router import router as invoices_router
 from app.api.reviews.router import router as reviews_router
 from app.api.notifications.router import router as notifications_router
-from app.api.tracking.router import router as tracking_router
 from app.api.admin.router import router as admin_router
 from app.api.company.router import router as company_router, companies_router
 from app.api.jobs.router import router as jobs_router
@@ -107,7 +106,6 @@ app.include_router(coupons_router)
 app.include_router(invoices_router)
 app.include_router(reviews_router)
 app.include_router(notifications_router)
-app.include_router(tracking_router)
 app.include_router(admin_router)
 app.include_router(company_router)
 app.include_router(companies_router)

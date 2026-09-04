@@ -26,6 +26,7 @@ from app.schemas.payments import (
     PaymentResponse,
     PaymentVerify,
     PaymentWebhookPayload,
+    DemoPayRequest,
 )
 from app.services.payment import PaymentService
 
@@ -76,6 +77,25 @@ def verify_payment(
 ) -> Any:
     """Verify a Razorpay payment signature."""
     return PaymentService(db).verify_payment(payload)
+
+
+@router.post(
+    "/demo-pay",
+    response_model=PaymentResponse,
+    summary="Instant Demo Payment",
+    description="Processes instant payment for demo purposes, auto-generating invoice and real-time broadcast.",
+)
+def demo_payment(
+    payload: DemoPayRequest,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> Any:
+    """Execute instant payment for demo flow."""
+    return PaymentService(db).demo_pay(
+        current_user=current_user,
+        booking_id=payload.booking_id,
+        payment_method=payload.payment_method,
+    )
 
 
 # ─── WEBHOOK HANDLER ─────────────────────────────────────────────────────

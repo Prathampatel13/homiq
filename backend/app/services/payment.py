@@ -300,14 +300,117 @@ class PaymentService:
             "Payment Signature Verified Successfully",
         )
 
-        logger.info(
-            "Payment %s verified for order %s (booking %d)",
-            payload.razorpay_payment_id,
-            payload.razorpay_order_id,
-            payment.booking_id,
-        )
+        # ── Broadcast real-time payment update ──
+        try:
+            from app.services.websocket import WebSocketService
+            ws_service = WebSocketService(self.db)
+            st_val = booking.status.value if (booking and hasattr(booking.status, "value")) else "in_progress"
+            ws_service.broadcast_booking_update(
+                booking_id=payment.booking_id,
+                old_status=st_val,
+                new_status=st_val,
+                message=f"Payment of ₹{payment.amount:.2f} verified successfully.",
+            )
+        except Exception as exc:
+            logger.warning(f"Failed to broadcast payment verification update: {exc}")
 
         return PaymentResponse.model_validate(updated)
+
+    def demo_pay(
+        self,
+        current_user: User,
+        booking_id: int,
+        payment_method: str = "online_demo",
+    ) -> PaymentResponse:
+        """Process instant payment for demo purposes, auto-generating invoice and real-time broadcast."""
+        import secrets
+        from app.models.bookings import Booking, BookingStatus, PaymentStatus as BookingPayStatus
+        from app.models.payments import Payment, PaymentMethod, PaymentStatus
+        from app.services.websocket import WebSocketService
+
+        booking = self.db.get(Booking, booking_id)
+        if not booking:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Booking not found.",
+            )
+
+        customer_id = self._get_customer_id(current_user)
+        if not current_user.is_superuser and booking.customer_id != customer_id:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="This booking does not belong to you.",
+            )
+
+        payable = float(booking.final_price or booking.estimated_price or 499.0)
+
+        # Check existing payment
+        existing = self.crud.get_by_booking(booking_id)
+        if existing and existing.status == PaymentStatus.PAID:
+            return PaymentResponse.model_validate(existing)
+
+        razorpay_order_id = f"demo_order_{secrets.token_hex(8)}"
+        razorpay_payment_id = f"demo_pay_{secrets.token_hex(8)}"
+
+        pm = PaymentMethod.UPI if "upi" in payment_method.lower() else (
+            PaymentMethod.CASH if "cash" in payment_method.lower() else PaymentMethod.CARD
+        )
+
+        if existing:
+            existing.status = PaymentStatus.PAID
+            existing.amount = payable
+            existing.razorpay_order_id = razorpay_order_id
+            existing.razorpay_payment_id = razorpay_payment_id
+            existing.razorpay_signature = "demo_verified"
+            existing.payment_method = pm
+            self.db.commit()
+            self.db.refresh(existing)
+            payment = existing
+        else:
+            payment_data = {
+                "booking_id": booking.id,
+                "customer_id": booking.customer_id,
+                "amount": payable,
+                "currency": "INR",
+                "razorpay_order_id": razorpay_order_id,
+                "razorpay_payment_id": razorpay_payment_id,
+                "razorpay_signature": "demo_verified",
+                "payment_method": pm,
+                "status": PaymentStatus.PAID,
+            }
+            payment = self.crud.create(payment_data)
+
+        # Update booking payment status
+        booking.payment_status = BookingPayStatus.PAID
+        self.db.commit()
+        self.db.refresh(booking)
+
+        # Generate invoice
+        self._generate_invoice(booking, payment)
+
+        # Audit log
+        self._log_audit_event(
+            booking.id,
+            booking.status,
+            booking.status,
+            current_user.id,
+            f"Payment of ₹{payable:.2f} completed successfully ({payment_method}).",
+        )
+
+        # Broadcast real-time update
+        try:
+            ws_service = WebSocketService(self.db)
+            st_val = booking.status.value if hasattr(booking.status, "value") else str(booking.status)
+            ws_service.broadcast_booking_update(
+                booking_id=booking.id,
+                old_status=st_val,
+                new_status=st_val,
+                message=f"Payment of ₹{payable:.2f} received from customer.",
+            )
+        except Exception as exc:
+            logger.warning(f"Failed to broadcast payment update: {exc}")
+
+        return PaymentResponse.model_validate(payment)
 
     # ── GET SINGLE PAYMENT ──────────────────────────────────────────
 

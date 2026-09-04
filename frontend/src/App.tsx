@@ -20,7 +20,6 @@ import { RegisterPage } from './pages/RegisterPage';
 import { ForgotPasswordPage } from './pages/ForgotPasswordPage';
 import { ResetPasswordPage } from './pages/ResetPasswordPage';
 import { NotificationsPage } from './pages/NotificationsPage';
-import { LiveTrackingPage } from './pages/LiveTrackingPage';
 import { ReviewsPage } from './pages/ReviewsPage';
 import { HistoryPage } from './pages/HistoryPage';
 import { AnalyticsPage } from './pages/AnalyticsPage';
@@ -107,14 +106,6 @@ export const App: React.FC = () => {
                   element={
                     <ProtectedRoute>
                       <NotificationsPage />
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path="/live-tracking"
-                  element={
-                    <ProtectedRoute>
-                      <LiveTrackingPage />
                     </ProtectedRoute>
                   }
                 />

@@ -604,6 +604,7 @@ class BookingService:
         },
         BookingStatus.ACCEPTED: {
             BookingStatus.ON_THE_WAY,
+            BookingStatus.ARRIVED,
             BookingStatus.CANCELLED,
         },
         BookingStatus.ON_THE_WAY: {
@@ -612,17 +613,25 @@ class BookingService:
             BookingStatus.CANCELLED,
         },
         BookingStatus.ARRIVED: {
+            BookingStatus.CONFIRMED,
             BookingStatus.WAITING_QR,
             BookingStatus.IN_PROGRESS,
             BookingStatus.REJECTED,
             BookingStatus.CANCELLED,
         },
         BookingStatus.WAITING_QR: {
+            BookingStatus.CONFIRMED,
             BookingStatus.QR_VERIFIED,
             BookingStatus.CANCELLED,
         },
         BookingStatus.QR_VERIFIED: {
+            BookingStatus.CONFIRMED,
             BookingStatus.IN_PROGRESS,
+            BookingStatus.CANCELLED,
+        },
+        BookingStatus.CONFIRMED: {
+            BookingStatus.IN_PROGRESS,
+            BookingStatus.COMPLETED,
             BookingStatus.CANCELLED,
         },
         BookingStatus.IN_PROGRESS: {
@@ -1010,12 +1019,49 @@ class BookingService:
         booking_id: int,
         payload: Optional[BookingRejectRequest] = None,
     ) -> BookingResponse:
-        """Mark the technician as arrived (technician or admin)."""
+        """Mark the technician as arrived and auto-generate unique 6-digit code and QR token."""
+        import random
+        import secrets
+        from datetime import datetime, timedelta, timezone
+        from app.models.qr import QRVerification
+
         booking = self._get_booking_for(current_user, booking_id)
         self._ensure_technician_role(current_user, booking)
         self._ensure_transition_change(booking, BookingStatus.ARRIVED)
 
-        reason = payload.reason if payload else None
+        # Generate unique 6-digit verification code and QR token
+        verification_code = f"{random.randint(100000, 999999)}"
+        qr_token = f"HMQ-VERIFY-{booking.id}-{secrets.token_hex(8)}"
+        now = datetime.now(timezone.utc)
+        expires_at = now + timedelta(hours=2)
+
+        qr_rec = self.db.scalar(select(QRVerification).where(QRVerification.booking_id == booking.id))
+        tech_id = booking.technician_id
+        if not tech_id and current_user.technician:
+            tech_id = current_user.technician.id
+
+        if not qr_rec:
+            qr_rec = QRVerification(
+                booking_id=booking.id,
+                technician_id=tech_id or 0,
+                token=qr_token,
+                verification_code=verification_code,
+                verification_status="pending",
+                expires_at=expires_at,
+                created_at=now,
+            )
+            self.db.add(qr_rec)
+        else:
+            qr_rec.token = qr_token
+            qr_rec.verification_code = verification_code
+            qr_rec.verification_status = "pending"
+            qr_rec.expires_at = expires_at
+            if tech_id:
+                qr_rec.technician_id = tech_id
+
+        self.db.commit()
+
+        reason = payload.reason if payload else "Technician arrived at location"
         updated = self._transition(
             booking,
             BookingStatus.ARRIVED,
@@ -1023,6 +1069,121 @@ class BookingService:
             reason=reason,
         )
         return BookingResponse.model_validate(updated)
+
+    def verify_arrival_code(
+        self,
+        current_user: User,
+        booking_id: int,
+        code: str,
+    ) -> BookingResponse:
+        """Technician verifies the customer's unique 6-digit code or QR token, marking service as CONFIRMED."""
+        from datetime import datetime, timezone
+        from app.models.qr import QRVerification
+
+        booking = self._get_booking_for(current_user, booking_id)
+        self._ensure_technician_role(current_user, booking)
+
+        if booking.status not in [BookingStatus.ARRIVED, BookingStatus.WAITING_QR, BookingStatus.QR_VERIFIED]:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Cannot verify code for booking with status '{booking.status.value}'. Must be 'arrived'.",
+            )
+
+        clean_code = code.strip().upper()
+        qr_rec = self.db.scalar(select(QRVerification).where(QRVerification.booking_id == booking.id))
+        if not qr_rec or not qr_rec.verification_code:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="No verification code active for this booking. Please mark arrived first.",
+            )
+
+        # Match either 6-digit passcode or QR token
+        matches_code = clean_code == (qr_rec.verification_code or "").strip().upper()
+        matches_token = clean_code == (qr_rec.token or "").strip().upper()
+
+        if not (matches_code or matches_token):
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Invalid verification code or QR token. Please verify with the customer.",
+            )
+
+        now = datetime.now(timezone.utc)
+        qr_rec.verification_status = "verified"
+        qr_rec.verified_at = now
+        qr_rec.customer_pin_verified_at = now
+        qr_rec.technician_qr_verified_at = now
+        qr_rec.used = True
+        self.db.commit()
+
+        updated = self._transition(
+            booking,
+            BookingStatus.CONFIRMED,
+            current_user,
+            reason="Customer passcode verified. Service confirmed and initiated.",
+        )
+        return BookingResponse.model_validate(updated)
+
+    def get_verification_details(
+        self,
+        current_user: User,
+        booking_id: int,
+    ) -> dict[str, Any]:
+        """Returns verification code, QR token, and status for the customer and technician."""
+        from app.models.qr import QRVerification
+
+        booking = self._get_booking_for(current_user, booking_id)
+        qr_rec = self.db.scalar(select(QRVerification).where(QRVerification.booking_id == booking.id))
+
+        tech_name = None
+        tech_phone = None
+        if booking.technician and booking.technician.user:
+            tech_name = booking.technician.user.full_name
+            tech_phone = booking.technician.user.phone
+
+        service_name = booking.service.name if booking.service else None
+        final_price = booking.final_price or booking.estimated_price
+
+        code = qr_rec.verification_code if qr_rec else None
+        qr_token = qr_rec.token if qr_rec else None
+        is_verified = (qr_rec.verification_status == "verified") if qr_rec else False
+
+        # If arrived and no code yet, generate on the fly
+        if not code and booking.status == BookingStatus.ARRIVED:
+            import random
+            import secrets
+            from datetime import datetime, timedelta, timezone
+            code = f"{random.randint(100000, 999999)}"
+            qr_token = f"HMQ-VERIFY-{booking.id}-{secrets.token_hex(8)}"
+            now = datetime.now(timezone.utc)
+            if not qr_rec:
+                qr_rec = QRVerification(
+                    booking_id=booking.id,
+                    technician_id=booking.technician_id or 0,
+                    token=qr_token,
+                    verification_code=code,
+                    verification_status="pending",
+                    expires_at=now + timedelta(hours=2),
+                    created_at=now,
+                )
+                self.db.add(qr_rec)
+            else:
+                qr_rec.verification_code = code
+                qr_rec.token = qr_token
+            self.db.commit()
+
+        return {
+            "booking_id": booking.id,
+            "status": booking.status.value if hasattr(booking.status, "value") else str(booking.status),
+            "verification_code": code,
+            "qr_token": qr_token,
+            "qr_data": qr_token,
+            "is_verified": is_verified,
+            "technician_name": tech_name,
+            "technician_phone": tech_phone,
+            "service_name": service_name,
+            "final_price": final_price,
+            "payment_status": booking.payment_status.value if hasattr(booking.payment_status, "value") else str(booking.payment_status),
+        }
 
     def start_service(
         self,

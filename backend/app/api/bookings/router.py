@@ -34,6 +34,8 @@ from app.schemas.bookings import (
     QRScanRequest,
     QRScanResponse,
     SmartVerifyStatusResponse,
+    VerificationDetailsResponse,
+    VerifyCodeRequest,
 )
 from app.services.booking import BookingService
 from app.services.smart_verify import SmartVerifyService
@@ -767,130 +769,36 @@ def complete_service(
     return BookingService(db).complete_service(current_user, booking_id, payload)
 
 
-# SmartVerify Dual Verification Flow
-
-from app.schemas.bookings import (
-    GeneratePinResponse,
-    VerifyPinRequest,
-    VerifyPinResponse,
-    QRGenerateResponse,
-    QRScanRequest,
-    QRScanResponse,
-    DualConfirmResponse,
-    SmartVerifyStatusResponse,
-)
 
 @router.post(
-    "/{booking_id}/generate-pin",
-    response_model=GeneratePinResponse,
-    status_code=status.HTTP_200_OK,
-    summary="Generate verification PIN",
+    "/{booking_id}/verify-code",
+    response_model=BookingResponse,
+    summary="Verify arrival passcode or QR token",
+    description="Technician enters customer 6-digit passcode or scans QR token to confirm arrival and start service.",
 )
-def generate_pin(
+def verify_code_endpoint(
     booking_id: int,
+    payload: VerifyCodeRequest,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ) -> Any:
-    from app.services.smart_verify import SmartVerifyService
-    return SmartVerifyService(db).generate_pin(current_user, booking_id)
+    from app.services.booking import BookingService
+    return BookingService(db).verify_arrival_code(current_user, booking_id, payload.code)
 
-@router.post(
-    "/{booking_id}/verify-pin",
-    response_model=VerifyPinResponse,
-    status_code=status.HTTP_200_OK,
-    summary="Verify customer PIN",
-)
-def verify_pin(
-    booking_id: int,
-    payload: VerifyPinRequest,
-    current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db),
-) -> Any:
-    from app.services.smart_verify import SmartVerifyService
-    return SmartVerifyService(db).verify_pin(current_user, booking_id, payload)
-
-@router.post(
-    "/{booking_id}/qr",
-    response_model=QRGenerateResponse,
-    status_code=status.HTTP_201_CREATED,
-    summary="Generate verification QR code",
-)
-def generate_qr(
-    booking_id: int,
-    current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db),
-) -> Any:
-    from app.services.smart_verify import SmartVerifyService
-    return SmartVerifyService(db).generate_qr(current_user, booking_id)
 
 @router.get(
-    "/{booking_id}/qr",
-    response_model=QRGenerateResponse,
-    summary="Get active verification QR code",
+    "/{booking_id}/verification-details",
+    response_model=VerificationDetailsResponse,
+    summary="Get arrival verification details",
+    description="Customer and technician retrieve 6-digit code, QR token, and live verification status.",
 )
-def get_qr(
+def get_verification_details_endpoint(
     booking_id: int,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ) -> Any:
-    from app.services.smart_verify import SmartVerifyService
-    return SmartVerifyService(db).get_qr(current_user, booking_id)
-
-@router.post(
-    "/{booking_id}/scan-qr",
-    response_model=QRScanResponse,
-    status_code=status.HTTP_200_OK,
-    summary="Scan and verify QR code",
-)
-def scan_qr(
-    booking_id: int,
-    payload: QRScanRequest,
-    current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db),
-) -> Any:
-    from app.services.smart_verify import SmartVerifyService
-    return SmartVerifyService(db).scan_qr(current_user, booking_id, payload)
-
-@router.post(
-    "/{booking_id}/customer-confirm",
-    response_model=DualConfirmResponse,
-    status_code=status.HTTP_200_OK,
-    summary="Customer confirm service start",
-)
-def customer_confirm(
-    booking_id: int,
-    current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db),
-) -> Any:
-    from app.services.smart_verify import SmartVerifyService
-    return SmartVerifyService(db).customer_confirm(current_user, booking_id)
-
-@router.post(
-    "/{booking_id}/technician-confirm",
-    response_model=DualConfirmResponse,
-    status_code=status.HTTP_200_OK,
-    summary="Technician confirm service start",
-)
-def technician_confirm(
-    booking_id: int,
-    current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db),
-) -> Any:
-    from app.services.smart_verify import SmartVerifyService
-    return SmartVerifyService(db).technician_confirm(current_user, booking_id)
-
-@router.get(
-    "/{booking_id}/verification-status",
-    response_model=SmartVerifyStatusResponse,
-    summary="Get verification status",
-)
-def get_verification_status(
-    booking_id: int,
-    current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db),
-) -> Any:
-    from app.services.smart_verify import SmartVerifyService
-    return SmartVerifyService(db).get_verification_status(current_user, booking_id)
+    from app.services.booking import BookingService
+    return BookingService(db).get_verification_details(current_user, booking_id)
 
 
 # ─── BOOKING MEDIA ENDPOINTS (Before, After, Attachments) ─────────────────

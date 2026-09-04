@@ -35,6 +35,7 @@ class BookingStatus(str, Enum):
     ARRIVED = "arrived"
     WAITING_QR = "waiting_qr"
     QR_VERIFIED = "qr_verified"
+    CONFIRMED = "confirmed"
     IN_PROGRESS = "in_progress"
     COMPLETED = "completed"
     WAITING_PAYMENT = "waiting_payment"

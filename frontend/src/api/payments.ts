@@ -15,6 +15,12 @@ export const paymentsApi = {
     return response.data;
   },
 
+  demoPay: async (booking_id: number): Promise<Payment> => {
+    const response = await api.post<Payment>('/payments/demo-pay', { booking_id });
+    return response.data;
+  },
+
+
   verifyPayment: async (data: {
     razorpay_order_id: string;
     razorpay_payment_id: string;

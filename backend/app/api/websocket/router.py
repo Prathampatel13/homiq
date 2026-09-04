@@ -259,64 +259,6 @@ async def ws_chat_endpoint(
         db.close()
 
 
-# ── 5. LIVE GPS LOCATION WEBSOCKET ────────────────────────────────────────
-
-@router.websocket("/ws/location/{booking_id}")
-async def ws_location_endpoint(
-    websocket: WebSocket,
-    booking_id: int,
-    token: str = Query(..., description="JWT Access Token"),
-):
-    """Live Technician GPS Location & ETA Streaming WebSocket."""
-    db = SessionLocal()
-    try:
-        user = authenticate_ws_token(token, db)
-        if not user:
-            await websocket.close(code=status.WS_1008_POLICY_VIOLATION)
-            return
-
-        booking = db.get(Booking, booking_id)
-        if not booking:
-            await websocket.close(code=status.WS_1008_POLICY_VIOLATION)
-            return
-
-        room = f"location_{booking_id}"
-        await websocket.accept()
-        await manager.join_room(room, websocket)
-
-        ws_service = WebSocketService(db)
-
-        try:
-            while True:
-                data_text = await websocket.receive_text()
-                try:
-                    data = json.loads(data_text)
-                    if data.get("type") == "ping":
-                        await websocket.send_text(json.dumps({"type": "pong"}))
-                    elif data.get("type") == "location_update":
-                        lat = float(data.get("latitude", 0.0))
-                        lng = float(data.get("longitude", 0.0))
-                        speed = float(data.get("speed", 0.0))
-                        heading = float(data.get("heading", 0.0))
-                        eta = data.get("eta_minutes")
-                        tech_id = booking.technician_id or 0
-                        await ws_service.publish_location_update(
-                            booking_id=booking_id,
-                            technician_id=tech_id,
-                            latitude=lat,
-                            longitude=lng,
-                            speed=speed,
-                            heading=heading,
-                            eta_minutes=eta,
-                        )
-                except Exception as exc:
-                    logger.warning(f"Error handling location update: {exc}")
-        except WebSocketDisconnect:
-            await manager.leave_room(room, websocket)
-    finally:
-        db.close()
-
-
 # ── REST HELPER: CHAT HISTORY ─────────────────────────────────────────────
 
 @router.get(

@@ -316,20 +316,8 @@ export const ProviderDashboard: React.FC = () => {
                           </button>
                         )}
 
-                        {/* Start Trip / Navigate */}
-                        {job.status === 'accepted' && (
-                          <button
-                            onClick={() => handleJobAction(job.id, 'start_trip')}
-                            disabled={actionLoading === job.id}
-                            className="btn-secondary text-xs px-4 py-2 flex items-center gap-1.5"
-                          >
-                            <Navigation className="w-3.5 h-3.5 text-sage-400" />
-                            <span>Start Trip</span>
-                          </button>
-                        )}
-
                         {/* Arrived */}
-                        {(job.status === 'start_trip' || job.status === 'on_the_way') && (
+                        {(job.status === 'accepted' || job.status === 'start_trip' || job.status === 'on_the_way') && (
                           <button
                             onClick={() => handleJobAction(job.id, 'arrived')}
                             disabled={actionLoading === job.id}

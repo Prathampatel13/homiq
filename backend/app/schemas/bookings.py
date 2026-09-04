@@ -286,3 +286,21 @@ class SmartVerifyStatusResponse(BaseModel):
     attempts_remaining: int = 3
 
 
+class VerifyCodeRequest(BaseModel):
+    code: str = Field(..., description="Unique 6-digit passcode or QR token")
+
+
+class VerificationDetailsResponse(BaseModel):
+    booking_id: int
+    status: str
+    verification_code: Optional[str] = None
+    qr_token: Optional[str] = None
+    qr_data: Optional[str] = None
+    is_verified: bool = False
+    technician_name: Optional[str] = None
+    technician_phone: Optional[str] = None
+    service_name: Optional[str] = None
+    final_price: Optional[float] = None
+    payment_status: Optional[str] = None
+
+

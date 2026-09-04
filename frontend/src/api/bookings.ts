@@ -41,43 +41,13 @@ export const bookingsApi = {
     return response.data;
   },
 
-  generatePin: async (id: number): Promise<{ message: string; pin_expires_at: string; pin_code: string }> => {
-    const response = await api.post<{ message: string; pin_expires_at: string; pin_code: string }>(`/bookings/${id}/generate-pin`);
+  verifyCode: async (id: number, code: string): Promise<Booking> => {
+    const response = await api.post<Booking>(`/bookings/${id}/verify-code`, { code });
     return response.data;
   },
 
-  verifyPin: async (id: number, pin: string): Promise<{ message: string; verified_at: string }> => {
-    const response = await api.post<{ message: string; verified_at: string }>(`/bookings/${id}/verify-pin`, { pin });
-    return response.data;
-  },
-
-  generateQr: async (id: number): Promise<{ verification_token: string; qr_code_data: string; expires_at: string }> => {
-    const response = await api.post<{ verification_token: string; qr_code_data: string; expires_at: string }>(`/bookings/${id}/qr`);
-    return response.data;
-  },
-
-  getQr: async (id: number): Promise<{ verification_token: string; qr_code_data: string; expires_at: string }> => {
-    const response = await api.get<{ verification_token: string; qr_code_data: string; expires_at: string }>(`/bookings/${id}/qr`);
-    return response.data;
-  },
-
-  scanQr: async (id: number, verification_token: string): Promise<{ message: string; status: string }> => {
-    const response = await api.post<{ message: string; status: string }>(`/bookings/${id}/scan-qr`, { verification_token });
-    return response.data;
-  },
-
-  customerConfirm: async (id: number): Promise<{ message: string; verification_status: string }> => {
-    const response = await api.post<{ message: string; verification_status: string }>(`/bookings/${id}/customer-confirm`);
-    return response.data;
-  },
-
-  technicianConfirm: async (id: number): Promise<{ message: string; verification_status: string }> => {
-    const response = await api.post<{ message: string; verification_status: string }>(`/bookings/${id}/technician-confirm`);
-    return response.data;
-  },
-
-  getVerificationStatus: async (id: number): Promise<VerificationStatus> => {
-    const response = await api.get<VerificationStatus>(`/bookings/${id}/verification-status`);
+  getVerificationDetails: async (id: number): Promise<{ verification_code: string; qr_token: string; is_verified: boolean; qr_data: string }> => {
+    const response = await api.get<{ verification_code: string; qr_token: string; is_verified: boolean; qr_data: string }>(`/bookings/${id}/verification-details`);
     return response.data;
   },
 
