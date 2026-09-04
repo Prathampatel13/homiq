@@ -40,6 +40,30 @@ from app.security.deps import get_current_user
 
 Base.metadata.create_all(bind=engine)
 
+def seed_initial_data():
+    from app.database.session import SessionLocal
+    from app.models.auth import Role
+    db = SessionLocal()
+    try:
+        roles_data = [
+            ("customer", "Customer account"),
+            ("technician", "Technician account"),
+            ("company", "Service Company account"),
+            ("admin", "System Administrator"),
+        ]
+        for r_name, r_desc in roles_data:
+            existing = db.query(Role).filter(Role.name == r_name).first()
+            if not existing:
+                db.add(Role(name=r_name, description=r_desc))
+        db.commit()
+    except Exception as exc:
+        db.rollback()
+        logger.warning(f"Initial data auto-seeding skipped: {exc}")
+    finally:
+        db.close()
+
+seed_initial_data()
+
 app = FastAPI(
     title="HomiQ Backend",
     version="1.0.0",

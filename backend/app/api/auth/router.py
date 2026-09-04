@@ -20,13 +20,16 @@ def register(payload: RegisterRequest, db: Session = Depends(get_db)) -> Token:
     if existing:
         raise HTTPException(status_code=400, detail="Email already registered")
 
-    user = crud.create_user(
-        email=str(payload.email),
-        password=payload.password,
-        full_name=payload.full_name,
-        phone=payload.phone,
-        role_name=payload.role,
-    )
+    try:
+        user = crud.create_user(
+            email=str(payload.email),
+            password=payload.password,
+            full_name=payload.full_name,
+            phone=payload.phone,
+            role_name=payload.role,
+        )
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
     tokens = crud.create_tokens(user)
     tokens["user"] = {
         "id": user.id,
