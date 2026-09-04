@@ -5,7 +5,7 @@
 # ── Stage 1: Builder ──────────────────────────────────────────────────────────
 FROM python:3.11-slim AS builder
 
-WORKDIR /build
+WORKDIR /app
 
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1
@@ -16,10 +16,12 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     curl \
     && rm -rf /var/lib/apt/lists/*
 
+RUN python -m venv /opt/venv
+ENV PATH="/opt/venv/bin:$PATH"
+
 COPY requirements.txt .
 RUN pip install --no-cache-dir --upgrade pip && \
-    pip install --no-cache-dir wheel && \
-    pip wheel --no-cache-dir --no-deps --wheel-dir /build/wheels -r requirements.txt
+    pip install --no-cache-dir -r requirements.txt
 
 
 # ── Stage 2: Runner ───────────────────────────────────────────────────────────
@@ -29,7 +31,7 @@ WORKDIR /app
 
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
-    PATH="/home/homiq/.local/bin:${PATH}"
+    PATH="/opt/venv/bin:$PATH"
 
 # Install runtime dependencies & curl for container health checks
 RUN apt-get update && apt-get install -y --no-install-recommends \
@@ -41,10 +43,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 RUN groupadd -g 10001 homiq && \
     useradd -u 10001 -g homiq -s /bin/bash -m homiq
 
-# Copy wheels from builder and install
-COPY --from=builder /build/wheels /wheels
-RUN pip install --no-cache-dir --no-index --find-links=/wheels /wheels/* && \
-    rm -rf /wheels
+# Copy pre-built virtualenv from builder
+COPY --from=builder /opt/venv /opt/venv
 
 # Copy application source code
 COPY --chown=homiq:homiq . /app

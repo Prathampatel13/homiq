@@ -37,8 +37,15 @@ def upgrade() -> None:
     op.alter_column('qr_verifications', 'verification_code',
                existing_type=sa.VARCHAR(length=10),
                nullable=True)
-    op.drop_index(op.f('ix_users_username'), table_name='users')
-    op.drop_column('users', 'username')
+    bind = op.get_bind()
+    inspector = sa.inspect(bind)
+    user_cols = [c['name'] for c in inspector.get_columns('users')]
+    user_indices = [idx['name'] for idx in inspector.get_indexes('users')]
+
+    if 'ix_users_username' in user_indices:
+        op.drop_index('ix_users_username', table_name='users')
+    if 'username' in user_cols:
+        op.drop_column('users', 'username')
     # ### end Alembic commands ###
 
 
