@@ -68,7 +68,7 @@ class TestPasswordRecoveryFlow:
         # 1. Valid registered email
         res_valid = client.post("/auth/forgot-password", json={"email": "valid_user@example.com"})
         assert res_valid.status_code == 200
-        assert "recovery instructions have been sent" in res_valid.json()["message"]
+        assert "password reset instructions have been sent" in res_valid.json()["message"]
 
         # 2. Unknown non-existent email
         res_unknown = client.post("/auth/forgot-password", json={"email": "ghost_account_404@example.com"})
@@ -87,7 +87,7 @@ class TestPasswordRecoveryFlow:
         token_record = db.query(PasswordResetToken).filter(PasswordResetToken.user_id == user.id).first()
         assert token_record is not None, "PasswordResetToken record was not created"
         assert token_record.used_at is None
-        assert len(token_record.token_hash) == 64, "Token hash should be SHA-256 (64 hex characters)"
+        assert len(token_record.token_hash) == 60, "Token hash should be bcrypt (60 characters)"
         db.close()
 
     def test_send_reset_otp_and_verification(self):
@@ -113,7 +113,7 @@ class TestPasswordRecoveryFlow:
             json={"email": "otp_user@example.com", "otp": "000000"}
         )
         assert res_invalid.status_code == 400
-        assert "Incorrect verification code" in res_invalid.json()["detail"]
+        assert "Invalid OTP" in res_invalid.json()["detail"]
 
         # Check attempt count incremented
         db = TestingSessionLocal()
@@ -133,7 +133,6 @@ class TestPasswordRecoveryFlow:
             user_id=user.id,
             otp_hash=hash_password(raw_otp),
             expires_at=now + datetime.timedelta(minutes=10),
-            max_attempts=5,
             attempt_count=0,
             created_at=now,
         )
@@ -141,17 +140,26 @@ class TestPasswordRecoveryFlow:
         db.commit()
         db.close()
 
-        # Submit direct OTP reset
+        # Submit direct OTP reset via 2 steps (verify then reset)
         new_pass = "NewSecurePass@5678"
+        
+        # 1. Verify OTP to get auth token
+        verify_res = client.post(
+            "/auth/verify-reset-otp",
+            json={"email": "direct_otp@example.com", "otp": raw_otp}
+        )
+        assert verify_res.status_code == 200, verify_res.text
+        auth_token = verify_res.json()["reset_token"]
+
+        # 2. Reset password using the auth token
         res = client.post(
-            "/auth/reset-password-otp",
+            "/auth/reset-password",
             json={
-                "email": "direct_otp@example.com",
-                "otp": raw_otp,
+                "token": auth_token,
                 "new_password": new_pass,
             }
         )
-        assert res.status_code == 200
+        assert res.status_code == 200, res.text
         assert "Password successfully updated" in res.json()["message"]
 
         # Verify old password no longer works
@@ -171,7 +179,7 @@ class TestPasswordRecoveryFlow:
 
         # Short password
         res = client.post(
-            "/auth/reset-password-otp",
+            "/auth/reset-password",
             json={
                 "email": "policy_user@example.com",
                 "otp": "123456",

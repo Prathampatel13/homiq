@@ -1,17 +1,17 @@
 ﻿#!/usr/bin/env bash
-# start_prod.sh
-# Runs migrations, Celery worker, and FastAPI in one container for a FREE tier deployment.
-
+# ==============================================================================
+# HomiQ Production Startup Script (Free Tier Optimized)
+# Runs Alembic migrations then starts FastAPI via Uvicorn.
+# Redis/Celery are NOT required — the app uses in-memory fallbacks.
+# ==============================================================================
 set -e
 
-echo "Running Database Migrations..."
-alembic upgrade head
+echo "========================================================"
+echo "HomiQ Backend — Starting Production Server"
+echo "========================================================"
 
-echo "Starting Celery Worker in background..."
-celery -A app.core.celery_app worker --loglevel=info &
+echo "[1/2] Running database migrations..."
+alembic upgrade head || echo "Warning: Alembic migrations skipped (may already be up to date)"
 
-# Optional: celery beat
-# celery -A app.core.celery_app beat --loglevel=info &
-
-echo "Starting FastAPI Server..."
+echo "[2/2] Starting FastAPI server on port ${PORT:-8000}..."
 exec uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8000}

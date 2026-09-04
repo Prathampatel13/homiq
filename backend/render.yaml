@@ -1,9 +1,10 @@
 ﻿services:
-  # ── 1. FastAPI Web Backend Service (100% Free Tier) ──────────────────────
-  # This single web service runs FastAPI and Celery simultaneously using start_prod.sh.
+  # HomiQ Backend — Single Free Web Service
+  # Runs FastAPI with in-memory fallbacks (no Redis/Celery required).
+  # Database: External Neon.tech free PostgreSQL.
   - type: web
     name: homiq-backend
-    env: docker
+    runtime: docker
     dockerfilePath: ./Dockerfile
     healthCheckPath: /health
     autoDeploy: true
@@ -11,10 +12,16 @@
       - key: ENV
         value: production
       - key: DATABASE_URL
-        sync: false # Set this to your Neon.tech Postgres URL in Render Dashboard
-      - key: REDIS_URL
-        sync: false # Set this to your Upstash Redis URL in Render Dashboard
-      - key: REDIS_BROKER_URL
-        sync: false # Set this to your Upstash Redis URL in Render Dashboard
+        sync: false
+        # Set this to your Neon.tech PostgreSQL connection string in the Render Dashboard.
+        # Example: postgresql://user:pass@ep-xxx.us-east-2.aws.neon.tech/homiq_db?sslmode=require
       - key: SECRET_KEY
         generateValue: true
+      - key: ALGORITHM
+        value: HS256
+      - key: FRONTEND_URL
+        sync: false
+        # Set this to your Vercel frontend URL, e.g. https://homiq.vercel.app
+      - key: CORS_ORIGINS
+        sync: false
+        # Set this to your Vercel frontend URL, e.g. https://homiq.vercel.app
