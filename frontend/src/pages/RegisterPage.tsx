@@ -52,9 +52,11 @@ export const RegisterPage: React.FC = () => {
       if (typeof detail === 'string') {
         setError(detail);
       } else if (Array.isArray(detail)) {
-        setError(detail.map((d: any) => d.msg || 'Invalid field').join(', '));
+        setError(detail.map((d: any) => `${d.loc ? d.loc.slice(-1) + ': ' : ''}${d.msg || 'Invalid field'}`).join(', '));
+      } else if (err?.message === 'Network Error' || !err?.response) {
+        setError(`Network Error: Cannot reach backend at ${authApi ? import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000' : ''}. Check if the backend is awake or VITE_API_BASE_URL is set.`);
       } else {
-        setError('Failed to create account. Please check your inputs.');
+        setError(err?.response?.data?.message || `Failed to create account (${err?.response?.status || 'Error'}). Please check your inputs.`);
       }
     } finally {
       setLoading(false);
