@@ -20,6 +20,7 @@ from app.schemas.technician import (
     TechnicianResponse,
     TechnicianUpdate,
 )
+from app.schemas.bookings import VerifyCodeRequest
 from app.services.technician import TechnicianService
 from app.services.technician_dashboard import TechnicianDashboardService
 
@@ -296,6 +297,32 @@ def mark_arrived(
     """Mark arrival at job location."""
     service = TechnicianService(db)
     return service.mark_arrived(current_user, id, reason=payload.reason)
+
+
+@router.post(
+    "/bookings/{id}/verify-code",
+    response_model=TechnicianJobResponse,
+    summary="Verify arrival passcode or QR token",
+    description="Technician enters customer 6-digit passcode or scans QR token to confirm arrival and start service.",
+)
+@router.patch(
+    "/bookings/{id}/verify-code",
+    response_model=TechnicianJobResponse,
+    summary="Verify arrival passcode or QR token",
+    description="Technician enters customer 6-digit passcode or scans QR token to confirm arrival and start service.",
+)
+def verify_code(
+    id: int,
+    payload: VerifyCodeRequest,
+    current_user: User = Depends(get_current_technician),
+    db: Session = Depends(get_db),
+) -> Any:
+    """Verify customer passcode or QR token upon arrival to confirm service."""
+    from app.services.booking import BookingService
+    BookingService(db).verify_arrival_code(current_user, id, payload.code)
+    service = TechnicianService(db)
+    booking = BookingService(db).crud.get_booking(id)
+    return service._build_job_response(booking)
 
 
 @router.patch(

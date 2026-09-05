@@ -149,6 +149,11 @@ export const technicianApi = {
     return response.data;
   },
 
+  verifyCode: async (id: number, code: string): Promise<Booking> => {
+    const response = await api.post<Booking>(`/technician/bookings/${id}/verify-code`, { code });
+    return response.data;
+  },
+
   completeService: async (id: number, reason?: string): Promise<Booking> => {
     const response = await api.patch<Booking>(`/technician/bookings/${id}/complete`, { reason });
     return response.data;

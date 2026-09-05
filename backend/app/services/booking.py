@@ -689,20 +689,35 @@ class BookingService:
     ) -> None:
         """Validate a status transition against the lifecycle map.
 
-        Admins may bypass the map for manual corrections.  Non-admins must
-        follow the allowed transitions.  Invalid transitions raise 409.
+        Admins may bypass the map for manual corrections. Non-admins must
+        follow the allowed transitions. Invalid transitions raise 409.
         """
-        if new_status == booking.status:
+        def _to_status(val: Any) -> BookingStatus:
+            if isinstance(val, BookingStatus):
+                return val
+            if isinstance(val, str):
+                try:
+                    return BookingStatus(val.lower())
+                except ValueError:
+                    pass
+            return val
+
+        cur_st = _to_status(booking.status)
+        tgt_st = _to_status(new_status)
+
+        if cur_st == tgt_st:
             return
 
         if not current_user.is_superuser:
-            allowed_next = self._ALLOWED_TRANSITIONS.get(booking.status, set())
-            if new_status not in allowed_next:
+            allowed_next = self._ALLOWED_TRANSITIONS.get(cur_st, set())
+            if tgt_st not in allowed_next:
+                cur_name = cur_st.value if hasattr(cur_st, "value") else str(cur_st)
+                tgt_name = tgt_st.value if hasattr(tgt_st, "value") else str(tgt_st)
                 raise HTTPException(
                     status_code=status.HTTP_409_CONFLICT,
                     detail=(
                         f"Invalid status transition: "
-                        f"'{booking.status.value}' -> '{new_status.value}'"
+                        f"'{cur_name}' -> '{tgt_name}'"
                     ),
                 )
 
@@ -1231,9 +1246,22 @@ class BookingService:
         """Ensure the current user is the assigned technician or an admin."""
         if current_user.is_superuser:
             return
-        is_technician = (
-            booking.technician and booking.technician.user_id == current_user.id
-        )
+
+        is_technician = False
+        if booking.technician and booking.technician.user_id == current_user.id:
+            is_technician = True
+        elif booking.technician_id:
+            tech = self.technician_crud.get_by_user_id(current_user.id)
+            if tech and tech.id == booking.technician_id:
+                is_technician = True
+        else:
+            # Unassigned booking being acted on by an eligible technician
+            tech = self.technician_crud.get_by_user_id(current_user.id)
+            if tech:
+                self.crud.update_booking(booking.id, {"technician_id": tech.id})
+                self.db.refresh(booking)
+                is_technician = True
+
         if not is_technician:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
@@ -1244,11 +1272,13 @@ class BookingService:
         self, booking: Booking, new_status: BookingStatus
     ) -> None:
         """Reject a no-op (duplicate) action with 409."""
-        if booking.status == new_status:
+        cur = booking.status.value if hasattr(booking.status, "value") else str(booking.status)
+        target = new_status.value if hasattr(new_status, "value") else str(new_status)
+        if cur.lower() == target.lower():
             raise HTTPException(
                 status_code=status.HTTP_409_CONFLICT,
                 detail=(
-                    f"Booking is already in status '{new_status.value}'; "
+                    f"Booking is already in status '{target}'; "
                     f"this action has already been performed"
                 ),
             )

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { ShieldCheck, KeyRound, X, AlertCircle, Loader2 } from 'lucide-react';
 import { bookingsApi } from '../../api/bookings';
+import { technicianApi } from '../../api/technician';
 import { Booking } from '../../types';
 
 export interface TechnicianVerifyModalProps {
@@ -29,7 +30,11 @@ export const TechnicianVerifyModal: React.FC<TechnicianVerifyModalProps> = ({
     try {
       setLoading(true);
       setError(null);
-      await bookingsApi.verifyCode(booking.id, code);
+      try {
+        await technicianApi.verifyCode(booking.id, code);
+      } catch {
+        await bookingsApi.verifyCode(booking.id, code);
+      }
       onVerified();
       onClose();
     } catch (err: any) {

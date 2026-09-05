@@ -55,6 +55,7 @@ export const CustomerDashboard: React.FC = () => {
   const [reviewModalBooking, setReviewModalBooking] = useState<Booking | null>(null);
   const [addressModalOpen, setAddressModalOpen] = useState(false);
   const [editingAddress, setEditingAddress] = useState<CustomerAddress | null>(null);
+  const [arrivedVerification, setArrivedVerification] = useState<{ bookingId: number; code: string; qrData: string } | null>(null);
 
   const loadDashboardData = async (isBackground = false) => {
     try {
@@ -99,6 +100,22 @@ export const CustomerDashboard: React.FC = () => {
   const activeBooking = bookings.find((b) => 
     ['assigned', 'accepted', 'in_progress', 'arrived', 'start_trip', 'pending', 'confirmed', 'on_the_way'].includes(b.status)
   );
+
+  useEffect(() => {
+    if (activeBooking && activeBooking.status === 'arrived') {
+      bookingsApi.getVerificationDetails(activeBooking.id)
+        .then((res) => {
+          setArrivedVerification({
+            bookingId: activeBooking.id,
+            code: res.verification_code,
+            qrData: res.qr_data || res.qr_token,
+          });
+        })
+        .catch((err) => console.error('Failed to fetch arrival code:', err));
+    } else {
+      setArrivedVerification(null);
+    }
+  }, [activeBooking?.id, activeBooking?.status]);
 
 
 
@@ -206,73 +223,145 @@ export const CustomerDashboard: React.FC = () => {
           </h2>
 
           {activeBooking ? (
-            <div className="p-6 sm:p-8 rounded-3xl bg-dark-900 border border-dark-750 shadow-modal flex flex-col md:flex-row items-start md:items-center justify-between gap-6 relative overflow-hidden">
+            <div className="p-6 sm:p-8 rounded-3xl bg-dark-900 border border-dark-750 shadow-modal space-y-6 relative overflow-hidden">
               <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-transparent via-sage-400 to-transparent" />
 
-              <div className="space-y-2 max-w-xl">
-                <div className="flex items-center gap-3">
-                  <span className="text-lg font-bold text-white">
-                    {activeBooking.service?.name || 'Home Service'}
-                  </span>
-                  <StatusBadge status={activeBooking.status} size="sm" />
+              <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
+                <div className="space-y-2 max-w-xl">
+                  <div className="flex items-center gap-3">
+                    <span className="text-lg font-bold text-white">
+                      {activeBooking.service?.name || 'Home Service'}
+                    </span>
+                    <StatusBadge status={activeBooking.status} size="sm" />
+                  </div>
+
+                  <p className="text-xs text-slate-400 flex items-center gap-2 font-mono">
+                    <span>Booking #{activeBooking.booking_number || activeBooking.id}</span>
+                    <span>•</span>
+                    <span>
+                      {activeBooking.booking_date ? new Date(activeBooking.booking_date).toLocaleDateString() : 'Scheduled'}
+                    </span>
+                  </p>
+
+                  {activeBooking.technician ? (
+                    <div className="flex items-center gap-3 pt-2">
+                      <div className="w-8 h-8 rounded-lg bg-sage-400/15 border border-sage-400/30 flex items-center justify-center text-sage-400 text-xs font-bold">
+                        {getTechName(activeBooking.technician).charAt(0)}
+                      </div>
+                      <div>
+                        <p className="text-xs font-semibold text-white">{getTechName(activeBooking.technician)}</p>
+                        <span className="text-[10px] text-slate-400 font-mono">Assigned Master Professional</span>
+                      </div>
+                    </div>
+                  ) : (
+                    <p className="text-xs text-sage-400 font-mono pt-1 flex items-center gap-1.5">
+                      <Clock className="w-3.5 h-3.5" />
+                      <span>Routing nearest certified technician...</span>
+                    </p>
+                  )}
                 </div>
 
-                <p className="text-xs text-slate-400 flex items-center gap-2 font-mono">
-                  <span>Booking #{activeBooking.booking_number || activeBooking.id}</span>
-                  <span>•</span>
-                  <span>
-                    {activeBooking.booking_date ? new Date(activeBooking.booking_date).toLocaleDateString() : 'Scheduled'}
-                  </span>
-                </p>
+                <div className="flex flex-wrap items-center gap-3 w-full md:w-auto shrink-0">
+                  <button
+                    onClick={() => setSelectedBooking(activeBooking)}
+                    className="btn-secondary text-xs px-4 py-2.5 flex items-center gap-1.5"
+                  >
+                    <Eye className="w-3.5 h-3.5" />
+                    <span>View Details</span>
+                  </button>
 
-                {activeBooking.technician ? (
-                  <div className="flex items-center gap-3 pt-2">
-                    <div className="w-8 h-8 rounded-lg bg-sage-400/15 border border-sage-400/30 flex items-center justify-center text-sage-400 text-xs font-bold">
-                      {getTechName(activeBooking.technician).charAt(0)}
+                  {['confirmed', 'in_progress', 'completed'].includes(activeBooking.status) && activeBooking.payment_status !== 'paid' && (
+                    <button
+                      onClick={() => setPaymentModalBooking(activeBooking)}
+                      className="btn-primary text-xs px-5 py-2.5 font-semibold flex items-center gap-1.5 shadow-subtle"
+                    >
+                      <CreditCard className="w-4 h-4" />
+                      <span>Pay Now</span>
+                    </button>
+                  )}
+
+                  {['arrived'].includes(activeBooking.status) && (
+                    <button
+                      onClick={() => setVerifyModalBooking(activeBooking)}
+                      className="btn-accent text-xs px-5 py-2.5 font-semibold flex items-center gap-1.5 shadow-accent"
+                    >
+                      <ShieldCheck className="w-4 h-4" />
+                      <span>Show QR Code</span>
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              {/* ── REAL-TIME ARRIVAL VERIFICATION BANNER ── */}
+              {activeBooking.status === 'arrived' && (
+                <div className="p-5 rounded-2xl bg-sage-400/10 border border-sage-400/30 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 animate-in fade-in duration-300">
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-2">
+                      <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-ping" />
+                      <span className="text-xs font-bold text-white uppercase tracking-wider">
+                        Technician Arrived at Location
+                      </span>
                     </div>
-                    <div>
-                      <p className="text-xs font-semibold text-white">{getTechName(activeBooking.technician)}</p>
-                      <span className="text-[10px] text-slate-400 font-mono">Assigned Master Professional</span>
-                    </div>
+                    <p className="text-xs text-slate-300">
+                      Share this 6-digit PIN with your technician to authorize service initiation:
+                    </p>
                   </div>
-                ) : (
-                  <p className="text-xs text-sage-400 font-mono pt-1 flex items-center gap-1.5">
-                    <Clock className="w-3.5 h-3.5" />
-                    <span>Routing nearest certified technician...</span>
-                  </p>
-                )}
-              </div>
 
-              <div className="flex flex-wrap items-center gap-3 w-full md:w-auto shrink-0">
-                <button
-                  onClick={() => setSelectedBooking(activeBooking)}
-                  className="btn-secondary text-xs px-4 py-2.5 flex items-center gap-1.5"
-                >
-                  <Eye className="w-3.5 h-3.5" />
-                  <span>View Details</span>
-                </button>
+                  <div className="flex items-center gap-3 self-stretch sm:self-auto justify-between sm:justify-end">
+                    {arrivedVerification?.code ? (
+                      <div className="flex items-center gap-2 font-mono text-xl font-extrabold text-emerald-400 bg-dark-950 px-5 py-2.5 rounded-xl border border-sage-400/40 tracking-[0.3em] shadow-[0_0_15px_rgba(16,185,129,0.2)]">
+                        {arrivedVerification.code}
+                      </div>
+                    ) : (
+                      <div className="text-xs font-mono text-slate-400 animate-pulse px-4 py-2 bg-dark-950 rounded-xl">
+                        Generating PIN...
+                      </div>
+                    )}
 
+                    <button
+                      onClick={() => setVerifyModalBooking(activeBooking)}
+                      className="btn-accent text-xs px-4 py-2.5 font-semibold flex items-center gap-1.5 shadow-accent shrink-0"
+                    >
+                      <ShieldCheck className="w-4 h-4" />
+                      <span>QR Code</span>
+                    </button>
+                  </div>
+                </div>
+              )}
 
-                {['confirmed', 'in_progress', 'completed'].includes(activeBooking.status) && activeBooking.payment_status !== 'paid' && (
-                  <button
-                    onClick={() => setPaymentModalBooking(activeBooking)}
-                    className="btn-primary text-xs px-5 py-2.5 font-semibold flex items-center gap-1.5 shadow-subtle"
-                  >
-                    <CreditCard className="w-4 h-4" />
-                    <span>Pay Now</span>
-                  </button>
-                )}
+              {/* ── REAL-TIME SERVICE IN PROGRESS & PAYMENT BANNER ── */}
+              {(activeBooking.status === 'confirmed' || activeBooking.status === 'in_progress') && (
+                <div className="p-5 rounded-2xl bg-dark-850 border border-dark-750 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 animate-in fade-in duration-300">
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-2">
+                      <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+                      <span className="text-xs font-bold text-white uppercase tracking-wider">
+                        Service Verified & In Progress
+                      </span>
+                    </div>
+                    <p className="text-xs text-slate-300">
+                      Technician is currently performing your home service. You can pay anytime during or after the service.
+                    </p>
+                  </div>
 
-                {['arrived'].includes(activeBooking.status) && (
-                  <button
-                    onClick={() => setVerifyModalBooking(activeBooking)}
-                    className="btn-accent text-xs px-5 py-2.5 font-semibold flex items-center gap-1.5 shadow-accent"
-                  >
-                    <ShieldCheck className="w-4 h-4" />
-                    <span>SmartVerify™ Code</span>
-                  </button>
-                )}
-              </div>
+                  <div className="flex items-center gap-3 shrink-0">
+                    {activeBooking.payment_status !== 'paid' ? (
+                      <button
+                        onClick={() => setPaymentModalBooking(activeBooking)}
+                        className="btn-primary text-xs px-6 py-2.5 font-semibold flex items-center gap-2 shadow-subtle"
+                      >
+                        <CreditCard className="w-4 h-4" />
+                        <span>Pay ₹{(activeBooking.final_price || activeBooking.total_amount || activeBooking.estimated_price || 0).toFixed(2)}</span>
+                      </button>
+                    ) : (
+                      <span className="text-xs font-mono px-4 py-2 rounded-xl bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 flex items-center gap-2 font-semibold">
+                        <CheckCircle2 className="w-4 h-4" />
+                        <span>Payment Completed</span>
+                      </span>
+                    )}
+                  </div>
+                </div>
+              )}
             </div>
           ) : (
             <div className="p-8 rounded-3xl bg-dark-900/60 border border-dark-750 text-center space-y-3">

@@ -141,11 +141,33 @@ export const ProviderDashboard: React.FC = () => {
     }
   };
 
+  const [inlineCodes, setInlineCodes] = useState<Record<number, string>>({});
+
+  const handleVerifyCode = async (bookingId: number, codeToVerify?: string) => {
+    const code = (codeToVerify || inlineCodes[bookingId] || '').trim();
+    if (code.length < 6) {
+      alert('Please enter the full 6-digit code or QR token.');
+      return;
+    }
+    try {
+      setActionLoading(bookingId);
+      await technicianApi.verifyCode(bookingId, code);
+      setInlineCodes((prev) => ({ ...prev, [bookingId]: '' }));
+      triggerLocalSync();
+      await loadTechnicianData(true);
+    } catch (err: any) {
+      console.error('Failed to verify code:', err);
+      alert(err?.response?.data?.detail || 'Invalid verification code. Please check with customer.');
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
   if (loading) {
     return <LoadingState message="Initializing Technician Workspace..." />;
   }
 
-  const activeJobs = jobs.filter((j) => ['in_progress', 'arrived', 'start_trip', 'on_the_way'].includes(j.status));
+  const activeJobs = jobs.filter((j) => ['accepted', 'confirmed', 'in_progress', 'arrived', 'start_trip', 'on_the_way'].includes(j.status));
   const pendingJobs = jobs.filter((j) => ['assigned', 'pending'].includes(j.status));
   const completedJobs = jobs.filter((j) => j.status === 'completed');
 
@@ -246,9 +268,9 @@ export const ProviderDashboard: React.FC = () => {
               <div className="space-y-4">
                 {jobs
                   .filter((j) => {
-                    if (activeTab === 'active') return ['in_progress', 'arrived', 'start_trip', 'on_the_way'].includes(j.status);
+                    if (activeTab === 'active') return ['accepted', 'confirmed', 'in_progress', 'arrived', 'start_trip', 'on_the_way'].includes(j.status);
                     if (activeTab === 'pending') return ['assigned', 'pending'].includes(j.status);
-                    if (activeTab === 'today') return ['assigned', 'pending', 'in_progress', 'arrived', 'start_trip', 'on_the_way'].includes(j.status);
+                    if (activeTab === 'today') return ['assigned', 'pending', 'accepted', 'confirmed', 'in_progress', 'arrived', 'start_trip', 'on_the_way'].includes(j.status);
                     return true; // 'all' will return true for all jobs including completed
                   })
                   .map((job) => (
@@ -328,15 +350,34 @@ export const ProviderDashboard: React.FC = () => {
                           </button>
                         )}
 
-                        {/* SmartVerify Customer OTP */}
+                        {/* Arrival & Verification: Inline PIN Entry + Modal Trigger */}
                         {job.status === 'arrived' && (
-                          <button
-                            onClick={() => setVerifyBooking(job)}
-                            className="btn-accent text-xs px-5 py-2 flex items-center gap-1.5 shadow-accent"
-                          >
-                            <ShieldCheck className="w-3.5 h-3.5" />
-                            <span>Verify Customer Passcode</span>
-                          </button>
+                          <div className="flex flex-wrap items-center gap-2">
+                            <div className="flex items-center gap-1.5 bg-dark-850 p-1 rounded-xl border border-dark-750">
+                              <input
+                                type="text"
+                                maxLength={6}
+                                placeholder="6-digit PIN"
+                                value={inlineCodes[job.id] || ''}
+                                onChange={(e) => setInlineCodes({ ...inlineCodes, [job.id]: e.target.value.replace(/[^0-9a-zA-Z]/g, '') })}
+                                className="w-24 px-2 py-1.5 text-center font-mono text-xs bg-dark-900 border border-dark-700 rounded-lg text-white tracking-widest focus:outline-none focus:border-sage-400"
+                              />
+                              <button
+                                onClick={() => handleVerifyCode(job.id)}
+                                disabled={actionLoading === job.id || (inlineCodes[job.id] || '').length < 6}
+                                className="btn-accent text-xs px-3 py-1.5 flex items-center gap-1 shadow-accent disabled:opacity-40 font-semibold"
+                              >
+                                <span>Verify</span>
+                              </button>
+                            </div>
+                            <button
+                              onClick={() => setVerifyBooking(job)}
+                              className="px-3 py-2 rounded-xl text-xs bg-dark-850 hover:bg-dark-800 text-slate-300 border border-dark-750 flex items-center gap-1"
+                            >
+                              <ShieldCheck className="w-3.5 h-3.5 text-sage-400" />
+                              <span>Passcode / QR Modal</span>
+                            </button>
+                          </div>
                         )}
 
                         {/* Confirmed / In Progress -> Complete */}
@@ -344,7 +385,7 @@ export const ProviderDashboard: React.FC = () => {
                           <button
                             onClick={() => handleJobAction(job.id, 'complete')}
                             disabled={actionLoading === job.id}
-                            className="btn-primary text-xs px-5 py-2 flex items-center gap-1.5 bg-emerald-500 hover:bg-emerald-400 text-dark-950 shadow-subtle"
+                            className="btn-primary text-xs px-5 py-2 flex items-center gap-1.5 bg-emerald-500 hover:bg-emerald-400 text-dark-950 shadow-subtle font-semibold"
                           >
                             <CheckCircle2 className="w-3.5 h-3.5" />
                             <span>Complete Job & Audit</span>
