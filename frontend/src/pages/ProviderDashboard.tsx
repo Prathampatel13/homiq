@@ -30,6 +30,7 @@ import { LoadingState } from '../components/ui/LoadingState';
 import { TechnicianVerifyModal } from '../components/modals/TechnicianVerifyModal';
 import { BookingDetailsModal } from '../components/modals/BookingDetailsModal';
 import { useRealTimeSync, triggerLocalSync } from '../services/realtime';
+import { getErrorMessage } from '../api/axios';
 
 export const ProviderDashboard: React.FC = () => {
   const { user } = useAuthStore();
@@ -135,7 +136,7 @@ export const ProviderDashboard: React.FC = () => {
       await loadTechnicianData(true);
     } catch (err: any) {
       console.error(`Failed to execute ${action}:`, err);
-      alert(err?.response?.data?.detail || `Action ${action} failed`);
+      alert(getErrorMessage(err, `Action ${action} failed`));
     } finally {
       setActionLoading(null);
     }
@@ -146,7 +147,7 @@ export const ProviderDashboard: React.FC = () => {
   const handleVerifyCode = async (bookingId: number, codeToVerify?: string) => {
     const code = (codeToVerify || inlineCodes[bookingId] || '').trim();
     if (code.length < 6) {
-      alert('Please enter the full 6-digit code or QR token.');
+      alert('Please enter the full 6-digit customer PIN.');
       return;
     }
     try {
@@ -157,7 +158,7 @@ export const ProviderDashboard: React.FC = () => {
       await loadTechnicianData(true);
     } catch (err: any) {
       console.error('Failed to verify code:', err);
-      alert(err?.response?.data?.detail || 'Invalid verification code. Please check with customer.');
+      alert(getErrorMessage(err, 'Invalid verification code. Please check with customer.'));
     } finally {
       setActionLoading(null);
     }
@@ -375,21 +376,46 @@ export const ProviderDashboard: React.FC = () => {
                               className="px-3 py-2 rounded-xl text-xs bg-dark-850 hover:bg-dark-800 text-slate-300 border border-dark-750 flex items-center gap-1"
                             >
                               <ShieldCheck className="w-3.5 h-3.5 text-sage-400" />
-                              <span>Passcode / QR Modal</span>
+                              <span>PIN Modal</span>
                             </button>
                           </div>
                         )}
 
-                        {/* Confirmed / In Progress -> Complete */}
+                        {/* Working / Ongoing Service: Payment Gate before Completion */}
                         {(job.status === 'confirmed' || job.status === 'in_progress') && (
-                          <button
-                            onClick={() => handleJobAction(job.id, 'complete')}
-                            disabled={actionLoading === job.id}
-                            className="btn-primary text-xs px-5 py-2 flex items-center gap-1.5 bg-emerald-500 hover:bg-emerald-400 text-dark-950 shadow-subtle font-semibold"
-                          >
-                            <CheckCircle2 className="w-3.5 h-3.5" />
-                            <span>Complete Job & Audit</span>
-                          </button>
+                          <div className="flex items-center gap-2">
+                            {job.payment_status !== 'paid' ? (
+                              <div className="flex items-center gap-2">
+                                <span className="text-[11px] font-mono px-3 py-1.5 rounded-xl bg-amber-500/10 text-amber-400 border border-amber-500/30 flex items-center gap-1.5">
+                                  <Clock className="w-3.5 h-3.5 animate-pulse" />
+                                  <span>Customer Payment Pending</span>
+                                </span>
+                                <button
+                                  disabled={true}
+                                  title="Customer must pay before work can be marked completed"
+                                  className="opacity-40 cursor-not-allowed text-xs px-4 py-2 rounded-xl bg-dark-800 text-slate-400 border border-dark-700 flex items-center gap-1.5 font-medium"
+                                >
+                                  <CheckCircle2 className="w-3.5 h-3.5" />
+                                  <span>Complete Service</span>
+                                </button>
+                              </div>
+                            ) : (
+                              <div className="flex items-center gap-2">
+                                <span className="text-[11px] font-mono px-2.5 py-1 rounded-lg bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 flex items-center gap-1">
+                                  <CheckCircle2 className="w-3.5 h-3.5" />
+                                  <span>Paid</span>
+                                </span>
+                                <button
+                                  onClick={() => handleJobAction(job.id, 'complete')}
+                                  disabled={actionLoading === job.id}
+                                  className="btn-primary text-xs px-5 py-2 flex items-center gap-1.5 bg-emerald-500 hover:bg-emerald-400 text-dark-950 shadow-subtle font-semibold"
+                                >
+                                  <CheckCircle2 className="w-3.5 h-3.5" />
+                                  <span>Complete Job & Audit</span>
+                                </button>
+                              </div>
+                            )}
+                          </div>
                         )}
                       </div>
                     </div>

@@ -286,7 +286,7 @@ export const CustomerDashboard: React.FC = () => {
                       className="btn-accent text-xs px-5 py-2.5 font-semibold flex items-center gap-1.5 shadow-accent"
                     >
                       <ShieldCheck className="w-4 h-4" />
-                      <span>Show QR Code</span>
+                      <span>View 6-Digit PIN</span>
                     </button>
                   )}
                 </div>
@@ -323,7 +323,7 @@ export const CustomerDashboard: React.FC = () => {
                       className="btn-accent text-xs px-4 py-2.5 font-semibold flex items-center gap-1.5 shadow-accent shrink-0"
                     >
                       <ShieldCheck className="w-4 h-4" />
-                      <span>QR Code</span>
+                      <span>PIN Details</span>
                     </button>
                   </div>
                 </div>
@@ -557,6 +557,9 @@ export const CustomerDashboard: React.FC = () => {
           onOpenReview={() => {
             setReviewModalBooking(selectedBooking);
             setSelectedBooking(null);
+          }}
+          onBookingUpdated={() => {
+            loadDashboardData(true);
           }}
         />
       )}

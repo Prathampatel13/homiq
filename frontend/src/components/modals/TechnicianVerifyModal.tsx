@@ -3,6 +3,7 @@ import { ShieldCheck, KeyRound, X, AlertCircle, Loader2 } from 'lucide-react';
 import { bookingsApi } from '../../api/bookings';
 import { technicianApi } from '../../api/technician';
 import { Booking } from '../../types';
+import { getErrorMessage } from '../../api/axios';
 
 export interface TechnicianVerifyModalProps {
   booking: Booking;
@@ -24,7 +25,7 @@ export const TechnicianVerifyModal: React.FC<TechnicianVerifyModalProps> = ({
   const handleVerify = async (e: React.FormEvent) => {
     e.preventDefault();
     if (code.length < 6) {
-      setError('Please enter the full 6-digit code or QR token.');
+      setError('Please enter the full 6-digit customer PIN.');
       return;
     }
     try {
@@ -38,7 +39,7 @@ export const TechnicianVerifyModal: React.FC<TechnicianVerifyModalProps> = ({
       onVerified();
       onClose();
     } catch (err: any) {
-      setError(err?.response?.data?.detail || 'Invalid code.');
+      setError(getErrorMessage(err, 'Invalid verification PIN. Please verify with the customer.'));
     } finally {
       setLoading(false);
     }
@@ -61,7 +62,7 @@ export const TechnicianVerifyModal: React.FC<TechnicianVerifyModalProps> = ({
             <ShieldCheck className="w-5 h-5" />
           </div>
           <div>
-            <h3 className="text-base font-bold text-white tracking-tight">SmartVerify™ Code</h3>
+            <h3 className="text-base font-bold text-white tracking-tight">Security PIN Verification</h3>
             <p className="text-xs text-slate-400 font-mono">Booking #{booking.booking_number || booking.id}</p>
           </div>
         </div>
@@ -76,7 +77,7 @@ export const TechnicianVerifyModal: React.FC<TechnicianVerifyModalProps> = ({
         <form onSubmit={handleVerify} className="space-y-6">
           <div className="p-4 rounded-2xl bg-dark-850 border border-dark-750 space-y-3">
             <label className="block text-xs font-semibold text-slate-200">
-              Enter Customer's 6-Digit Code
+              Enter Customer's 6-Digit PIN
             </label>
             <input
               type="text"
@@ -85,7 +86,7 @@ export const TechnicianVerifyModal: React.FC<TechnicianVerifyModalProps> = ({
                 setCode(e.target.value.replace(/[^0-9a-zA-Z]/g, ''));
                 setError(null);
               }}
-              placeholder="Enter Code"
+              placeholder="6-Digit PIN"
               className="w-full text-center tracking-[0.2em] text-xl font-mono font-bold bg-dark-900 border border-dark-750 focus:border-sage-400 rounded-xl py-3 text-white placeholder-slate-600 focus:outline-none focus:ring-1 focus:ring-sage-400/50"
               autoFocus
             />

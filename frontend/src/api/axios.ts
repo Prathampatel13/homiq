@@ -11,8 +11,19 @@ const api = axios.create({
   headers: {
     'Content-Type': 'application/json',
   },
-  timeout: 15000,
+  timeout: 60000,
 });
+
+export const getErrorMessage = (error: any, fallback = 'Operation failed'): string => {
+  if (!error) return fallback;
+  if (error.code === 'ECONNABORTED' || error.message?.includes('timeout')) {
+    return 'The backend server is waking up. Please wait 10-15 seconds and try again.';
+  }
+  if (!error.response && error.request) {
+    return 'Unable to connect to backend server. Please check your network or allow the server a moment to spin up.';
+  }
+  return error.response?.data?.detail || error.response?.data?.message || error.message || fallback;
+};
 
 let isRefreshing = false;
 let failedQueue: Array<{

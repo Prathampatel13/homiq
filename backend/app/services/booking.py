@@ -596,6 +596,7 @@ class BookingService:
     _ALLOWED_TRANSITIONS: dict[BookingStatus, set[BookingStatus]] = {
         BookingStatus.PENDING: {
             BookingStatus.ACCEPTED,
+            BookingStatus.CANCELLED,
         },
         BookingStatus.ASSIGNED: {
             BookingStatus.ACCEPTED,
@@ -613,9 +614,9 @@ class BookingService:
             BookingStatus.CANCELLED,
         },
         BookingStatus.ARRIVED: {
+            BookingStatus.IN_PROGRESS,
             BookingStatus.CONFIRMED,
             BookingStatus.WAITING_QR,
-            BookingStatus.IN_PROGRESS,
             BookingStatus.REJECTED,
             BookingStatus.CANCELLED,
         },
@@ -640,12 +641,16 @@ class BookingService:
         },
         BookingStatus.COMPLETED: {
             BookingStatus.WAITING_PAYMENT,
+            BookingStatus.PAID,
+            BookingStatus.CLOSED,
         },
         BookingStatus.WAITING_PAYMENT: {
             BookingStatus.PAID,
+            BookingStatus.CLOSED,
         },
         BookingStatus.PAID: {
             BookingStatus.REVIEW_PENDING,
+            BookingStatus.CLOSED,
         },
         BookingStatus.REVIEW_PENDING: {
             BookingStatus.CLOSED,
@@ -670,6 +675,7 @@ class BookingService:
         BookingStatus.ASSIGNED,
         BookingStatus.ACCEPTED,
         BookingStatus.ON_THE_WAY,
+        BookingStatus.ARRIVED,
     }
 
     # Customer-reschedule allowed source statuses.
@@ -1132,9 +1138,9 @@ class BookingService:
 
         updated = self._transition(
             booking,
-            BookingStatus.CONFIRMED,
+            BookingStatus.IN_PROGRESS,
             current_user,
-            reason="Customer passcode verified. Service confirmed and initiated.",
+            reason="Customer passcode verified. Work initiated and in progress.",
         )
         return BookingResponse.model_validate(updated)
 
@@ -1143,7 +1149,7 @@ class BookingService:
         current_user: User,
         booking_id: int,
     ) -> dict[str, Any]:
-        """Returns verification code, QR token, and status for the customer and technician."""
+        """Returns verification code, status, and service details for customer and technician."""
         from app.models.qr import QRVerification
 
         booking = self._get_booking_for(current_user, booking_id)
@@ -1226,12 +1232,24 @@ class BookingService:
         booking_id: int,
         payload: Optional[BookingRejectRequest] = None,
     ) -> BookingResponse:
-        """Complete the service for a booking (technician or admin)."""
+        """Complete the service for a booking (technician or admin).
+        
+        Strictly enforces that customer payment must be completed before the service can be marked as complete.
+        """
         booking = self._get_booking_for(current_user, booking_id)
         self._ensure_technician_role(current_user, booking)
         self._ensure_transition_change(booking, BookingStatus.COMPLETED)
 
-        reason = payload.reason if payload else None
+        # Strict payment check: Customer must complete payment before completion!
+        if not current_user.is_superuser:
+            pay_st = booking.payment_status.value if hasattr(booking.payment_status, "value") else str(booking.payment_status)
+            if pay_st.lower() != "paid":
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="Customer payment has not been received yet. Customer must complete payment before this service can be marked completed.",
+                )
+
+        reason = payload.reason if payload else "Service completed and verified"
         updated = self._transition(
             booking,
             BookingStatus.COMPLETED,

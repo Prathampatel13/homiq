@@ -9,7 +9,6 @@ import {
 } from 'lucide-react';
 import { bookingsApi } from '../../api/bookings';
 import { Booking } from '../../types';
-import { QRCodeSVG } from 'qrcode.react';
 
 export interface SmartVerifyModalProps {
   booking: Booking;
@@ -97,26 +96,26 @@ export const SmartVerifyModal: React.FC<SmartVerifyModalProps> = ({
         ) : (
           <div className="space-y-6 text-center">
             <div className="p-6 rounded-2xl bg-dark-850/80 border border-dark-750">
-              <span className="text-[11px] font-mono text-slate-400 uppercase tracking-wider block mb-3">
-                Share code or show QR to technician
+              <span className="text-[11px] font-mono text-slate-400 uppercase tracking-wider block mb-2">
+                Security Arrival Verification PIN
               </span>
               
               {!details ? (
-                <div className="h-12 flex items-center justify-center text-xs font-mono text-slate-400 animate-pulse">
-                  Loading verification details...
+                <div className="h-16 flex items-center justify-center text-xs font-mono text-slate-400 animate-pulse">
+                  Generating secure PIN...
                 </div>
               ) : (
                 <>
-                  <div className="flex flex-col items-center justify-center gap-4">
-                    <div className="p-2 bg-white rounded-xl inline-block">
-                      <QRCodeSVG value={details.qr_data || ''} size={120} />
-                    </div>
+                  <div className="flex flex-col items-center justify-center gap-3 py-2">
+                    <p className="text-xs text-slate-300">
+                      Share this 6-digit PIN with your technician to verify their arrival:
+                    </p>
                     
                     <div className="flex items-center justify-center gap-2 mt-2">
                       {details.verification_code.split('').map((digit, idx) => (
                         <div
                           key={idx}
-                          className="w-10 h-12 rounded-xl bg-dark-900 border border-sage-400/40 text-xl sm:text-2xl font-mono font-bold text-white flex items-center justify-center shadow-accent"
+                          className="w-11 h-13 sm:w-12 sm:h-14 rounded-2xl bg-dark-900 border border-sage-400/50 text-2xl sm:text-3xl font-mono font-extrabold text-emerald-400 flex items-center justify-center shadow-[0_0_15px_rgba(16,185,129,0.2)]"
                         >
                           {digit}
                         </div>
@@ -129,7 +128,7 @@ export const SmartVerifyModal: React.FC<SmartVerifyModalProps> = ({
                     className="mt-4 inline-flex items-center gap-1.5 text-xs font-mono text-sage-400 hover:text-sage-300 transition-colors"
                   >
                     <Copy className="w-3.5 h-3.5" />
-                    <span>{copied ? 'Copied to clipboard' : 'Copy code'}</span>
+                    <span>{copied ? 'Copied to clipboard' : 'Copy PIN'}</span>
                   </button>
                 </>
               )}

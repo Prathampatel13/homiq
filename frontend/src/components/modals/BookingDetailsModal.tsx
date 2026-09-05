@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { 
   X, 
   Calendar, 
@@ -8,13 +8,16 @@ import {
   ShieldCheck, 
   CreditCard, 
   Phone, 
-  CheckCircle2
+  CheckCircle2,
+  XCircle
 } from 'lucide-react';
 import { Booking } from '../../types';
 import { StatusBadge } from '../ui/StatusBadge';
 import { BookingMediaSection } from '../media/BookingMediaSection';
 import { CustomerHistorySection } from '../bookings/CustomerHistorySection';
 import { useAuthStore } from '../../store/useAuthStore';
+import { bookingsApi } from '../../api/bookings';
+import { triggerLocalSync } from '../../services/realtime';
 
 export interface BookingDetailsModalProps {
   booking: Booking | null;
@@ -23,6 +26,7 @@ export interface BookingDetailsModalProps {
   onOpenVerify?: () => void;
   onOpenPayment?: () => void;
   onOpenReview?: () => void;
+  onBookingUpdated?: () => void;
 }
 
 export const BookingDetailsModal: React.FC<BookingDetailsModalProps> = ({
@@ -32,8 +36,10 @@ export const BookingDetailsModal: React.FC<BookingDetailsModalProps> = ({
   onOpenVerify,
   onOpenPayment,
   onOpenReview,
+  onBookingUpdated,
 }) => {
   const { user } = useAuthStore();
+  const [cancelling, setCancelling] = useState(false);
   if (!isOpen || !booking) return null;
 
   const getTechName = (tech: any) => {
@@ -41,6 +47,25 @@ export const BookingDetailsModal: React.FC<BookingDetailsModalProps> = ({
     if (typeof tech.full_name === 'string') return tech.full_name;
     if (tech.user?.full_name) return tech.user.full_name;
     return 'Master Technician';
+  };
+
+  const handleCancelBooking = async () => {
+    if (!window.confirm('Are you sure you want to cancel this booking? This will remove the dispatch request.')) {
+      return;
+    }
+    try {
+      setCancelling(true);
+      await bookingsApi.cancelBooking(booking.id, 'Cancelled by customer');
+      triggerLocalSync();
+      if (onBookingUpdated) {
+        onBookingUpdated();
+      }
+      onClose();
+    } catch (err: any) {
+      alert(err?.response?.data?.detail || 'Failed to cancel booking. Please try again.');
+    } finally {
+      setCancelling(false);
+    }
   };
 
   return (
@@ -101,7 +126,7 @@ export const BookingDetailsModal: React.FC<BookingDetailsModalProps> = ({
               <span>
                 {booking.address 
                   ? `${booking.address.house_no}, ${booking.address.area}, ${booking.address.city || ''}` 
-                  : 'Address details unavailable (Please refresh)'}
+                  : 'Address details on record'}
               </span>
             </div>
           </div>
@@ -126,17 +151,14 @@ export const BookingDetailsModal: React.FC<BookingDetailsModalProps> = ({
             )}
           </div>
 
-          {/* SmartVerify Token Status */}
+          {/* Live Fulfillment State */}
           <div className="p-4 rounded-2xl bg-dark-850 border border-dark-750 space-y-2">
-            <span className="text-[11px] font-mono text-sage-400 uppercase tracking-wider block">Security Protocol</span>
+            <span className="text-[11px] font-mono text-sage-400 uppercase tracking-wider block">Service State</span>
             <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2 text-xs text-slate-200">
-                <ShieldCheck className="w-4 h-4 text-sage-400" />
-                <span>SmartVerify Handshake</span>
-              </div>
-              <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/30">
-                Active
+              <span className="text-xs text-slate-200 capitalize font-medium">
+                {booking.status === 'arrived' ? 'Technician Arrived' : booking.status === 'in_progress' ? 'Service Ongoing' : booking.status}
               </span>
+              <StatusBadge status={booking.status} size="sm" />
             </div>
           </div>
         </div>
@@ -160,54 +182,54 @@ export const BookingDetailsModal: React.FC<BookingDetailsModalProps> = ({
           assignedTechnicianId={(booking.technician as any)?.user_id || (booking.technician as any)?.id} 
         />
 
-
         {/* Action Buttons */}
-        <div className="flex flex-wrap items-center justify-end gap-3 pt-4 border-t border-dark-750">
-          {onOpenVerify && booking.status === 'arrived' && (
+        <div className="flex flex-wrap items-center justify-between gap-3 pt-4 border-t border-dark-750">
+          {/* Cancel Booking Action for Customer */}
+          {['pending', 'assigned', 'accepted', 'arrived', 'on_the_way'].includes(booking.status) ? (
             <button
-              onClick={() => {
-                onClose();
-                onOpenVerify();
-              }}
-              className="btn-accent text-xs px-4 py-2.5 flex items-center gap-1.5"
+              onClick={handleCancelBooking}
+              disabled={cancelling}
+              className="px-4 py-2.5 rounded-xl text-xs bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/30 font-semibold flex items-center gap-1.5 transition-colors disabled:opacity-50"
             >
-              <ShieldCheck className="w-4 h-4" />
-              <span>SmartVerify™ Code</span>
+              <XCircle className="w-4 h-4" />
+              <span>{cancelling ? 'Cancelling...' : 'Cancel Booking'}</span>
             </button>
-          )}
+          ) : <div />}
 
-          {onOpenPayment && (
+          <div className="flex items-center gap-3">
+            {onOpenPayment && ['confirmed', 'in_progress'].includes(booking.status) && booking.payment_status !== 'paid' && (
+              <button
+                onClick={() => {
+                  onClose();
+                  onOpenPayment();
+                }}
+                className="btn-primary text-xs px-4 py-2.5 flex items-center gap-1.5 font-semibold"
+              >
+                <CreditCard className="w-4 h-4" />
+                <span>Pay Now</span>
+              </button>
+            )}
+
+            {onOpenReview && booking.status === 'completed' && (
+              <button
+                onClick={() => {
+                  onClose();
+                  onOpenReview();
+                }}
+                className="btn-secondary text-xs px-4 py-2.5 flex items-center gap-1.5"
+              >
+                <CheckCircle2 className="w-4 h-4 text-sage-400" />
+                <span>Leave Review</span>
+              </button>
+            )}
+
             <button
-              onClick={() => {
-                onClose();
-                onOpenPayment();
-              }}
-              className="btn-primary text-xs px-4 py-2.5 flex items-center gap-1.5"
+              onClick={onClose}
+              className="btn-secondary text-xs px-4 py-2.5"
             >
-              <CreditCard className="w-4 h-4" />
-              <span>Pay Now</span>
+              Close
             </button>
-          )}
-
-          {onOpenReview && booking.status === 'completed' && (
-            <button
-              onClick={() => {
-                onClose();
-                onOpenReview();
-              }}
-              className="btn-secondary text-xs px-4 py-2.5 flex items-center gap-1.5"
-            >
-              <CheckCircle2 className="w-4 h-4 text-sage-400" />
-              <span>Leave Workmanship Review</span>
-            </button>
-          )}
-
-          <button
-            onClick={onClose}
-            className="btn-secondary text-xs px-4 py-2.5"
-          >
-            Close
-          </button>
+          </div>
         </div>
       </div>
     </div>
