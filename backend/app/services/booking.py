@@ -1056,31 +1056,35 @@ class BookingService:
         now = datetime.now(timezone.utc)
         expires_at = now + timedelta(hours=2)
 
-        qr_rec = self.db.scalar(select(QRVerification).where(QRVerification.booking_id == booking.id))
-        tech_id = booking.technician_id
-        if not tech_id and current_user.technician:
-            tech_id = current_user.technician.id
+        tech = self.technician_crud.get_by_user_id(current_user.id)
+        tech_id = booking.technician_id or (tech.id if tech else None)
+        if tech_id and not booking.technician_id:
+            booking.technician_id = tech_id
 
-        if not qr_rec:
-            qr_rec = QRVerification(
-                booking_id=booking.id,
-                technician_id=tech_id or 0,
-                token=qr_token,
-                verification_code=verification_code,
-                verification_status="pending",
-                expires_at=expires_at,
-                created_at=now,
-            )
-            self.db.add(qr_rec)
-        else:
-            qr_rec.token = qr_token
-            qr_rec.verification_code = verification_code
-            qr_rec.verification_status = "pending"
-            qr_rec.expires_at = expires_at
-            if tech_id:
-                qr_rec.technician_id = tech_id
-
-        self.db.commit()
+        try:
+            qr_rec = self.db.scalar(select(QRVerification).where(QRVerification.booking_id == booking.id))
+            if not qr_rec:
+                qr_rec = QRVerification(
+                    booking_id=booking.id,
+                    technician_id=tech_id,
+                    token=qr_token,
+                    verification_code=verification_code,
+                    verification_status="pending",
+                    expires_at=expires_at,
+                    created_at=now,
+                )
+                self.db.add(qr_rec)
+            else:
+                qr_rec.token = qr_token
+                qr_rec.verification_code = verification_code
+                qr_rec.verification_status = "pending"
+                qr_rec.expires_at = expires_at
+                if tech_id:
+                    qr_rec.technician_id = tech_id
+            self.db.commit()
+        except Exception as exc:
+            self.db.rollback()
+            logger.error(f"Error persisting verification record: {exc}")
 
         reason = payload.reason if payload else "Technician arrived at location"
         updated = self._transition(
@@ -1176,21 +1180,29 @@ class BookingService:
             code = f"{random.randint(100000, 999999)}"
             qr_token = f"HMQ-VERIFY-{booking.id}-{secrets.token_hex(8)}"
             now = datetime.now(timezone.utc)
-            if not qr_rec:
-                qr_rec = QRVerification(
-                    booking_id=booking.id,
-                    technician_id=booking.technician_id or 0,
-                    token=qr_token,
-                    verification_code=code,
-                    verification_status="pending",
-                    expires_at=now + timedelta(hours=2),
-                    created_at=now,
-                )
-                self.db.add(qr_rec)
-            else:
-                qr_rec.verification_code = code
-                qr_rec.token = qr_token
-            self.db.commit()
+            tech = self.technician_crud.get_by_user_id(current_user.id)
+            tech_id = booking.technician_id or (tech.id if tech else None)
+            try:
+                if not qr_rec:
+                    qr_rec = QRVerification(
+                        booking_id=booking.id,
+                        technician_id=tech_id,
+                        token=qr_token,
+                        verification_code=code,
+                        verification_status="pending",
+                        expires_at=now + timedelta(hours=2),
+                        created_at=now,
+                    )
+                    self.db.add(qr_rec)
+                else:
+                    qr_rec.verification_code = code
+                    qr_rec.token = qr_token
+                    if tech_id and not qr_rec.technician_id:
+                        qr_rec.technician_id = tech_id
+                self.db.commit()
+            except Exception as exc:
+                self.db.rollback()
+                logger.error(f"Error persisting verification details: {exc}")
 
         return {
             "booking_id": booking.id,

@@ -1,10 +1,15 @@
+import logging
+import traceback
 from pathlib import Path
 from typing import Any
 
-from fastapi import Depends, FastAPI
+from fastapi import Depends, FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
 from sqlalchemy.orm import Session
+
+logger = logging.getLogger("homiq")
 
 import app.models
 
@@ -55,6 +60,29 @@ def seed_initial_data():
             if not existing:
                 db.add(Role(name=r_name, description=r_desc))
         db.commit()
+
+        if engine.dialect.name == "postgresql":
+            from sqlalchemy import text
+            try:
+                db.execute(text("""
+                    ALTER TABLE qr_verifications ADD COLUMN IF NOT EXISTS customer_pin_hash VARCHAR(255);
+                    ALTER TABLE qr_verifications ADD COLUMN IF NOT EXISTS pin_expires_at TIMESTAMP WITH TIME ZONE;
+                    ALTER TABLE qr_verifications ADD COLUMN IF NOT EXISTS pin_attempt_count INTEGER DEFAULT 0;
+                    ALTER TABLE qr_verifications ADD COLUMN IF NOT EXISTS customer_pin_verified_at TIMESTAMP WITH TIME ZONE;
+                    ALTER TABLE qr_verifications ADD COLUMN IF NOT EXISTS technician_qr_verified_at TIMESTAMP WITH TIME ZONE;
+                    ALTER TABLE qr_verifications ADD COLUMN IF NOT EXISTS customer_confirmed_at TIMESTAMP WITH TIME ZONE;
+                    ALTER TABLE qr_verifications ADD COLUMN IF NOT EXISTS technician_confirmed_at TIMESTAMP WITH TIME ZONE;
+                    ALTER TABLE qr_verifications ADD COLUMN IF NOT EXISTS verified_at TIMESTAMP WITH TIME ZONE;
+                    ALTER TABLE qr_verifications ADD COLUMN IF NOT EXISTS verification_status VARCHAR(50) DEFAULT 'pending';
+                    ALTER TABLE qr_verifications ALTER COLUMN technician_id DROP NOT NULL;
+                    ALTER TABLE qr_verifications ALTER COLUMN token DROP NOT NULL;
+                    ALTER TABLE qr_verifications ALTER COLUMN verification_code DROP NOT NULL;
+                    ALTER TABLE qr_verifications ALTER COLUMN expires_at DROP NOT NULL;
+                """))
+                db.commit()
+            except Exception as schema_exc:
+                db.rollback()
+                logger.warning(f"Schema auto-alignment warning: {schema_exc}")
     except Exception as exc:
         db.rollback()
         logger.warning(f"Initial data auto-seeding skipped: {exc}")
@@ -69,6 +97,15 @@ app = FastAPI(
     docs_url="/docs",
     redoc_url="/redoc",
 )
+
+@app.exception_handler(Exception)
+async def global_exception_handler(request: Request, exc: Exception):
+    tb = traceback.format_exc()
+    logger.error(f"Global unhandled error on {request.method} {request.url}: {exc}\n{tb}")
+    return JSONResponse(
+        status_code=500,
+        content={"detail": str(exc), "trace": tb.splitlines()[-6:]}
+    )
 
 @app.on_event("startup")
 async def startup_event():

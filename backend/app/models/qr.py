@@ -12,7 +12,7 @@ class QRVerification(Base):
 
     id: Mapped[int] = mapped_column(primary_key=True, index=True)
     booking_id: Mapped[int] = mapped_column(ForeignKey("bookings.id"), nullable=False)
-    technician_id: Mapped[int] = mapped_column(ForeignKey("technicians.id"), nullable=False)
+    technician_id: Mapped[Optional[int]] = mapped_column(ForeignKey("technicians.id"), nullable=True)
     
     # QR Token fields (Technician displays, Customer scans)
     token: Mapped[str] = mapped_column(String(255), nullable=True)

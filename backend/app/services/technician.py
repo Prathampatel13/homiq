@@ -290,8 +290,13 @@ class TechnicianService:
         from app.schemas.bookings import BookingRejectRequest
         from app.services.booking import BookingService
 
-        self._get_technician_or_404(current_user.id)
+        technician = self._get_technician_or_404(current_user.id)
         booking_service = BookingService(self.db)
+        booking = booking_service.crud.get_booking(booking_id)
+        if booking and not booking.technician_id:
+            booking_service.crud.update_booking(booking_id, {"technician_id": technician.id})
+            self.db.commit()
+
         booking_service.mark_arrived(
             current_user, booking_id, BookingRejectRequest(reason=reason)
         )
