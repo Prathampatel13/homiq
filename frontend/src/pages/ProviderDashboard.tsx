@@ -95,7 +95,7 @@ export const ProviderDashboard: React.FC = () => {
   // Real-time synchronization across dashboards & tabs
   useRealTimeSync(() => {
     loadTechnicianData(true);
-  }, 6000);
+  }, 15000);
 
   const handleToggleOnline = async () => {
     try {
@@ -308,6 +308,18 @@ export const ProviderDashboard: React.FC = () => {
                             <span>
                               {job.address ? `${job.address.house_no} ${job.address.area}, ${job.address.city}` : 'Customer Address on record'}
                             </span>
+                            {job.address && (
+                              <a 
+                                href={`https://maps.google.com/?q=${encodeURIComponent(`${job.address.house_no} ${job.address.area}, ${job.address.city}, ${job.address.pincode}`)}`} 
+                                target="_blank" 
+                                rel="noopener noreferrer"
+                                className="ml-2 text-[10px] text-sage-400 hover:text-sage-300 underline underline-offset-2 flex items-center gap-1"
+                                title="Open in Google Maps"
+                              >
+                                <Navigation className="w-3 h-3" />
+                                Navigate
+                              </a>
+                            )}
                           </div>
                         </div>
 
@@ -388,15 +400,20 @@ export const ProviderDashboard: React.FC = () => {
                               <div className="flex items-center gap-2">
                                 <span className="text-[11px] font-mono px-3 py-1.5 rounded-xl bg-amber-500/10 text-amber-400 border border-amber-500/30 flex items-center gap-1.5">
                                   <Clock className="w-3.5 h-3.5 animate-pulse" />
-                                  <span>Customer Payment Pending</span>
+                                  <span>Payment Pending (Cash/Later)</span>
                                 </span>
                                 <button
-                                  disabled={true}
-                                  title="Customer must pay before work can be marked completed"
-                                  className="opacity-40 cursor-not-allowed text-xs px-4 py-2 rounded-xl bg-dark-800 text-slate-400 border border-dark-700 flex items-center gap-1.5 font-medium"
+                                  onClick={() => {
+                                    if (window.confirm("Customer hasn't paid via app. Mark as completed and collect cash/invoice later?")) {
+                                      handleJobAction(job.id, 'complete');
+                                    }
+                                  }}
+                                  disabled={actionLoading === job.id}
+                                  title="Complete work and collect payment offline"
+                                  className="btn-primary text-xs px-5 py-2 rounded-xl bg-amber-500/20 text-amber-400 border border-amber-500/40 hover:bg-amber-500/30 flex items-center gap-1.5 font-medium"
                                 >
                                   <CheckCircle2 className="w-3.5 h-3.5" />
-                                  <span>Complete Service</span>
+                                  <span>Complete Offline</span>
                                 </button>
                               </div>
                             ) : (

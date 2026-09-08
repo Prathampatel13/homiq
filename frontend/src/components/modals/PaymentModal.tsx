@@ -37,17 +37,59 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
       setLoading(true);
       setError(null);
 
-      await paymentsApi.demoPay(booking.id);
+      // 1. Create order
+      const orderData = await paymentsApi.createOrder(booking.id);
+
+      // 2. Auto-settle if free/discounted
+      if (orderData.status === 'paid' || orderData.status === 'PAID') {
+        setSuccess(true);
+        setTimeout(() => {
+          onSuccess();
+          onClose();
+        }, 1800);
+        return;
+      }
+
+      // 3. Initialize Razorpay Checkout
+      const options = {
+        key: orderData.key_id,
+        amount: orderData.amount,
+        currency: orderData.currency,
+        name: 'HomiQ Services',
+        description: `Payment for Booking #${booking.booking_number || booking.id}`,
+        order_id: orderData.id,
+        handler: async (response: any) => {
+          try {
+            setLoading(true);
+            await paymentsApi.verifyPayment({
+              razorpay_order_id: response.razorpay_order_id,
+              razorpay_payment_id: response.razorpay_payment_id,
+              razorpay_signature: response.razorpay_signature,
+            });
+            setSuccess(true);
+            setTimeout(() => {
+              onSuccess();
+              onClose();
+            }, 1800);
+          } catch (err: any) {
+            setError(err?.response?.data?.detail || 'Payment verification failed.');
+            setLoading(false);
+          }
+        },
+        theme: {
+          color: '#10b981', // emerald-500
+        },
+      };
+
+      const rzp = new (window as any).Razorpay(options);
+      rzp.on('payment.failed', function (response: any) {
+        setError(response.error.description || 'Payment failed.');
+      });
+      rzp.open();
       
-      setSuccess(true);
-      setTimeout(() => {
-        onSuccess();
-        onClose();
-      }, 1800);
     } catch (err: any) {
       console.error('Payment failure:', err);
-      setError(err?.response?.data?.detail || 'Demo Payment failed. Please try again.');
-    } finally {
+      setError(err?.response?.data?.detail || 'Failed to initialize payment.');
       setLoading(false);
     }
   };

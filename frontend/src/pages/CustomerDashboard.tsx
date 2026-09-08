@@ -95,7 +95,7 @@ export const CustomerDashboard: React.FC = () => {
   // Real-time synchronization across dashboards & tabs
   useRealTimeSync(() => {
     loadDashboardData(true);
-  }, 6000);
+  }, 15000);
 
   const activeBooking = bookings.find((b) => 
     ['assigned', 'accepted', 'in_progress', 'arrived', 'start_trip', 'pending', 'confirmed', 'on_the_way'].includes(b.status)
@@ -120,12 +120,24 @@ export const CustomerDashboard: React.FC = () => {
 
 
   const handleDeleteAddress = async (id: number) => {
+    // Check if any active booking uses this address
+    const hasActiveBooking = bookings.some(b => 
+      b.address_id === id && 
+      ['assigned', 'accepted', 'in_progress', 'arrived', 'start_trip', 'pending', 'confirmed', 'on_the_way'].includes(b.status)
+    );
+    
+    if (hasActiveBooking) {
+      alert('Cannot delete this address as it is currently linked to an active service dispatch.');
+      return;
+    }
+
     if (!window.confirm('Remove this service address?')) return;
     try {
       await customerApi.deleteAddress(id);
       setAddresses(addresses.filter((a) => a.id !== id));
-    } catch (err) {
+    } catch (err: any) {
       console.error('Failed to delete address:', err);
+      alert(err.response?.data?.detail || 'Failed to delete address');
     }
   };
 

@@ -47,16 +47,18 @@ export const LandingPage: React.FC = () => {
   useEffect(() => {
     const loadHomeData = async () => {
       setLoading(true);
-      setTimeout(async () => {
-        try {
-          // MOCK TO PREVENT 15s HANG
-          setCategories([]);
-          setFeaturedServices([]);
-          setRecentJobs([]);
-        } finally {
-          setLoading(false);
-        }
-      }, 100);
+      try {
+        const [cats, servs] = await Promise.all([
+          servicesApi.getCategories(),
+          servicesApi.getServices({ limit: 4 })
+        ]);
+        setCategories(cats);
+        setFeaturedServices(servs);
+      } catch (e) {
+        console.error('Failed to load home data', e);
+      } finally {
+        setLoading(false);
+      }
     };
 
     loadHomeData();

@@ -7,6 +7,7 @@ export interface RazorpayOrderResponse {
   currency: string;
   payment_id: number;
   key_id?: string;
+  status?: string;
 }
 
 export const paymentsApi = {

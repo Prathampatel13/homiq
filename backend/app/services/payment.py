@@ -130,23 +130,13 @@ class PaymentService:
                 detail="This booking does not belong to you.",
             )
 
-        # Validate payable amount
-        # Prefer final_price; fall back to estimated_price when set by the customer.
-        payable = booking.final_price or booking.estimated_price or 0.0
-        if payable <= 0:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Booking does not have a valid price to pay.",
-            )
-
-        # Convert ₹ to paise
-        amount_paise = int(payable * 100)
+        payable = float(booking.final_price or booking.estimated_price or 0.0)
         
+        # ── Auto-Settle Zero-Cost Bookings ──────────────────────────
+        amount_paise = int(payable * 100)
         if amount_paise < 100:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Minimum amount must be at least ₹1 (100 paise).",
-            )
+            logger.info(f"Auto-settling zero-cost booking {booking.id}")
+            return self.demo_pay(current_user, booking.id, payment_method="Free/Discounted").model_dump()
 
         # ── Idempotency: resume an existing CREATED order ──────────
         existing = self.crud.get_by_booking(payload.booking_id)
