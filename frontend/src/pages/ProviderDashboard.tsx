@@ -17,7 +17,8 @@ import {
   AlertCircle,
   Eye,
   CheckSquare,
-  Bell
+  Bell,
+  Camera
 } from 'lucide-react';
 import { technicianApi } from '../api/technician';
 import { bookingsApi } from '../api/bookings';
@@ -49,6 +50,16 @@ export const ProviderDashboard: React.FC = () => {
 
   const [verifyBooking, setVerifyBooking] = useState<Booking | null>(null);
   const [detailsBooking, setDetailsBooking] = useState<Booking | null>(null);
+
+  const getProofStatus = (note?: string | null) => {
+    if (!note) return null;
+    try {
+      const data = JSON.parse(note);
+      return data.proof_status || null;
+    } catch {
+      return null;
+    }
+  };
 
   const loadTechnicianData = async (isBackground = false) => {
     try {
@@ -396,40 +407,62 @@ export const ProviderDashboard: React.FC = () => {
                           </div>
                         )}
 
-                        {/* Working / Ongoing Service: Payment Gate before Completion */}
+                        {/* Working / Ongoing Service: Proof of Work -> Customer Approval -> Complete */}
                         {(job.status === 'confirmed' || job.status === 'in_progress') && (
                           <div className="flex items-center gap-2">
-                            {job.payment_status !== 'paid' ? (
+                            {getProofStatus(job.admin_note) === 'approved' ? (
+                              <div className="flex items-center gap-2">
+                                <span className="text-[11px] font-mono px-3 py-1.5 rounded-xl bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 flex items-center gap-1.5 font-bold">
+                                  <CheckCircle2 className="w-3.5 h-3.5" />
+                                  <span>Customer Approved Work</span>
+                                </span>
+                                <button
+                                  onClick={() => handleJobAction(job.id, 'complete')}
+                                  disabled={actionLoading === job.id}
+                                  className="btn-primary text-xs px-5 py-2 flex items-center gap-1.5 bg-emerald-500 hover:bg-emerald-400 text-dark-950 font-bold shadow-subtle animate-pulse"
+                                >
+                                  <CheckCircle2 className="w-3.5 h-3.5" />
+                                  <span>{actionLoading === job.id ? 'Finalizing...' : 'Complete Job'}</span>
+                                </button>
+                              </div>
+                            ) : getProofStatus(job.admin_note) === 'submitted' ? (
                               <div className="flex items-center gap-2">
                                 <span className="text-[11px] font-mono px-3 py-1.5 rounded-xl bg-amber-500/10 text-amber-400 border border-amber-500/30 flex items-center gap-1.5">
                                   <Clock className="w-3.5 h-3.5 animate-pulse" />
-                                  <span>Payment Pending (Cash/Later)</span>
+                                  <span>Proof Submitted • Awaiting User Approval</span>
                                 </span>
                                 <button
                                   onClick={() => setCompletingJobId(job.id)}
-                                  disabled={actionLoading === job.id}
-                                  title="Complete work and collect payment offline"
-                                  className="btn-primary text-xs px-5 py-2 rounded-xl bg-amber-500/20 text-amber-400 border border-amber-500/40 hover:bg-amber-500/30 flex items-center gap-1.5 font-medium"
+                                  className="px-3 py-1.5 text-xs font-mono rounded-xl bg-dark-850 hover:bg-dark-800 text-slate-300 border border-dark-750 flex items-center gap-1"
+                                  title="Update or view uploaded proof photos"
                                 >
-                                  <CheckCircle2 className="w-3.5 h-3.5" />
-                                  <span>Complete Offline</span>
+                                  <Camera className="w-3.5 h-3.5" />
+                                  <span>Update Evidence</span>
+                                </button>
+                              </div>
+                            ) : getProofStatus(job.admin_note) === 'changes_requested' ? (
+                              <div className="flex items-center gap-2">
+                                <span className="text-[11px] font-mono px-3 py-1.5 rounded-xl bg-red-500/10 text-red-400 border border-red-500/30 flex items-center gap-1.5">
+                                  <AlertCircle className="w-3.5 h-3.5" />
+                                  <span>Changes Requested by Customer</span>
+                                </span>
+                                <button
+                                  onClick={() => setCompletingJobId(job.id)}
+                                  className="btn-primary text-xs px-4 py-2 rounded-xl bg-amber-500 text-dark-950 font-bold flex items-center gap-1.5"
+                                >
+                                  <Camera className="w-3.5 h-3.5" />
+                                  <span>Re-upload Evidence</span>
                                 </button>
                               </div>
                             ) : (
-                              <div className="flex items-center gap-2">
-                                <span className="text-[11px] font-mono px-2.5 py-1 rounded-lg bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 flex items-center gap-1">
-                                  <CheckCircle2 className="w-3.5 h-3.5" />
-                                  <span>Paid</span>
-                                </span>
-                                <button
-                                  onClick={() => setCompletingJobId(job.id)}
-                                  disabled={actionLoading === job.id}
-                                  className="btn-primary text-xs px-5 py-2 flex items-center gap-1.5 bg-emerald-500 hover:bg-emerald-400 text-dark-950 shadow-subtle font-semibold"
-                                >
-                                  <CheckCircle2 className="w-3.5 h-3.5" />
-                                  <span>Complete Job & Audit</span>
-                                </button>
-                              </div>
+                              <button
+                                onClick={() => setCompletingJobId(job.id)}
+                                disabled={actionLoading === job.id}
+                                className="btn-primary text-xs px-5 py-2 rounded-xl bg-sage-500 hover:bg-sage-400 text-white flex items-center gap-1.5 font-bold shadow-subtle"
+                              >
+                                <Camera className="w-4 h-4" />
+                                <span>Upload Proof of Work</span>
+                              </button>
                             )}
                           </div>
                         )}

@@ -304,3 +304,12 @@ class VerificationDetailsResponse(BaseModel):
     payment_status: Optional[str] = None
 
 
+class SubmitProofRequest(BaseModel):
+    remarks: Optional[str] = Field(None, max_length=1000, description="Optional technician notes/remarks regarding work done.")
+
+
+class ApproveProofRequest(BaseModel):
+    approved: bool = Field(True, description="Whether the user approves or rejects the work evidence.")
+    feedback: Optional[str] = Field(None, max_length=1000, description="Customer feedback or rework instructions if rejected.")
+
+

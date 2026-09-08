@@ -60,4 +60,14 @@ export const bookingsApi = {
     const response = await api.get<TechnicianProfile>(`/bookings/${id}/technician`);
     return response.data;
   },
+
+  submitProofOfWork: async (id: number, remarks?: string): Promise<Booking> => {
+    const response = await api.post<Booking>(`/bookings/${id}/submit-proof`, { remarks });
+    return response.data;
+  },
+
+  approveProofOfWork: async (id: number, approved: boolean, feedback?: string): Promise<Booking> => {
+    const response = await api.post<Booking>(`/bookings/${id}/approve-proof`, { approved, feedback });
+    return response.data;
+  },
 };

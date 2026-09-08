@@ -747,6 +747,24 @@ class BookingService:
                     detail="Before and After photos must be uploaded before completing the job."
                 )
 
+            # Customer must explicitly approve the proof of work uploaded by technician
+            if not current_user.is_superuser:
+                import json
+                is_approved = False
+                if booking.admin_note:
+                    try:
+                        note_data = json.loads(booking.admin_note)
+                        if isinstance(note_data, dict) and note_data.get("proof_status") == "approved":
+                            is_approved = True
+                    except Exception:
+                        pass
+
+                if not is_approved:
+                    raise HTTPException(
+                        status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                        detail="Customer has not approved the work evidence yet. Customer approval is required before technician can complete the job."
+                    )
+
     def _transition(
         self,
         booking: Booking,
@@ -1258,6 +1276,137 @@ class BookingService:
         )
         return BookingResponse.model_validate(updated)
 
+    def submit_proof_of_work(
+        self,
+        current_user: User,
+        booking_id: int,
+        remarks: Optional[str] = None,
+    ) -> BookingResponse:
+        """Technician submits Before & After work evidence for customer approval."""
+        import json
+        from datetime import datetime, timezone
+        from app.services.notification import NotificationService
+
+        booking = self._get_booking_for(current_user, booking_id)
+        self._ensure_technician_role(current_user, booking)
+
+        if booking.status not in [BookingStatus.IN_PROGRESS, BookingStatus.CONFIRMED]:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Cannot submit proof of work for booking with status '{booking.status.value}'. Must be 'in_progress'.",
+            )
+
+        has_before = self.db.query(MediaAsset).filter(
+            MediaAsset.owner_id == booking.id,
+            MediaAsset.owner_type == "booking",
+            MediaAsset.asset_type == MediaAssetType.BOOKING_BEFORE
+        ).first() is not None
+
+        has_after = self.db.query(MediaAsset).filter(
+            MediaAsset.owner_id == booking.id,
+            MediaAsset.owner_type == "booking",
+            MediaAsset.asset_type == MediaAssetType.BOOKING_AFTER
+        ).first() is not None
+
+        if not has_before or not has_after:
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail="Both Before and After work photos must be uploaded before submitting proof.",
+            )
+
+        proof_data = {
+            "proof_status": "submitted",
+            "remarks": remarks.strip() if remarks else None,
+            "submitted_at": datetime.now(timezone.utc).isoformat(),
+            "customer_approved": None,
+        }
+        booking.admin_note = json.dumps(proof_data)
+        self.db.commit()
+        self.db.refresh(booking)
+
+        # Notify customer
+        try:
+            if booking.customer and booking.customer.user_id:
+                NotificationService(self.db).notify_user(
+                    user_id=booking.customer.user_id,
+                    title="Work Evidence Submitted",
+                    message=f"Technician has uploaded Before & After photos for Booking #{booking.booking_number}. Please inspect and approve the work.",
+                )
+        except Exception as e:
+            logger.error(f"Failed to send customer notification: {e}")
+
+        return BookingResponse.model_validate(booking)
+
+    def approve_proof_of_work(
+        self,
+        current_user: User,
+        booking_id: int,
+        approved: bool = True,
+        feedback: Optional[str] = None,
+    ) -> BookingResponse:
+        """Customer approves or requests rework on the uploaded work evidence."""
+        import json
+        from datetime import datetime, timezone
+        from app.services.notification import NotificationService
+
+        booking = self._get_booking_for(current_user, booking_id)
+
+        # Must be the customer owner of this booking or admin
+        is_owner = booking.customer and booking.customer.user_id == current_user.id
+        if not (is_owner or current_user.is_superuser):
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Only the customer who made the booking may approve the proof of work.",
+            )
+
+        existing_proof = {}
+        if booking.admin_note:
+            try:
+                parsed = json.loads(booking.admin_note)
+                if isinstance(parsed, dict):
+                    existing_proof = parsed
+            except Exception:
+                pass
+
+        if approved:
+            existing_proof.update({
+                "proof_status": "approved",
+                "customer_approved": True,
+                "approved_at": datetime.now(timezone.utc).isoformat(),
+                "feedback": feedback,
+            })
+            try:
+                if booking.technician and booking.technician.user_id:
+                    NotificationService(self.db).notify_user(
+                        user_id=booking.technician.user_id,
+                        title="Work Evidence Approved",
+                        message=f"Customer has approved your proof of work for Booking #{booking.booking_number}! You can now complete the job.",
+                    )
+            except Exception as e:
+                logger.error(f"Failed to notify technician: {e}")
+        else:
+            existing_proof.update({
+                "proof_status": "changes_requested",
+                "customer_approved": False,
+                "rejected_at": datetime.now(timezone.utc).isoformat(),
+                "feedback": feedback,
+            })
+            try:
+                if booking.technician and booking.technician.user_id:
+                    NotificationService(self.db).notify_user(
+                        user_id=booking.technician.user_id,
+                        title="Work Corrections Requested",
+                        message=f"Customer requested adjustments on Booking #{booking.booking_number}: {feedback or 'Please review customer notes.'}",
+                    )
+            except Exception as e:
+                logger.error(f"Failed to notify technician: {e}")
+
+        booking.admin_note = json.dumps(existing_proof)
+        self.db.commit()
+        self.db.refresh(booking)
+
+        return BookingResponse.model_validate(booking)
+
     def complete_service(
         self,
         current_user: User,
@@ -1266,22 +1415,14 @@ class BookingService:
     ) -> BookingResponse:
         """Complete the service for a booking (technician or admin).
         
-        Strictly enforces that customer payment must be completed before the service can be marked as complete.
+        Requires that Before & After photos exist and customer approval has been granted.
+        After completion, the customer is enabled to pay.
         """
         booking = self._get_booking_for(current_user, booking_id)
         self._ensure_technician_role(current_user, booking)
         self._ensure_transition_change(booking, BookingStatus.COMPLETED)
 
-        # Strict payment check: Customer must complete payment before completion!
-        if not current_user.is_superuser:
-            pay_st = booking.payment_status.value if hasattr(booking.payment_status, "value") else str(booking.payment_status)
-            if pay_st.lower() != "paid":
-                raise HTTPException(
-                    status_code=status.HTTP_400_BAD_REQUEST,
-                    detail="Customer payment has not been received yet. Customer must complete payment before this service can be marked completed.",
-                )
-
-        reason = payload.reason if payload else "Service completed and verified"
+        reason = payload.reason if payload else "Service completed with approved proof of work"
         updated = self._transition(
             booking,
             BookingStatus.COMPLETED,

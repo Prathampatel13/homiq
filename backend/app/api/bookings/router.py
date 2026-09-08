@@ -36,6 +36,8 @@ from app.schemas.bookings import (
     SmartVerifyStatusResponse,
     VerificationDetailsResponse,
     VerifyCodeRequest,
+    SubmitProofRequest,
+    ApproveProofRequest,
 )
 from app.services.booking import BookingService
 from app.services.smart_verify import SmartVerifyService
@@ -768,6 +770,53 @@ def complete_service(
     """
     return BookingService(db).complete_service(current_user, booking_id, payload)
 
+
+# ─── TECHNICIAN: SUBMIT PROOF OF WORK ─────────────────────────────────
+
+
+@router.post(
+    "/{booking_id}/submit-proof",
+    response_model=BookingResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Submit Proof of Work Evidence",
+    description=(
+        "Technician submits Before & After photos and remarks for customer review and approval."
+    ),
+)
+def submit_proof_endpoint(
+    booking_id: int,
+    payload: Optional[SubmitProofRequest] = None,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> Any:
+    remarks = payload.remarks if payload else None
+    return BookingService(db).submit_proof_of_work(current_user, booking_id, remarks=remarks)
+
+
+# ─── CUSTOMER: APPROVE OR REJECT PROOF OF WORK ─────────────────────────
+
+
+@router.post(
+    "/{booking_id}/approve-proof",
+    response_model=BookingResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Customer Review & Approve Proof of Work",
+    description=(
+        "Customer inspects Before & After photos and approves or requests rework on the service."
+    ),
+)
+def approve_proof_endpoint(
+    booking_id: int,
+    payload: ApproveProofRequest,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> Any:
+    return BookingService(db).approve_proof_of_work(
+        current_user,
+        booking_id,
+        approved=payload.approved,
+        feedback=payload.feedback,
+    )
 
 
 @router.post(

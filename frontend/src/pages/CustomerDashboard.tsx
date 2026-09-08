@@ -23,7 +23,8 @@ import {
   Trash2,
   Edit2,
   Navigation2,
-  Lock
+  Lock,
+  Camera
 } from 'lucide-react';
 import { bookingsApi } from '../api/bookings';
 import { customerApi } from '../api/customer';
@@ -38,6 +39,7 @@ import { BookingDetailsModal } from '../components/modals/BookingDetailsModal';
 import { AddressModal } from '../components/modals/AddressModal';
 import { PaymentModal } from '../components/modals/PaymentModal';
 import { ReviewModal } from '../components/modals/ReviewModal';
+import { ProofReviewModal } from '../components/modals/ProofReviewModal';
 import { useRealTimeSync, triggerLocalSync } from '../services/realtime';
 
 export const CustomerDashboard: React.FC = () => {
@@ -54,9 +56,20 @@ export const CustomerDashboard: React.FC = () => {
   const [verifyModalBooking, setVerifyModalBooking] = useState<Booking | null>(null);
   const [paymentModalBooking, setPaymentModalBooking] = useState<Booking | null>(null);
   const [reviewModalBooking, setReviewModalBooking] = useState<Booking | null>(null);
+  const [reviewProofBooking, setReviewProofBooking] = useState<Booking | null>(null);
   const [addressModalOpen, setAddressModalOpen] = useState(false);
   const [editingAddress, setEditingAddress] = useState<CustomerAddress | null>(null);
   const [arrivedVerification, setArrivedVerification] = useState<{ bookingId: number; code: string; qrData: string } | null>(null);
+
+  const getProofStatus = (note?: string | null) => {
+    if (!note) return null;
+    try {
+      const data = JSON.parse(note);
+      return data.proof_status || null;
+    } catch {
+      return null;
+    }
+  };
 
   const loadDashboardData = async (isBackground = false) => {
     try {
@@ -283,12 +296,23 @@ export const CustomerDashboard: React.FC = () => {
                     <span>View Details</span>
                   </button>
 
-                  {/* Payment Block Logic */}
+                  {/* Action buttons */}
+                  {activeBooking.status === 'in_progress' && getProofStatus(activeBooking.admin_note) === 'submitted' && (
+                    <button
+                      onClick={() => setReviewProofBooking(activeBooking)}
+                      className="btn-primary text-xs px-4 py-2.5 font-bold flex items-center gap-2 shadow-[0_0_20px_-5px_rgba(217,56,30,0.6)] animate-pulse"
+                    >
+                      <Camera className="w-4 h-4" />
+                      <span>Review & Approve Work</span>
+                    </button>
+                  )}
+
+                  {/* Payment Gate Logic: Only after job completion can user pay */}
                   {['confirmed', 'in_progress'].includes(activeBooking.status) && activeBooking.payment_status !== 'paid' && (
                     <button
                       disabled
                       className="btn-secondary opacity-50 cursor-not-allowed text-xs px-5 py-2.5 font-semibold flex items-center gap-1.5"
-                      title="Payment unlocks after technician completes work and uploads evidence."
+                      title="Payment unlocks only after proof of work is approved and job is completed."
                     >
                       <Lock className="w-4 h-4" />
                       <span>Payment Locked</span>
@@ -298,10 +322,10 @@ export const CustomerDashboard: React.FC = () => {
                   {['completed', 'waiting_payment'].includes(activeBooking.status) && activeBooking.payment_status !== 'paid' && (
                     <button
                       onClick={() => setPaymentModalBooking(activeBooking)}
-                      className="btn-primary text-xs px-5 py-2.5 font-semibold flex items-center gap-1.5 shadow-subtle animate-pulse-light"
+                      className="btn-primary text-xs px-6 py-2.5 font-bold flex items-center gap-2 shadow-[0_0_25px_-5px_rgba(217,56,30,0.5)] animate-pulse-light"
                     >
                       <CreditCard className="w-4 h-4" />
-                      <span>Pay Securely</span>
+                      <span>Pay Securely ₹{(activeBooking.final_price || activeBooking.total_amount || activeBooking.estimated_price || 0).toFixed(2)}</span>
                     </button>
                   )}
 
@@ -354,37 +378,61 @@ export const CustomerDashboard: React.FC = () => {
                 </div>
               )}
 
-              {/* ── REAL-TIME SERVICE IN PROGRESS & PAYMENT BANNER ── */}
-              {(activeBooking.status === 'confirmed' || activeBooking.status === 'in_progress') && (
+              {/* ── PROOF OF WORK SUBMITTED: CUSTOMER APPROVAL STEP ── */}
+              {activeBooking.status === 'in_progress' && getProofStatus(activeBooking.admin_note) === 'submitted' && (
+                <div className="p-5 rounded-2xl bg-sage-500/10 border border-sage-500/40 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 animate-in fade-in duration-300 shadow-[0_0_30px_rgba(217,56,30,0.15)]">
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-2">
+                      <span className="w-2.5 h-2.5 rounded-full bg-sage-500 animate-ping" />
+                      <span className="text-xs font-bold text-white uppercase tracking-wider font-mono">
+                        Work Evidence Ready for Inspection
+                      </span>
+                    </div>
+                    <p className="text-xs text-slate-300">
+                      Your technician uploaded Before & After photos. Please inspect and approve the work so the technician can complete the job.
+                    </p>
+                  </div>
+
+                  <button
+                    onClick={() => setReviewProofBooking(activeBooking)}
+                    className="btn-primary text-xs px-6 py-2.5 font-bold flex items-center gap-2 shrink-0 shadow-[0_0_20px_-5px_rgba(217,56,30,0.6)] active:scale-95"
+                  >
+                    <Camera className="w-4 h-4" />
+                    <span>Inspect & Approve Work</span>
+                  </button>
+                </div>
+              )}
+
+              {/* ── WORK EVIDENCE APPROVED BANNER ── */}
+              {activeBooking.status === 'in_progress' && getProofStatus(activeBooking.admin_note) === 'approved' && (
+                <div className="p-4 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 flex items-center gap-3 text-xs font-mono text-emerald-400">
+                  <CheckCircle2 className="w-4 h-4 shrink-0" />
+                  <span>Work evidence approved! Technician has been authorized to complete the job. Payment will unlock once completed.</span>
+                </div>
+              )}
+
+              {/* ── COMPLETED & UNLOCKED PAYMENT BANNER ── */}
+              {['completed', 'waiting_payment'].includes(activeBooking.status) && activeBooking.payment_status !== 'paid' && (
                 <div className="p-5 rounded-2xl bg-dark-850 border border-dark-750 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 animate-in fade-in duration-300">
                   <div className="space-y-1">
                     <div className="flex items-center gap-2">
                       <CheckCircle2 className="w-4 h-4 text-emerald-400" />
-                      <span className="text-xs font-bold text-white uppercase tracking-wider">
-                        Service Verified & In Progress
+                      <span className="text-xs font-bold text-white uppercase tracking-wider font-mono">
+                        Service Completed • Payment Due
                       </span>
                     </div>
                     <p className="text-xs text-slate-300">
-                      Technician is currently performing your home service. You can pay anytime during or after the service.
+                      Work evidence has been verified and job finalized. You may now complete payment securely via Razorpay.
                     </p>
                   </div>
 
-                  <div className="flex items-center gap-3 shrink-0">
-                    {activeBooking.payment_status !== 'paid' ? (
-                      <button
-                        onClick={() => setPaymentModalBooking(activeBooking)}
-                        className="btn-primary text-xs px-6 py-2.5 font-semibold flex items-center gap-2 shadow-subtle"
-                      >
-                        <CreditCard className="w-4 h-4" />
-                        <span>Pay ₹{(activeBooking.final_price || activeBooking.total_amount || activeBooking.estimated_price || 0).toFixed(2)}</span>
-                      </button>
-                    ) : (
-                      <span className="text-xs font-mono px-4 py-2 rounded-xl bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 flex items-center gap-2 font-semibold">
-                        <CheckCircle2 className="w-4 h-4" />
-                        <span>Payment Completed</span>
-                      </span>
-                    )}
-                  </div>
+                  <button
+                    onClick={() => setPaymentModalBooking(activeBooking)}
+                    className="btn-primary text-xs px-6 py-2.5 font-bold flex items-center gap-2 shrink-0 shadow-[0_0_20px_-5px_rgba(217,56,30,0.5)]"
+                  >
+                    <CreditCard className="w-4 h-4" />
+                    <span>Pay ₹{(activeBooking.final_price || activeBooking.total_amount || activeBooking.estimated_price || 0).toFixed(2)}</span>
+                  </button>
                 </div>
               )}
             </div>
@@ -632,6 +680,19 @@ export const CustomerDashboard: React.FC = () => {
             setEditingAddress(null);
           }}
           onSaved={() => {
+            loadDashboardData();
+          }}
+        />
+      )}
+
+      {reviewProofBooking && (
+        <ProofReviewModal
+          booking={reviewProofBooking}
+          isOpen={!!reviewProofBooking}
+          onClose={() => setReviewProofBooking(null)}
+          onApproved={() => {
+            setReviewProofBooking(null);
+            triggerLocalSync();
             loadDashboardData();
           }}
         />
