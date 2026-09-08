@@ -17,7 +17,9 @@ import {
   Settings,
   History,
   Star,
-  BarChart3
+  BarChart3,
+  MapPin,
+  PhoneCall
 } from 'lucide-react';
 import { useAuthStore } from '../../store/useAuthStore';
 import { UserRole } from '../../types';
@@ -313,7 +315,11 @@ export const Navbar: React.FC = () => {
                 </div>
               </div>
             ) : (
-              <div className="flex items-center gap-2.5">
+              <div className="flex items-center gap-3">
+                <div className="hidden lg:flex items-center gap-2 text-xs font-mono text-slate-300 px-3 py-1.5 rounded-full bg-dark-900 border border-dark-750">
+                  <MapPin className="w-3.5 h-3.5 text-sage-500" />
+                  <span className="tracking-wide">INDIA • LIVE DISPATCH</span>
+                </div>
 
                 <Link
                   to="/login"
@@ -321,12 +327,13 @@ export const Navbar: React.FC = () => {
                 >
                   Sign In
                 </Link>
-                <Link
-                  to="/register"
-                  className="btn-primary text-xs px-4 py-2"
+                <a
+                  href="tel:+919800046647"
+                  className="hidden sm:flex items-center gap-2 px-4 py-2 rounded-xl bg-sage-500 hover:bg-sage-400 text-white font-mono text-xs font-bold transition-all shadow-[0_0_20px_-5px_rgba(217,56,30,0.5)] active:scale-95"
                 >
-                  Get Started
-                </Link>
+                  <PhoneCall className="w-3.5 h-3.5" />
+                  <span>+91 98000 HOMIQ</span>
+                </a>
               </div>
             )}
           </div>
