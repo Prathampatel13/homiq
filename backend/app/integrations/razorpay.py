@@ -45,7 +45,10 @@ class RazorpayClient:
             return None
         if self._client is None:
             self._client = razorpay.Client(
-                auth=(settings.RAZORPAY_KEY_ID, settings.RAZORPAY_KEY_SECRET)
+                auth=(
+                    settings.RAZORPAY_KEY_ID.strip(),
+                    settings.RAZORPAY_KEY_SECRET.strip()
+                )
             )
         return self._client
 
@@ -75,11 +78,10 @@ class RazorpayClient:
 
                 return self.client.order.create(data=data)
             except Exception as exc:
-                if not settings.APP_DEBUG:
-                    raise HTTPException(
-                        status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                        detail=f"Razorpay order creation failed: {exc}",
-                    )
+                raise HTTPException(
+                    status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                    detail=f"Razorpay order creation failed: {exc}",
+                )
 
         # Mock fallback in development / test mode
         order_id = f"order_{uuid.uuid4().hex[:14]}"
