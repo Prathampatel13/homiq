@@ -9,39 +9,39 @@ export default {
     extend: {
       colors: {
         sage: {
-          50: '#F4F7F6',
-          100: '#E5EBE9',
-          200: '#CAD7D3',
-          300: '#AEC3BC',
-          400: '#8FA8A0', // Official HomiQ Sage Accent
-          500: '#759088',
-          600: '#5C746D',
-          700: '#465954',
-          800: '#32403C',
-          900: '#202A27',
-          950: '#101715',
+          50: '#FDF3F1',
+          100: '#FCE5DE',
+          200: '#F7C6B8',
+          300: '#F2A18C',
+          400: '#E7603B', 
+          500: '#D9381E', // The Ekvator orange
+          600: '#C02C15',
+          700: '#A0220F',
+          800: '#831F10',
+          900: '#6D1E11',
+          950: '#3B0C06',
         },
         brand: {
-          50: '#F4F7F6',
-          100: '#E5EBE9',
-          200: '#CAD7D3',
-          300: '#AEC3BC',
-          400: '#8FA8A0', // Muted sage accent
-          500: '#8FA8A0', // Primary accent
-          600: '#7B948D',
-          700: '#647A73',
-          800: '#4E5F5A',
-          900: '#36433F',
-          950: '#1F2825',
+          50: '#FDF3F1',
+          100: '#FCE5DE',
+          200: '#F7C6B8',
+          300: '#F2A18C',
+          400: '#E7603B', 
+          500: '#D9381E',
+          600: '#C02C15',
+          700: '#A0220F',
+          800: '#831F10',
+          900: '#6D1E11',
+          950: '#3B0C06',
         },
         dark: {
-          950: '#08090B', // Primary root canvas
-          900: '#0D0F12', // Panel / card surface
-          850: '#12151A', // Elevated surface
-          800: '#181C22', // Interactive / input surface
-          750: '#22272F', // Active / border
-          700: '#2A303A', // Static border
-          600: '#3D4653',
+          950: '#111111', // Very dark charcoal
+          900: '#1A1A1A', // Slightly lighter charcoal
+          850: '#222222', 
+          800: '#2A2A2A', 
+          750: '#333333', 
+          700: '#404040', 
+          600: '#555555',
         },
         light: {
           primary: '#F5F5F2',

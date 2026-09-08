@@ -35,6 +35,7 @@ from app.crud.services import ServicesCRUD
 from app.crud.technician import TechnicianCRUD
 from app.models.bookings import Booking, BookingStatus, BookingStatusLog
 from app.models.auth import User
+from app.models.media import MediaAsset, MediaAssetType
 from app.schemas.bookings import (
     AssignedTechnicianResponse,
     BookingAssignTechnician,
@@ -725,6 +726,25 @@ class BookingService:
                         f"Invalid status transition: "
                         f"'{cur_name}' -> '{tgt_name}'"
                     ),
+                )
+
+        if tgt_st == BookingStatus.COMPLETED:
+            has_before = self.db.query(MediaAsset).filter(
+                MediaAsset.owner_id == booking.id,
+                MediaAsset.owner_type == "booking",
+                MediaAsset.asset_type == MediaAssetType.BOOKING_BEFORE
+            ).first() is not None
+
+            has_after = self.db.query(MediaAsset).filter(
+                MediaAsset.owner_id == booking.id,
+                MediaAsset.owner_type == "booking",
+                MediaAsset.asset_type == MediaAssetType.BOOKING_AFTER
+            ).first() is not None
+
+            if not has_before or not has_after:
+                raise HTTPException(
+                    status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                    detail="Before and After photos must be uploaded before completing the job."
                 )
 
     def _transition(

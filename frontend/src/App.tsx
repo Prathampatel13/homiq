@@ -23,6 +23,7 @@ import { NotificationsPage } from './pages/NotificationsPage';
 import { ReviewsPage } from './pages/ReviewsPage';
 import { HistoryPage } from './pages/HistoryPage';
 import { AnalyticsPage } from './pages/AnalyticsPage';
+import { InvoicePage } from './pages/InvoicePage';
 
 import { useAuthStore } from './store/useAuthStore';
 import { UserRole } from './types';
@@ -138,6 +139,14 @@ export const App: React.FC = () => {
                   element={
                     <ProtectedRoute>
                       <BookingPage />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/customer/invoices/:id"
+                  element={
+                    <ProtectedRoute>
+                      <InvoicePage />
                     </ProtectedRoute>
                   }
                 />

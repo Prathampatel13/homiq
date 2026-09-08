@@ -22,6 +22,8 @@ import {
 import { technicianApi } from '../api/technician';
 import { bookingsApi } from '../api/bookings';
 import { notificationsApi } from '../api/notifications';
+import { BookingMediaSection } from '../components/media/BookingMediaSection';
+import { JobCompletionModal } from '../components/modals/JobCompletionModal';
 import { useAuthStore } from '../store/useAuthStore';
 import { Booking, TechnicianProfile, NotificationItem } from '../types';
 import { StatusBadge } from '../components/ui/StatusBadge';
@@ -38,6 +40,8 @@ export const ProviderDashboard: React.FC = () => {
   const [isOnline, setIsOnline] = useState<boolean>(true);
   const [jobs, setJobs] = useState<Booking[]>([]);
   const [loading, setLoading] = useState(true);
+  const [actionLoading, setActionLoading] = useState<number | null>(null);
+  const [completingJobId, setCompletingJobId] = useState<number | null>(null);
   const [activeTab, setActiveTab] = useState<'today' | 'active' | 'pending' | 'all' | 'earnings' | 'documents' | 'notifications'>('today');
 
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
@@ -403,11 +407,7 @@ export const ProviderDashboard: React.FC = () => {
                                   <span>Payment Pending (Cash/Later)</span>
                                 </span>
                                 <button
-                                  onClick={() => {
-                                    if (window.confirm("Customer hasn't paid via app. Mark as completed and collect cash/invoice later?")) {
-                                      handleJobAction(job.id, 'complete');
-                                    }
-                                  }}
+                                  onClick={() => setCompletingJobId(job.id)}
                                   disabled={actionLoading === job.id}
                                   title="Complete work and collect payment offline"
                                   className="btn-primary text-xs px-5 py-2 rounded-xl bg-amber-500/20 text-amber-400 border border-amber-500/40 hover:bg-amber-500/30 flex items-center gap-1.5 font-medium"
@@ -423,7 +423,7 @@ export const ProviderDashboard: React.FC = () => {
                                   <span>Paid</span>
                                 </span>
                                 <button
-                                  onClick={() => handleJobAction(job.id, 'complete')}
+                                  onClick={() => setCompletingJobId(job.id)}
                                   disabled={actionLoading === job.id}
                                   className="btn-primary text-xs px-5 py-2 flex items-center gap-1.5 bg-emerald-500 hover:bg-emerald-400 text-dark-950 shadow-subtle font-semibold"
                                 >
@@ -570,6 +570,19 @@ export const ProviderDashboard: React.FC = () => {
           booking={detailsBooking}
           isOpen={!!detailsBooking}
           onClose={() => setDetailsBooking(null)}
+        />
+      )}
+
+      {completingJobId && (
+        <JobCompletionModal
+          bookingId={completingJobId}
+          isOpen={!!completingJobId}
+          onClose={() => setCompletingJobId(null)}
+          onSuccess={() => {
+            setCompletingJobId(null);
+            triggerLocalSync();
+            loadTechnicianData(true);
+          }}
         />
       )}
     </div>

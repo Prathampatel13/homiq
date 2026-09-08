@@ -22,7 +22,8 @@ import {
   Phone,
   Trash2,
   Edit2,
-  Navigation2
+  Navigation2,
+  Lock
 } from 'lucide-react';
 import { bookingsApi } from '../api/bookings';
 import { customerApi } from '../api/customer';
@@ -282,13 +283,25 @@ export const CustomerDashboard: React.FC = () => {
                     <span>View Details</span>
                   </button>
 
-                  {['confirmed', 'in_progress', 'completed'].includes(activeBooking.status) && activeBooking.payment_status !== 'paid' && (
+                  {/* Payment Block Logic */}
+                  {['confirmed', 'in_progress'].includes(activeBooking.status) && activeBooking.payment_status !== 'paid' && (
+                    <button
+                      disabled
+                      className="btn-secondary opacity-50 cursor-not-allowed text-xs px-5 py-2.5 font-semibold flex items-center gap-1.5"
+                      title="Payment unlocks after technician completes work and uploads evidence."
+                    >
+                      <Lock className="w-4 h-4" />
+                      <span>Payment Locked</span>
+                    </button>
+                  )}
+
+                  {['completed', 'waiting_payment'].includes(activeBooking.status) && activeBooking.payment_status !== 'paid' && (
                     <button
                       onClick={() => setPaymentModalBooking(activeBooking)}
-                      className="btn-primary text-xs px-5 py-2.5 font-semibold flex items-center gap-1.5 shadow-subtle"
+                      className="btn-primary text-xs px-5 py-2.5 font-semibold flex items-center gap-1.5 shadow-subtle animate-pulse-light"
                     >
                       <CreditCard className="w-4 h-4" />
-                      <span>Pay Now</span>
+                      <span>Pay Securely</span>
                     </button>
                   )}
 
