@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { X, Upload, Camera, CheckCircle2, AlertCircle } from 'lucide-react';
 import { mediaApi } from '../../api/media';
-import { bookingsApi } from '../../api/bookings';
+import { technicianApi } from '../../api/technician';
 
 interface JobCompletionModalProps {
   bookingId: number;
@@ -75,12 +75,8 @@ export const JobCompletionModal: React.FC<JobCompletionModalProps> = ({
     setLoading(true);
     setError(null);
     try {
-      // First update the admin_note / remarks if we have any
-      if (remarks.trim()) {
-        await bookingsApi.updateBookingStatus(bookingId, 'completed', remarks);
-      } else {
-        await bookingsApi.updateBookingStatus(bookingId, 'completed');
-      }
+      // Finalize the job status on the backend using technician API
+      await technicianApi.completeService(bookingId, remarks);
       onSuccess();
     } catch (err: any) {
       setError(err.response?.data?.detail || 'Failed to mark job as completed.');

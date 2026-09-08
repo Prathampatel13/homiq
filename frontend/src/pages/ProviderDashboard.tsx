@@ -49,7 +49,6 @@ export const ProviderDashboard: React.FC = () => {
 
   const [verifyBooking, setVerifyBooking] = useState<Booking | null>(null);
   const [detailsBooking, setDetailsBooking] = useState<Booking | null>(null);
-  const [actionLoading, setActionLoading] = useState<number | null>(null);
 
   const loadTechnicianData = async (isBackground = false) => {
     try {
