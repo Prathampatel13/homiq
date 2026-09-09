@@ -160,6 +160,13 @@ export const BookingDetailsModal: React.FC<BookingDetailsModalProps> = ({
               </span>
               <StatusBadge status={booking.status} size="sm" />
             </div>
+            
+            <div className="border-t border-dark-750 pt-2 mt-2 flex items-center justify-between">
+              <span className="text-[11px] font-mono text-slate-400 uppercase tracking-wider block">Payment</span>
+              <span className={`text-xs font-semibold uppercase ${booking.payment_status === 'paid' ? 'text-emerald-400' : booking.payment_status === 'refunded' ? 'text-orange-400' : 'text-amber-400'}`}>
+                {booking.payment_status || 'PENDING'}
+              </span>
+            </div>
           </div>
         </div>
 

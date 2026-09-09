@@ -167,9 +167,10 @@ export const BookingPage: React.FC = () => {
       setSubmitting(true);
       setSubmitError(null);
 
-      // Create multiple bookings if needed
-      const bookingPromises = selectedServices.map(svc => {
-        return bookingsApi.createBooking({
+      // Create multiple bookings sequentially
+      const bookings = [];
+      for (const svc of selectedServices) {
+        const b = await bookingsApi.createBooking({
           service_id: svc.id,
           address_id: selectedAddress.id,
           booking_date: bookingDate,
@@ -177,8 +178,8 @@ export const BookingPage: React.FC = () => {
           customer_note: customerNotes || undefined,
           estimated_price: (svc.price || svc.base_price || 0),
         });
-      });
-      const bookings = await Promise.all(bookingPromises);
+        bookings.push(b);
+      }
       const newBooking = bookings[0];
       setConfirmedBooking(newBooking);
       triggerLocalSync();
