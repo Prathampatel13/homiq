@@ -21,6 +21,7 @@ import {
 import { servicesApi } from '../api/services';
 import { Service, ServiceCategory, UserRole } from '../types';
 import { useAuthStore } from '../store/useAuthStore';
+import { handleImageError } from '../utils/media';
 
 // All Services Data with Dedicated 3D Logo Badges and Technical Specifications
 const HERO_SERVICES = [
@@ -367,6 +368,7 @@ export const LandingPage: React.FC = () => {
                         <img 
                           src={srv.iconImg} 
                           alt={srv.name} 
+                          onError={(e) => handleImageError(e, 'service')}
                           className="w-full h-full object-cover rounded-lg"
                         />
                       </div>
@@ -418,6 +420,7 @@ export const LandingPage: React.FC = () => {
                 <img 
                   src="/assets/service_plumbing.jpg" 
                   alt="Plumbing Infrastructure" 
+                  onError={(e) => handleImageError(e, 'plumbing')}
                   className="w-full h-auto object-cover rounded-2xl transition-transform duration-700 group-hover:scale-105 filter contrast-115"
                 />
                 
@@ -538,6 +541,7 @@ export const LandingPage: React.FC = () => {
                 <img 
                   src="/assets/hero_ac.jpg" 
                   alt="Heavy Industrial HVAC" 
+                  onError={(e) => handleImageError(e, 'service')}
                   className="max-h-[380px] w-auto object-contain transition-transform duration-700 group-hover:scale-105 filter contrast-125 select-none"
                   style={{ filter: "drop-shadow(0 0 35px rgba(217, 56, 30, 0.3))" }}
                 />
@@ -604,6 +608,7 @@ export const LandingPage: React.FC = () => {
                   <img 
                     src={srv.iconImg} 
                     alt={srv.name} 
+                    onError={(e) => handleImageError(e, 'service')}
                     className="w-full h-full object-cover rounded-xl"
                   />
                 </div>

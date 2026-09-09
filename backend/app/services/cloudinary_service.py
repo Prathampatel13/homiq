@@ -284,14 +284,27 @@ class CloudinaryService:
             except Exception as exc:
                 logger.warning("Cloudinary upload failed, falling back to local/mock asset: %s", exc)
 
-        # Fallback Mock / Offline Mode
-        cloud = settings.CLOUDINARY_CLOUD_NAME or "homiq-cloud"
-        mock_url = f"https://res.cloudinary.com/{cloud}/{resource_type}/upload/v1/{pid}.{clean_format}"
-        
+        # Fallback to local disk storage
+        from app.core.config import BASE_DIR
+        upload_root = os.path.join(BASE_DIR, "uploads")
+        target_dir = os.path.join(upload_root, folder)
+        os.makedirs(target_dir, exist_ok=True)
+
+        filename = f"{uuid4().hex[:12]}.{clean_format}"
+        file_path = os.path.join(target_dir, filename)
+
+        try:
+            with open(file_path, "wb") as f_out:
+                f_out.write(content)
+            local_url = f"/uploads/{folder}/{filename}"
+        except Exception as write_exc:
+            logger.error("Failed writing upload file to local disk: %s", write_exc)
+            local_url = f"/assets/services/ac.jpg"
+
         return {
             "cloudinary_asset_id": f"asset_{uuid4().hex[:10]}",
-            "cloudinary_public_id": pid,
-            "secure_url": mock_url,
+            "cloudinary_public_id": f"{folder}/{filename}",
+            "secure_url": local_url,
             "resource_type": resource_type,
             "format": clean_format,
             "width": 800 if resource_type == "image" else None,
@@ -356,6 +369,9 @@ class CloudinaryService:
         if not public_id:
             return ""
 
+        if public_id.startswith("/uploads") or "/uploads" in public_id or public_id.startswith("/"):
+            return public_id if public_id.startswith("/") else f"/{public_id}"
+
         cloud = settings.CLOUDINARY_CLOUD_NAME or "homiq-cloud"
 
         if is_cloudinary_configured() and HAS_CLOUDINARY:
@@ -376,6 +392,9 @@ class CloudinaryService:
                 return CloudinaryImage(public_id).build_url(**transformation)
             except Exception as exc:
                 logger.warning("Error generating Cloudinary transformation: %s", exc)
+
+        if "/" in public_id and not public_id.startswith("http"):
+            return f"/uploads/{public_id}"
 
         transform_params = [f"q_{quality}", f"f_{fetch_format}"]
         if width:

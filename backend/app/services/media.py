@@ -660,7 +660,21 @@ class MediaService:
         assets = self.crud.get_assets_by_owner(owner_id=owner_id, owner_type=owner_type, asset_type=asset_type)
         items = []
         for asset in assets:
+            sec_url = asset.secure_url
             thumb = self.cloudinary.get_thumbnail_url(asset.cloudinary_public_id) if asset.resource_type == "image" else None
+            
+            # Sanitize legacy homiq-cloud mock URLs that have no backing file
+            if "homiq-cloud" in str(sec_url):
+                if asset.asset_type == MediaAssetType.BOOKING_BEFORE:
+                    sec_url = "/assets/services/electrical.jpg"
+                    thumb = "/assets/services/electrical.jpg"
+                elif asset.asset_type == MediaAssetType.BOOKING_AFTER:
+                    sec_url = "/assets/hero_ac.jpg"
+                    thumb = "/assets/hero_ac.jpg"
+                else:
+                    sec_url = "/assets/services/ac.jpg"
+                    thumb = "/assets/services/ac.jpg"
+
             items.append(
                 MediaAssetResponse(
                     id=asset.id,
@@ -669,7 +683,7 @@ class MediaService:
                     asset_type=asset.asset_type,
                     cloudinary_asset_id=asset.cloudinary_asset_id,
                     cloudinary_public_id=asset.cloudinary_public_id,
-                    secure_url=asset.secure_url,
+                    secure_url=sec_url,
                     thumbnail_url=thumb,
                     resource_type=asset.resource_type,
                     format=asset.format,

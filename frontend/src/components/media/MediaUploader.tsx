@@ -1,6 +1,7 @@
 import React, { useState, useRef } from 'react';
 import { Upload, X, Loader2, ImagePlus, CheckCircle2, AlertCircle } from 'lucide-react';
 import { mediaApi, MediaAssetType, MediaAssetResponse } from '../../api/media';
+import { handleImageError } from '../../utils/media';
 
 interface MediaUploaderProps {
   bookingId: number;
@@ -101,7 +102,12 @@ export const MediaUploader: React.FC<MediaUploaderProps> = ({
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
             {previewUrls.map((url, i) => (
               <div key={i} className="relative aspect-square rounded-xl overflow-hidden border border-dark-700 bg-dark-950 group">
-                <img src={url} alt="Preview" className="w-full h-full object-cover" />
+                <img 
+                  src={url} 
+                  alt="Preview" 
+                  onError={(e) => handleImageError(e, 'service')}
+                  className="w-full h-full object-cover" 
+                />
                 <button
                   onClick={() => removeFile(i)}
                   disabled={isUploading}

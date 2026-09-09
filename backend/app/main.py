@@ -126,10 +126,16 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Mount static files for uploaded profile images
-upload_dir = Path(BASE_DIR) / settings.UPLOAD_DIR
-upload_dir.mkdir(parents=True, exist_ok=True)
-app.mount(f"/{settings.UPLOAD_DIR}", StaticFiles(directory=str(upload_dir)), name="uploads")
+# Mount static files for uploaded files (profiles, media, proof of work)
+uploads_root = Path(BASE_DIR) / "uploads"
+uploads_root.mkdir(parents=True, exist_ok=True)
+app.mount("/uploads", StaticFiles(directory=str(uploads_root)), name="uploads")
+
+if settings.UPLOAD_DIR and settings.UPLOAD_DIR != "uploads":
+    legacy_upload_dir = Path(BASE_DIR) / settings.UPLOAD_DIR
+    legacy_upload_dir.mkdir(parents=True, exist_ok=True)
+    if not str(legacy_upload_dir).startswith(str(uploads_root)):
+        app.mount(f"/{settings.UPLOAD_DIR}", StaticFiles(directory=str(legacy_upload_dir)), name="legacy_uploads")
 
 app.include_router(auth_router)
 app.include_router(users_router)

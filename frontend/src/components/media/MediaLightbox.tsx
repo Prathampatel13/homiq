@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { X, ChevronLeft, ChevronRight } from 'lucide-react';
 import { MediaAssetResponse } from '../../api/media';
+import { getSafeMediaUrl, handleImageError } from '../../utils/media';
 
 export interface MediaLightboxProps {
   images: MediaAssetResponse[];
@@ -73,9 +74,10 @@ export const MediaLightbox: React.FC<MediaLightboxProps> = ({
       <div className="relative w-full max-w-5xl max-h-[85vh] flex items-center justify-center p-4">
         {currentImage.resource_type === 'image' ? (
           <img
-            src={images[currentIndex].secure_url.startsWith('http') ? images[currentIndex].secure_url : `${import.meta.env.VITE_API_BASE_URL || 'https://homiq-backend-af73.onrender.com'}${images[currentIndex].secure_url}`}
+            src={getSafeMediaUrl(images[currentIndex].secure_url, images[currentIndex].asset_type === 'booking_before' ? 'before' : 'after')}
             alt="Fullscreen media"
-            className="max-h-[85vh] max-w-full object-contain"
+            onError={(e) => handleImageError(e, images[currentIndex].asset_type === 'booking_before' ? 'before' : 'after')}
+            className="max-h-[85vh] max-w-full object-contain rounded-xl"
           />
         ) : (
           <div className="w-full h-96 flex flex-col items-center justify-center bg-dark-800 rounded-lg">
