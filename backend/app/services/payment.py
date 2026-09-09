@@ -268,15 +268,21 @@ class PaymentService:
             payment_method=payment_method,
         )
 
-        # ── Update booking payment_status & auto-generate invoice ──
+        # ✨ Update booking payment_status & auto-generate invoice ✨
         from app.crud.booking import BookingCRUD
-        from app.models.bookings import PaymentStatus as BookingPaymentStatus
+        from app.models.bookings import PaymentStatus as BookingPaymentStatus, BookingStatus
 
         booking_crud = BookingCRUD(self.db)
         booking = booking_crud.get_booking(payment.booking_id)
+        
+        update_data = {"payment_status": BookingPaymentStatus.PAID}
+        # Mark as completed if the payment is successful
+        if booking and booking.status != BookingStatus.COMPLETED:
+            update_data["status"] = BookingStatus.COMPLETED
+
         booking_crud.update_booking(
             booking_id=payment.booking_id,
-            data={"payment_status": BookingPaymentStatus.PAID},
+            data=update_data,
         )
 
         if booking:
@@ -674,7 +680,7 @@ class PaymentService:
             return {"status": "ignored", "detail": "Associated payment record not found"}
 
         from app.crud.booking import BookingCRUD
-        from app.models.bookings import PaymentStatus as BookingPaymentStatus
+        from app.models.bookings import PaymentStatus as BookingPaymentStatus, BookingStatus
         booking_crud = BookingCRUD(self.db)
         booking = booking_crud.get_booking(payment.booking_id)
 
@@ -692,9 +698,12 @@ class PaymentService:
                 )
 
                 if booking:
+                    update_data = {"payment_status": BookingPaymentStatus.PAID}
+                    if booking.status != BookingStatus.COMPLETED:
+                        update_data["status"] = BookingStatus.COMPLETED
                     booking_crud.update_booking(
                         booking_id=booking.id,
-                        data={"payment_status": BookingPaymentStatus.PAID},
+                        data=update_data,
                     )
                     self._generate_invoice(booking, payment)
 

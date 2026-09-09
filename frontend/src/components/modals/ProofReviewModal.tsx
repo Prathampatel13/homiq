@@ -65,7 +65,7 @@ export const ProofReviewModal: React.FC<ProofReviewModalProps> = ({
     setError(null);
     try {
       await bookingsApi.approveProofOfWork(booking.id, true, feedback);
-      alert('Work evidence approved! The technician can now mark the service as completed, which will unlock payment.');
+      alert('Work evidence approved! Please proceed to complete the payment to finalize the job.');
       onApproved();
     } catch (err: any) {
       setError(err.response?.data?.detail || 'Failed to approve work evidence.');

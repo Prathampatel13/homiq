@@ -377,14 +377,10 @@ export const ProviderDashboard: React.FC = () => {
                                   <CheckCircle2 className="w-3.5 h-3.5" />
                                   <span>Customer Approved Work</span>
                                 </span>
-                                <button
-                                  onClick={() => handleJobAction(job.id, 'complete')}
-                                  disabled={actionLoading === job.id}
-                                  className="btn-primary text-xs px-5 py-2 flex items-center gap-1.5 bg-emerald-500 hover:bg-emerald-400 text-dark-950 font-bold shadow-subtle animate-pulse"
-                                >
-                                  <CheckCircle2 className="w-3.5 h-3.5" />
-                                  <span>{actionLoading === job.id ? 'Finalizing...' : 'Complete Job'}</span>
-                                </button>
+                                <span className="text-[11px] font-mono px-3 py-1.5 rounded-xl bg-amber-500/15 text-amber-400 border border-amber-500/30 flex items-center gap-1.5">
+                                  <Clock className="w-3.5 h-3.5 animate-pulse" />
+                                  <span>Awaiting Customer Payment...</span>
+                                </span>
                               </div>
                             ) : getProofStatus(job.admin_note) === 'submitted' ? (
                               <div className="flex items-center gap-2">

@@ -326,11 +326,11 @@ export const CustomerDashboard: React.FC = () => {
                       )}
 
                       {/* Payment Gate Logic: Only after job completion can user pay */}
-                      {['confirmed', 'in_progress'].includes(activeBooking.status) && activeBooking.payment_status !== 'paid' && (
+                      {['confirmed', 'in_progress'].includes(activeBooking.status) && getProofStatus(activeBooking.admin_note) !== 'approved' && activeBooking.payment_status !== 'paid' && (
                         <button
                           disabled
                           className="btn-secondary opacity-50 cursor-not-allowed text-xs px-5 py-2.5 font-semibold flex items-center gap-1.5"
-                          title="Payment unlocks only after proof of work is approved and job is completed."
+                          title="Payment unlocks only after proof of work is approved."
                         >
                           <Lock className="w-4 h-4" />
                           <span>Payment Locked</span>
@@ -376,51 +376,43 @@ export const CustomerDashboard: React.FC = () => {
                     </div>
                   )}
 
-                  {/* ── PROOF OF WORK SUBMITTED: CUSTOMER APPROVAL STEP ── */}
-                  {activeBooking.status === 'in_progress' && getProofStatus(activeBooking.admin_note) === 'submitted' && (
-                    <div className="p-5 rounded-2xl bg-sage-500/10 border border-sage-500/40 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 animate-in fade-in duration-300 shadow-[0_0_30px_rgba(217,56,30,0.15)]">
-                      <div className="space-y-1">
-                        <div className="flex items-center gap-2">
-                          <span className="w-2.5 h-2.5 rounded-full bg-sage-500 animate-ping" />
-                          <span className="text-xs font-bold text-white uppercase tracking-wider font-mono">
-                            Work Evidence Ready for Inspection
-                          </span>
+                      {/* ── PROOF OF WORK SUBMITTED: CUSTOMER APPROVAL STEP ── */}
+                      {activeBooking.status === 'in_progress' && getProofStatus(activeBooking.admin_note) === 'submitted' && (
+                        <div className="p-5 rounded-2xl bg-sage-500/10 border border-sage-500/40 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 animate-in fade-in duration-300 shadow-[0_0_30px_rgba(217,56,30,0.15)]">
+                          <div className="space-y-1">
+                            <div className="flex items-center gap-2">
+                              <span className="w-2.5 h-2.5 rounded-full bg-sage-500 animate-ping" />
+                              <span className="text-xs font-bold text-white uppercase tracking-wider font-mono">
+                                Work Evidence Ready for Inspection
+                              </span>
+                            </div>
+                            <p className="text-xs text-slate-300">
+                              Your technician uploaded Before & After photos. Please inspect and approve the work to unlock payment and complete the job.
+                            </p>
+                          </div>
+
+                          <button
+                            onClick={() => setReviewProofBooking(activeBooking)}
+                            className="btn-primary text-xs px-6 py-2.5 font-bold flex items-center gap-2 shrink-0 shadow-[0_0_20px_-5px_rgba(217,56,30,0.6)] active:scale-95"
+                          >
+                            <Camera className="w-4 h-4" />
+                            <span>Inspect & Approve Work</span>
+                          </button>
                         </div>
-                        <p className="text-xs text-slate-300">
-                          Your technician uploaded Before & After photos. Please inspect and approve the work so the technician can complete the job.
-                        </p>
-                      </div>
+                      )}
 
-                      <button
-                        onClick={() => setReviewProofBooking(activeBooking)}
-                        className="btn-primary text-xs px-6 py-2.5 font-bold flex items-center gap-2 shrink-0 shadow-[0_0_20px_-5px_rgba(217,56,30,0.6)] active:scale-95"
-                      >
-                        <Camera className="w-4 h-4" />
-                        <span>Inspect & Approve Work</span>
-                      </button>
-                    </div>
-                  )}
-
-                  {/* ── WORK EVIDENCE APPROVED BANNER ── */}
-                  {activeBooking.status === 'in_progress' && getProofStatus(activeBooking.admin_note) === 'approved' && (
-                    <div className="p-4 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 flex items-center gap-3 text-xs font-mono text-emerald-400">
-                      <CheckCircle2 className="w-4 h-4 shrink-0" />
-                      <span>Work evidence approved! Technician has been authorized to complete the job. Payment will unlock once completed.</span>
-                    </div>
-                  )}
-
-                  {/* ── COMPLETED & UNLOCKED PAYMENT BANNER ── */}
-                  {['completed', 'waiting_payment'].includes(activeBooking.status) && activeBooking.payment_status !== 'paid' && (
+                  {/* ── APPROVED / PAYMENT BANNER ── */}
+                  {(['completed', 'waiting_payment'].includes(activeBooking.status) || (activeBooking.status === 'in_progress' && getProofStatus(activeBooking.admin_note) === 'approved')) && activeBooking.payment_status !== 'paid' && (
                     <div className="p-5 rounded-2xl bg-dark-850 border border-dark-750 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 animate-in fade-in duration-300">
                       <div className="space-y-1">
                         <div className="flex items-center gap-2">
                           <CheckCircle2 className="w-4 h-4 text-emerald-400" />
                           <span className="text-xs font-bold text-white uppercase tracking-wider font-mono">
-                            Service Completed • Payment Due
+                            Work Approved • Payment Due
                           </span>
                         </div>
                         <p className="text-xs text-slate-300">
-                          Work evidence has been verified and job finalized. You may now complete payment securely via Razorpay.
+                          Work evidence has been verified. Please complete payment securely to finalize the job.
                         </p>
                       </div>
 
@@ -691,9 +683,13 @@ export const CustomerDashboard: React.FC = () => {
           isOpen={!!reviewProofBooking}
           onClose={() => setReviewProofBooking(null)}
           onApproved={() => {
+            const bookingToPay = reviewProofBooking;
             setReviewProofBooking(null);
             triggerLocalSync();
-            loadDashboardData();
+            loadDashboardData(true);
+            if (bookingToPay) {
+              setPaymentModalBooking(bookingToPay);
+            }
           }}
         />
       )}
