@@ -145,7 +145,7 @@ export const JobCompletionModal: React.FC<JobCompletionModalProps> = ({
               <div className="grid grid-cols-2 gap-3">
                 {beforeImages.map(img => (
                   <div key={img.id} className="relative h-28 rounded-2xl overflow-hidden border border-dark-700 bg-dark-950 group">
-                    <img src={img.thumbnail_url || img.secure_url} alt="Before work" className="w-full h-full object-cover" />
+                    <img src={img.secure_url || (img as any).url || img.thumbnail_url} alt="Before work" className="w-full h-full object-cover" />
                     <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                       <span className="text-[10px] font-mono text-white bg-dark-900/80 px-2 py-1 rounded">Before</span>
                     </div>

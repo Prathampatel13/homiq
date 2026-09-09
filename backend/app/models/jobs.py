@@ -9,14 +9,14 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.database.base import Base
 
 if TYPE_CHECKING:
-    from app.models.users import Company, Technician
+    from app.models.users import Company, Technician, User
 
 
 class JobPost(Base):
     __tablename__ = "job_posts"
 
     id: Mapped[int] = mapped_column(primary_key=True, index=True)
-    company_id: Mapped[int] = mapped_column(ForeignKey("companies.id"), nullable=False)
+    creator_id: Mapped[int] = mapped_column(ForeignKey("users.id"), nullable=False)
     title: Mapped[str] = mapped_column(String(255), nullable=False)
     description: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     requirements: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
@@ -24,8 +24,8 @@ class JobPost(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
 
     # Relationships
-    company_profile: Mapped["Company"] = relationship(
-        "Company",
+    creator: Mapped["User"] = relationship(
+        "User",
         back_populates="job_posts",
     )
 
@@ -41,7 +41,7 @@ class JobApplication(Base):
 
     id: Mapped[int] = mapped_column(primary_key=True, index=True)
     job_post_id: Mapped[int] = mapped_column(ForeignKey("job_posts.id"), nullable=False)
-    technician_id: Mapped[int] = mapped_column(ForeignKey("technicians.id"), nullable=False)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), nullable=False)
     cover_letter: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     status: Mapped[str] = mapped_column(String(50), default="applied", nullable=False)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
@@ -52,7 +52,7 @@ class JobApplication(Base):
         back_populates="job_applications",
     )
 
-    technician_profile: Mapped["Technician"] = relationship(
-        "Technician",
+    user: Mapped["User"] = relationship(
+        "User",
         back_populates="job_applications",
     )

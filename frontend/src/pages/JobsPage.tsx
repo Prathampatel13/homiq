@@ -148,7 +148,7 @@ export const JobsPage: React.FC = () => {
                     </div>
                     <div className="flex items-center gap-1.5">
                       <Building2 className="w-3.5 h-3.5 text-slate-500" />
-                      <span>{job.company?.company_name || 'HomiQ Direct Fleet'}</span>
+                      <span>{job.creator?.full_name || 'HomiQ Direct Fleet'}</span>
                     </div>
                   </div>
                 </div>

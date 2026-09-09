@@ -12,6 +12,7 @@ export const RegisterPage: React.FC = () => {
 
   const [role, setRole] = useState<'customer' | 'technician' | 'company'>('customer');
   const [fullName, setFullName] = useState('');
+  const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
@@ -21,7 +22,7 @@ export const RegisterPage: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!fullName.trim() || !email.trim() || !password.trim()) {
+    if (!fullName.trim() || !email.trim() || !password.trim() || !username.trim()) {
       setError('Please complete all required fields.');
       return;
     }
@@ -32,6 +33,7 @@ export const RegisterPage: React.FC = () => {
 
       const res = await authApi.register({
         full_name: fullName,
+        username,
         email,
         phone: phone || undefined,
         password,
@@ -125,6 +127,21 @@ export const RegisterPage: React.FC = () => {
                     role === 'technician' ? 'Jane Smith' : 
                     'John Doe'
                   }
+                  className="input-field pl-10"
+                  required
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-xs font-semibold text-slate-300 mb-1.5">Username *</label>
+              <div className="relative">
+                <User className="w-4 h-4 text-slate-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                <input
+                  type="text"
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value.toLowerCase().replace(/[^a-z0-9_.]/g, ''))}
+                  placeholder="johndoe123"
                   className="input-field pl-10"
                   required
                 />

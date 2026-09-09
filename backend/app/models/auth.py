@@ -1,7 +1,11 @@
 from __future__ import annotations
 
 from datetime import datetime, timezone
-from typing import Optional
+from typing import TYPE_CHECKING, Optional
+
+if TYPE_CHECKING:
+    from app.models.users import Customer, Technician, Company, Admin
+    from app.models.jobs import JobApplication, JobPost
 
 from sqlalchemy import Boolean, DateTime, ForeignKey, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
@@ -27,6 +31,7 @@ class User(Base):
     email: Mapped[str] = mapped_column(String(255), unique=True, index=True, nullable=False)
     phone: Mapped[Optional[str]] = mapped_column(String(20), nullable=True)
     full_name: Mapped[str] = mapped_column(String(255), nullable=False)
+    username: Mapped[Optional[str]] = mapped_column(String(50), unique=True, index=True, nullable=True)
     password_hash: Mapped[str] = mapped_column(String(255), nullable=False)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
     is_verified: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
@@ -41,6 +46,16 @@ class User(Base):
     technician: Mapped[Optional["Technician"]] = relationship(back_populates="user", uselist=False)
     company: Mapped[Optional["Company"]] = relationship(back_populates="user", uselist=False)
     admin: Mapped[Optional["Admin"]] = relationship(back_populates="user", uselist=False)
+    job_applications: Mapped[list["JobApplication"]] = relationship(
+        "JobApplication",
+        back_populates="user",
+        cascade="all, delete-orphan",
+    )
+    job_posts: Mapped[list["JobPost"]] = relationship(
+        "JobPost",
+        back_populates="creator",
+        cascade="all, delete-orphan",
+    )
 
 
 class RefreshToken(Base):

@@ -98,10 +98,7 @@ class Technician(Base):
         back_populates="technician",
     )
 
-    job_applications: Mapped[list["JobApplication"]] = relationship(
-        "JobApplication",
-        back_populates="technician_profile",
-    )
+
 
 
 class Company(Base):
@@ -117,11 +114,7 @@ class Company(Base):
 
     user: Mapped["User"] = relationship(back_populates="company")
 
-    job_posts: Mapped[list["JobPost"]] = relationship(
-        "JobPost",
-        back_populates="company_profile",
-        cascade="all, delete-orphan",
-    )
+
 
 
 class Admin(Base):

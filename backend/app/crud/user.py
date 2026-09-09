@@ -29,6 +29,7 @@ class UserCRUD:
         self,
         email: str,
         full_name: str,
+        username: str | None = None,
         phone: str | None = None,
         role_name: str = "customer",
         password: str | None = None,
@@ -65,6 +66,7 @@ class UserCRUD:
 
         user = User(
             email=email,
+            username=username,
             full_name=full_name,
             phone=phone,
             password_hash=password_hash,
@@ -113,7 +115,8 @@ class UserCRUD:
                 or_(
                     User.email == identifier,
                     User.phone == identifier,
-                    User.full_name == identifier
+                    User.full_name == identifier,
+                    User.username == identifier
                 )
             )
         )

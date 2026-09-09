@@ -148,7 +148,7 @@ export const ProofReviewModal: React.FC<ProofReviewModalProps> = ({
                 {beforeImages.length > 0 ? (
                   beforeImages.map(img => (
                     <div key={img.id} className="relative h-44 rounded-2xl overflow-hidden border border-dark-750 bg-dark-950">
-                      <img src={img.secure_url || img.thumbnail_url} alt="Before" className="w-full h-full object-cover" />
+                      <img src={img.secure_url || (img as any).url || img.thumbnail_url} alt="Before" className="w-full h-full object-cover" />
                       <div className="absolute bottom-2 left-2 bg-dark-950/80 backdrop-blur-md px-2.5 py-1 rounded-lg text-[10px] font-mono text-slate-300">
                         Initial Condition
                       </div>
@@ -176,7 +176,7 @@ export const ProofReviewModal: React.FC<ProofReviewModalProps> = ({
                 {afterImages.length > 0 ? (
                   afterImages.map(img => (
                     <div key={img.id} className="relative h-44 rounded-2xl overflow-hidden border border-sage-500/30 bg-dark-950">
-                      <img src={img.secure_url || img.thumbnail_url} alt="After" className="w-full h-full object-cover" />
+                      <img src={img.secure_url || (img as any).url || img.thumbnail_url} alt="After" className="w-full h-full object-cover" />
                       <div className="absolute bottom-2 left-2 bg-sage-500/90 backdrop-blur-md px-2.5 py-1 rounded-lg text-[10px] font-mono text-white font-bold">
                         Work Completed
                       </div>

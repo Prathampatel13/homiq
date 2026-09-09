@@ -51,14 +51,14 @@ router = APIRouter(prefix="/jobs", tags=["Jobs"])
     response_model=JobPostResponse,
     status_code=status.HTTP_201_CREATED,
     summary="Create a job post",
-    description="**Company required.** Creates a new job post under the authenticated company's profile.",
+    description="**User required.** Creates a new job post under the authenticated user's profile.",
 )
 def create_job_post(
     payload: JobPostCreate,
-    current_user: User = Depends(get_current_company),
+    current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ) -> Any:
-    """Create a job post as a company."""
+    """Create a job post as a user."""
     return JobService(db).create_job_post(current_user, payload)
 
 
@@ -82,22 +82,22 @@ def list_job_posts(
     "/my",
     response_model=JobPostListResponse,
     summary="List my job posts",
-    description="**Company required.** Lists job posts created by the authenticated company.",
+    description="**User required.** Lists job posts created by the authenticated user.",
 )
 @router.get(
     "/company/my",
     response_model=JobPostListResponse,
     summary="List my job posts alias",
-    description="**Company required.** Lists job posts created by the authenticated company.",
+    description="**User required.** Lists job posts created by the authenticated user.",
 )
 def list_my_job_posts(
     is_active: Optional[bool] = None,
     offset: int = 0,
     limit: int = 100,
-    current_user: User = Depends(get_current_company),
+    current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ) -> Any:
-    """List the authenticated company's job posts."""
+    """List the authenticated user's job posts."""
     return JobService(db).list_my_job_posts(
         current_user, is_active=is_active, offset=offset, limit=limit
     )
@@ -121,12 +121,12 @@ def get_job_post(
     "/{job_post_id}",
     response_model=JobPostResponse,
     summary="Update job post",
-    description="**Company required.** Updates one or more fields of a job post owned by the authenticated company.",
+    description="**User required.** Updates one or more fields of a job post owned by the authenticated user.",
 )
 def update_job_post(
     job_post_id: int,
     payload: JobPostUpdate,
-    current_user: User = Depends(get_current_company),
+    current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ) -> Any:
     """Update a job post (partial update)."""
@@ -137,19 +137,19 @@ def update_job_post(
     "/{job_post_id}",
     status_code=status.HTTP_200_OK,
     summary="Delete job post",
-    description="**Company required.** Deletes a job post owned by the authenticated company.",
+    description="**User required.** Deletes a job post owned by the authenticated user.",
 )
 def delete_job_post(
     job_post_id: int,
-    current_user: User = Depends(get_current_company),
+    current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ) -> dict[str, str]:
-    """Delete a job post (company owner only)."""
+    """Delete a job post (owner only)."""
     return JobService(db).delete_job_post(current_user, job_post_id)
 
 
 # ════════════════════════════════════════════════════════════
-# Job Applications — Company manages, Technician applies
+# Job Applications — User manages, User applies
 # ════════════════════════════════════════════════════════════
 
 
@@ -157,17 +157,17 @@ def delete_job_post(
     "/{job_post_id}/applications",
     response_model=JobApplicationListResponse,
     summary="List job applications",
-    description="**Company required.** Lists applications received for a job post owned by the authenticated company.",
+    description="**User required.** Lists applications received for a job post owned by the authenticated user.",
 )
 def list_job_applications(
     job_post_id: int,
     application_status: Optional[str] = None,
     offset: int = 0,
     limit: int = 100,
-    current_user: User = Depends(get_current_company),
+    current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ) -> Any:
-    """List applications for a company-owned job post."""
+    """List applications for a user-owned job post."""
     return JobService(db).list_job_applications(
         current_user,
         job_post_id,
@@ -182,15 +182,15 @@ def list_job_applications(
     response_model=JobApplicationResponse,
     status_code=status.HTTP_201_CREATED,
     summary="Apply to a job",
-    description="**Technician required.** Submits an application for an active job post. Duplicate applications are rejected.",
+    description="**User required.** Submits an application for an active job post. Duplicate applications are rejected.",
 )
 def apply_to_job(
     job_post_id: int,
     payload: JobApplicationCreate,
-    current_user: User = Depends(get_current_technician),
+    current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ) -> Any:
-    """Apply to a job post as a technician."""
+    """Apply to a job post as a user."""
     return JobService(db).apply_to_job(current_user, job_post_id, payload)
 
 
@@ -198,16 +198,16 @@ def apply_to_job(
     "/applications/my",
     response_model=JobApplicationListResponse,
     summary="List my job applications",
-    description="**Technician required.** Lists applications submitted by the authenticated technician.",
+    description="**User required.** Lists applications submitted by the authenticated user.",
 )
 def list_my_applications(
     application_status: Optional[str] = None,
     offset: int = 0,
     limit: int = 100,
-    current_user: User = Depends(get_current_technician),
+    current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ) -> Any:
-    """List the authenticated technician's applications."""
+    """List the authenticated user's applications."""
     return JobService(db).list_my_applications(
         current_user,
         status=application_status,
@@ -238,14 +238,14 @@ def update_application_status(
     "/applications/{application_id}",
     status_code=status.HTTP_200_OK,
     summary="Withdraw application",
-    description="**Technician required.** Withdraws an application. Not allowed once accepted or rejected.",
+    description="**User required.** Withdraws an application. Not allowed once accepted or rejected.",
 )
 def withdraw_application(
     application_id: int,
-    current_user: User = Depends(get_current_technician),
+    current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ) -> dict[str, str]:
-    """Withdraw an application as a technician."""
+    """Withdraw an application as a user."""
     return JobService(db).withdraw_application(current_user, application_id)
 
 

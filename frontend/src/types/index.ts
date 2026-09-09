@@ -22,6 +22,7 @@ export type BookingStatus =
 export interface User {
   id: number;
   email: string;
+  username?: string;
   full_name: string;
   phone?: string;
   role: UserRole | string;
@@ -221,28 +222,36 @@ export interface Coupon {
 
 export interface JobPost {
   id: number;
-  company_id?: number;
+  creator_id: number;
   title: string;
   description: string;
-  requirements?: string;
-  location?: string;
-  salary_range?: string;
+  requirements: string;
   is_active: boolean;
+  application_count: number;
   created_at: string;
-  company?: CompanyProfile;
-  applications_count?: number;
+  creator?: {
+    id: number;
+    full_name: string;
+  };
 }
 
 export interface JobApplication {
   id: number;
-  job_id: number;
-  job_post_id?: number;
-  technician_id: number;
-  cover_letter?: string;
-  status: 'applied' | 'shortlisted' | 'rejected' | 'hired' | string;
+  job_post_id: number;
+  user_id: number;
+  cover_letter: string;
+  status: 'applied' | 'reviewing' | 'accepted' | 'rejected';
   created_at: string;
-  job?: JobPost;
-  technician?: TechnicianProfile | User;
+  job_post?: {
+    title: string;
+    creator_name: string;
+  };
+  applicant?: {
+    id: number;
+    full_name: string;
+    email: string;
+    phone?: string;
+  };
 }
 
 export interface VerificationStatus {

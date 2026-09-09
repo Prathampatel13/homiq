@@ -25,6 +25,7 @@ import { bookingsApi } from '../api/bookings';
 import { notificationsApi } from '../api/notifications';
 import { BookingMediaSection } from '../components/media/BookingMediaSection';
 import { JobCompletionModal } from '../components/modals/JobCompletionModal';
+import { ProviderRecruitmentTab } from '../components/recruitment/ProviderRecruitmentTab';
 import { useAuthStore } from '../store/useAuthStore';
 import { Booking, TechnicianProfile, NotificationItem } from '../types';
 import { StatusBadge } from '../components/ui/StatusBadge';
@@ -38,12 +39,11 @@ import { getErrorMessage } from '../api/axios';
 export const ProviderDashboard: React.FC = () => {
   const { user } = useAuthStore();
   const [profile, setProfile] = useState<TechnicianProfile | null>(null);
-  const [isOnline, setIsOnline] = useState<boolean>(true);
   const [jobs, setJobs] = useState<Booking[]>([]);
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState<number | null>(null);
   const [completingJobId, setCompletingJobId] = useState<number | null>(null);
-  const [activeTab, setActiveTab] = useState<'today' | 'active' | 'pending' | 'all' | 'earnings' | 'documents' | 'notifications'>('today');
+  const [activeTab, setActiveTab] = useState<'today' | 'active' | 'pending' | 'all' | 'earnings' | 'documents' | 'notifications' | 'recruitment'>('today');
 
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
@@ -73,7 +73,6 @@ export const ProviderDashboard: React.FC = () => {
 
       if (profRes.status === 'fulfilled' && profRes.value) {
         setProfile(profRes.value);
-        setIsOnline(profRes.value.is_online ?? true);
       }
 
       let allJobs: Booking[] = [];
@@ -110,20 +109,6 @@ export const ProviderDashboard: React.FC = () => {
   useRealTimeSync(() => {
     loadTechnicianData(true);
   }, 15000);
-
-  const handleToggleOnline = async () => {
-    try {
-      if (isOnline) {
-        await technicianApi.setOffline();
-        setIsOnline(false);
-      } else {
-        await technicianApi.setOnline();
-        setIsOnline(true);
-      }
-    } catch (err) {
-      console.error('Failed to toggle status:', err);
-    }
-  };
 
   // Status transitions
   const handleJobAction = async (bookingId: number, action: 'accept' | 'start_trip' | 'arrived' | 'start_service' | 'complete') => {
@@ -197,11 +182,11 @@ export const ProviderDashboard: React.FC = () => {
         <div className="p-6 rounded-3xl bg-dark-900 border border-dark-750 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-card">
           <div className="flex items-center gap-4">
             <div className="w-12 h-12 rounded-2xl bg-sage-400/15 border border-sage-400/30 flex items-center justify-center text-sage-400 text-base font-bold shadow-accent">
-              {user?.full_name?.charAt(0) || 'T'}
+              {(user?.username || user?.full_name)?.charAt(0)?.toUpperCase() || 'T'}
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <h1 className="text-xl font-bold text-white tracking-tight">{user?.full_name || 'Master Technician'}</h1>
+                <h1 className="text-xl font-bold text-white tracking-tight">@{user?.username || user?.full_name || 'technician'}</h1>
                 <span className="text-[10px] font-mono uppercase px-2 py-0.5 rounded bg-dark-800 text-sage-300 border border-dark-750">
                   {profile?.specialization || 'Multi-Trade Master'}
                 </span>
@@ -212,32 +197,7 @@ export const ProviderDashboard: React.FC = () => {
             </div>
           </div>
 
-          <div className="flex items-center gap-3 self-start sm:self-auto">
-            <button
-              onClick={handleToggleOnline}
-              className={`px-4 py-2 rounded-full text-xs font-mono font-bold flex items-center gap-2.5 transition-all duration-300 ${
-                isOnline
-                  ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/40 shadow-[0_0_15px_rgba(16,185,129,0.15)] hover:bg-emerald-500/20'
-                  : 'bg-dark-800 text-slate-400 border border-dark-700 hover:bg-dark-750 hover:text-slate-300'
-              }`}
-            >
-              <div className="relative flex items-center justify-center">
-                <Power className="w-4 h-4 z-10" />
-                {isOnline && (
-                  <span className="absolute w-4 h-4 bg-emerald-400/30 rounded-full animate-ping"></span>
-                )}
-              </div>
-              <span className="tracking-wide">
-                {isOnline ? (
-                  <>
-                    <span className="text-white">ONLINE</span> <span className="text-emerald-500/50 mx-1">•</span> <span className="text-emerald-300/90 font-medium tracking-normal text-[11px]">RECEIVING DISPATCHES</span>
-                  </>
-                ) : (
-                  'OFFLINE • ON BREAK'
-                )}
-              </span>
-            </button>
-          </div>
+          {/* Online/Offline toggle removed per requirements */}
         </div>
 
         {/* ──────────────────────────────────────────────────────────────────────────
@@ -251,6 +211,7 @@ export const ProviderDashboard: React.FC = () => {
             { id: 'all', label: 'All Services', count: jobs.length },
             { id: 'earnings', label: 'Earnings & Payouts' },
             { id: 'notifications', label: 'Alerts', count: unreadCount },
+            { id: 'recruitment', label: 'Recruitment' },
             { id: 'documents', label: 'KYC & Credentials' },
           ].map((tab) => (
             <button
@@ -308,7 +269,7 @@ export const ProviderDashboard: React.FC = () => {
                         <div className="flex flex-col gap-1.5 pt-1">
                           <div className="flex items-center gap-2 text-xs text-slate-300">
                             <User className="w-3.5 h-3.5 text-sage-400 shrink-0" />
-                            <span className="font-semibold text-white">{job.customer?.full_name || 'Customer'}</span>
+                            <span className="font-semibold text-white">@{job.customer?.username || job.customer?.full_name || 'customer'}</span>
                             {job.customer?.phone && (
                               <>
                                 <span className="text-slate-500">•</span>
@@ -570,6 +531,8 @@ export const ProviderDashboard: React.FC = () => {
               />
             )}
           </div>
+        ) : activeTab === 'recruitment' ? (
+          <ProviderRecruitmentTab />
         ) : (
           <div className="p-6 rounded-3xl bg-dark-900 border border-dark-750 space-y-4">
             <h3 className="text-base font-bold text-white">KYC Verification & Master Credentials</h3>

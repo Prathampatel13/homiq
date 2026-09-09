@@ -157,6 +157,8 @@ export const CustomerDashboard: React.FC = () => {
 
   const getTechName = (tech: any) => {
     if (!tech) return 'Assigned Professional';
+    if (tech.user?.username) return `@${tech.user.username}`;
+    if (tech.username) return `@${tech.username}`;
     if (typeof tech.full_name === 'string') return tech.full_name;
     if (tech.user?.full_name) return tech.user.full_name;
     return 'Master Technician';
@@ -181,7 +183,7 @@ export const CustomerDashboard: React.FC = () => {
               </span>
             </div>
             <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-white">
-              Welcome back, {user?.full_name?.split(' ')[0] || 'Customer'}
+              Welcome back, @{user?.username || user?.full_name?.split(' ')[0] || 'Customer'}
             </h1>
             <p className="text-xs text-slate-400 mt-0.5">
               Live status, active technician dispatches, and smart home ecosystem health.

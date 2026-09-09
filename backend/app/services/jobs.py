@@ -56,23 +56,14 @@ class JobService:
     # Company — Job Post management
     # ─────────────────────────────────────────────
 
-    def _get_company_or_404(self, user_id: int) -> Any:
-        company = self.company_crud.get_by_user_id(user_id)
-        if not company:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="Company profile not found.",
-            )
-        return company
-
-    def _get_company_job_or_404(self, company: Any, job_post_id: int) -> JobPost:
+    def _get_user_job_or_404(self, user: User, job_post_id: int) -> JobPost:
         job_post = self.crud.get_job_post(job_post_id)
         if not job_post:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="Job post not found.",
             )
-        if job_post.company_id != company.id:
+        if job_post.creator_id != user.id and not user.is_superuser:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail="Not authorized to manage this job post.",
@@ -82,9 +73,8 @@ class JobService:
     def create_job_post(
         self, current_user: User, payload: JobPostCreate
     ) -> JobPostResponse:
-        company = self._get_company_or_404(current_user.id)
         data = payload.model_dump(exclude_unset=True)
-        data["company_id"] = company.id
+        data["creator_id"] = current_user.id
         job_post = self.crud.create_job_post(data)
         return self._build_job_post_response(job_post)
 
@@ -95,15 +85,14 @@ class JobService:
         offset: int = 0,
         limit: int = 100,
     ) -> JobPostListResponse:
-        company = self._get_company_or_404(current_user.id)
         job_posts = self.crud.list_job_posts(
-            company_id=company.id,
+            creator_id=current_user.id,
             is_active=is_active,
             offset=offset,
             limit=limit,
         )
         total = self.crud.count_job_posts(
-            company_id=company.id,
+            creator_id=current_user.id,
             is_active=is_active,
         )
         return JobPostListResponse(
@@ -148,8 +137,7 @@ class JobService:
         job_post_id: int,
         payload: JobPostUpdate,
     ) -> JobPostResponse:
-        company = self._get_company_or_404(current_user.id)
-        job_post = self._get_company_job_or_404(company, job_post_id)
+        job_post = self._get_user_job_or_404(current_user, job_post_id)
 
         data = payload.model_dump(exclude_unset=True, exclude_none=True)
         if not data:
@@ -161,8 +149,7 @@ class JobService:
     def delete_job_post(
         self, current_user: User, job_post_id: int
     ) -> dict[str, str]:
-        company = self._get_company_or_404(current_user.id)
-        self._get_company_job_or_404(company, job_post_id)
+        self._get_user_job_or_404(current_user, job_post_id)
 
         deleted = self.crud.delete_job_post(job_post_id)
         if not deleted:
@@ -184,8 +171,7 @@ class JobService:
         offset: int = 0,
         limit: int = 100,
     ) -> JobApplicationListResponse:
-        company = self._get_company_or_404(current_user.id)
-        self._get_company_job_or_404(company, job_post_id)
+        self._get_user_job_or_404(current_user, job_post_id)
 
         applications = self.crud.list_applications(
             job_post_id=job_post_id,
@@ -208,15 +194,13 @@ class JobService:
         application_id: int,
         payload: JobApplicationStatusUpdate,
     ) -> JobApplicationResponse:
-        company = self._get_company_or_404(current_user.id)
-
         application = self.crud.get_application(application_id)
         if not application:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="Application not found.",
             )
-        if application.job_post.company_id != company.id:
+        if application.job_post.creator_id != current_user.id and not current_user.is_superuser:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail="Not authorized to manage this application.",
@@ -246,8 +230,6 @@ class JobService:
         job_post_id: int,
         payload: JobApplicationCreate,
     ) -> JobApplicationResponse:
-        technician = self._get_technician_or_404(current_user.id)
-
         job_post = self.crud.get_job_post(job_post_id)
         if not job_post:
             raise HTTPException(
@@ -260,8 +242,8 @@ class JobService:
                 detail="This job post is no longer accepting applications.",
             )
 
-        existing = self.crud.get_application_by_job_and_technician(
-            job_post_id, technician.id
+        existing = self.crud.get_application_by_job_and_user(
+            job_post_id, current_user.id
         )
         if existing:
             raise HTTPException(
@@ -271,7 +253,7 @@ class JobService:
 
         data = {
             "job_post_id": job_post_id,
-            "technician_id": technician.id,
+            "user_id": current_user.id,
             "cover_letter": payload.cover_letter,
             "status": "applied",
         }
@@ -285,15 +267,14 @@ class JobService:
         offset: int = 0,
         limit: int = 100,
     ) -> JobApplicationListResponse:
-        technician = self._get_technician_or_404(current_user.id)
         applications = self.crud.list_applications(
-            technician_id=technician.id,
+            user_id=current_user.id,
             status=status,
             offset=offset,
             limit=limit,
         )
         total = self.crud.count_applications(
-            technician_id=technician.id,
+            user_id=current_user.id,
             status=status,
         )
         return JobApplicationListResponse(
@@ -304,15 +285,13 @@ class JobService:
     def withdraw_application(
         self, current_user: User, application_id: int
     ) -> dict[str, str]:
-        technician = self._get_technician_or_404(current_user.id)
-
         application = self.crud.get_application(application_id)
         if not application:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="Application not found.",
             )
-        if application.technician_id != technician.id:
+        if application.user_id != current_user.id:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail="Not authorized to withdraw this application.",
@@ -367,8 +346,9 @@ class JobService:
     def _build_application_response(
         self, application: JobApplication
     ) -> JobApplicationResponse:
+        from app.schemas.jobs import JobApplicationUser
         job_post = application.job_post
-        technician = application.technician_profile
+        user = application.user
 
         job_post_data = None
         if job_post:
@@ -384,23 +364,23 @@ class JobService:
                 is_active=job_post.is_active,
             )
 
-        technician_data = None
-        if technician:
-            technician_data = JobApplicationTechnician(
-                id=technician.id,
-                full_name=technician.user.full_name if technician.user else "",
-                specialization=technician.specialization,
-                experience_years=technician.experience_years,
-                rating=technician.rating,
+        user_data = None
+        if user:
+            user_data = JobApplicationUser(
+                id=user.id,
+                full_name=user.full_name,
+                email=user.email,
+                phone=user.phone,
+                avatar_url=user.avatar_url,
             )
 
         return JobApplicationResponse(
             id=application.id,
             job_post_id=application.job_post_id,
-            technician_id=application.technician_id,
+            user_id=application.user_id,
             cover_letter=application.cover_letter,
             status=application.status,
             created_at=application.created_at,
             job_post=job_post_data,
-            technician=technician_data,
+            applicant=user_data,
         )

@@ -234,10 +234,10 @@ export const Navbar: React.FC = () => {
                     className="flex items-center gap-2.5 p-1.5 pr-3 rounded-xl bg-dark-850 hover:bg-dark-800 border border-dark-750 transition-colors"
                   >
                     <div className="w-8 h-8 rounded-lg bg-sage-400/15 border border-sage-400/30 flex items-center justify-center text-sage-400 text-xs font-bold">
-                      {user.full_name?.charAt(0).toUpperCase() || 'U'}
+                      {(user.username || user.full_name)?.charAt(0).toUpperCase() || 'U'}
                     </div>
                     <div className="text-left">
-                      <p className="text-xs font-semibold text-white leading-none">{user.full_name || 'User'}</p>
+                      <p className="text-xs font-semibold text-white leading-none">@{user.username || user.full_name || 'user'}</p>
                       <span className="text-[10px] font-mono text-sage-400">
                         {role.replace('ROLE_', '')}
                       </span>
@@ -251,7 +251,7 @@ export const Navbar: React.FC = () => {
                       onMouseLeave={() => setIsProfileOpen(false)}
                     >
                       <div className="px-3 py-2 border-b border-dark-750 mb-1">
-                        <p className="text-xs font-semibold text-white">{user.full_name}</p>
+                        <p className="text-xs font-semibold text-white">@{user.username || user.full_name}</p>
                         <p className="text-[11px] text-slate-400 truncate">{user.email}</p>
                       </div>
 

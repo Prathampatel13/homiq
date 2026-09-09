@@ -16,6 +16,7 @@ class TokenPayload(BaseModel):
 
 class RegisterRequest(BaseModel):
     email: EmailStr
+    username: str = Field(min_length=3)
     password: str = Field(min_length=8)
     full_name: str = Field(min_length=2)
     phone: str | None = None

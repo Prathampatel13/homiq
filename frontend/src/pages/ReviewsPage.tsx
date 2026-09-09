@@ -11,8 +11,12 @@ export const ReviewsPage: React.FC = () => {
   const { user, getEffectiveRole } = useAuthStore();
   const role = getEffectiveRole();
   const [reviews, setReviews] = useState<Review[]>([]);
+  const [originalReviews, setOriginalReviews] = useState<Review[]>([]);
   const [loading, setLoading] = useState(true);
   const [summary, setSummary] = useState<any>(null);
+  
+  const [ratingFilter, setRatingFilter] = useState<number | null>(null);
+  const [serviceFilter, setServiceFilter] = useState<string>('');
 
   useEffect(() => {
     const fetchReviews = async () => {
@@ -24,6 +28,7 @@ export const ReviewsPage: React.FC = () => {
           const res = await reviewsApi.getTechnicianReviews(techId);
           const items = Array.isArray(res) ? res : ((res as any).items || []);
           setReviews(items);
+          setOriginalReviews(items);
           
           try {
              const sum = await reviewsApi.getTechnicianSummary(techId);
@@ -33,16 +38,15 @@ export const ReviewsPage: React.FC = () => {
           }
         } else if (role === UserRole.CUSTOMER && user?.id) {
            const res = await reviewsApi.getReviews({ offset: 0, limit: 100 });
-           // Ideally backend filters by customer_id if passed, but we'll fetch all and filter or assume backend handles it.
-           // Since reviewsApi doesn't currently expose customer_id filter in types, we fetch all.
            const items = Array.isArray(res) ? res : (res.items || []);
-           // Filter for customer if possible, assuming backend doesn't filter by user automatically.
            const myReviews = items.filter((r: Review) => r.customer_id === user.id);
            setReviews(myReviews);
+           setOriginalReviews(myReviews);
         } else {
            const res = await reviewsApi.getReviews({ offset: 0, limit: 100 });
            const items = Array.isArray(res) ? res : (res.items || []);
            setReviews(items);
+           setOriginalReviews(items);
         }
       } catch (err) {
         console.error('Failed to fetch reviews:', err);
@@ -52,6 +56,14 @@ export const ReviewsPage: React.FC = () => {
     };
     fetchReviews();
   }, [role, user?.id]);
+
+  const uniqueServices = Array.from(new Set(originalReviews.map(r => r.service_name).filter(Boolean)));
+
+  const filteredReviews = originalReviews.filter(r => {
+    if (ratingFilter !== null && r.rating < ratingFilter) return false;
+    if (serviceFilter && r.service_name !== serviceFilter) return false;
+    return true;
+  });
 
   if (loading) return <LoadingState message="Loading Reviews..." />;
 
@@ -66,6 +78,35 @@ export const ReviewsPage: React.FC = () => {
               : 'Your feedback and reviews.'}
           </p>
         </div>
+
+        {role === UserRole.TECHNICIAN && (
+          <div className="flex flex-col sm:flex-row gap-4 items-center mb-6">
+            <select
+              className="bg-dark-900 border border-dark-750 text-white text-sm rounded-xl px-4 py-2 focus:outline-none focus:border-sage-400 w-full sm:w-auto"
+              value={ratingFilter === null ? '' : ratingFilter.toString()}
+              onChange={(e) => {
+                const val = e.target.value;
+                setRatingFilter(val ? parseInt(val, 10) : null);
+              }}
+            >
+              <option value="">All Ratings</option>
+              <option value="5">5 Stars</option>
+              <option value="4">4 Stars & Above</option>
+              <option value="3">3 Stars & Above</option>
+            </select>
+
+            <select
+              className="bg-dark-900 border border-dark-750 text-white text-sm rounded-xl px-4 py-2 focus:outline-none focus:border-sage-400 w-full sm:w-auto"
+              value={serviceFilter}
+              onChange={(e) => setServiceFilter(e.target.value)}
+            >
+              <option value="">All Services</option>
+              {uniqueServices.map((service, idx) => (
+                <option key={idx} value={service as string}>{service}</option>
+              ))}
+            </select>
+          </div>
+        )}
 
         {role === UserRole.TECHNICIAN && summary && (
            <div className="p-6 rounded-3xl bg-dark-900 border border-dark-750 flex items-center justify-between gap-6 shadow-card">
@@ -83,15 +124,15 @@ export const ReviewsPage: React.FC = () => {
            </div>
         )}
 
-        {reviews.length === 0 ? (
+        {filteredReviews.length === 0 ? (
           <EmptyState
-            title="No reviews yet"
-            description="When customers leave a review, they will appear here."
+            title="No reviews found"
+            description="Try adjusting your filters or wait for more customer reviews."
             icon={MessageSquare}
           />
         ) : (
           <div className="space-y-4">
-            {reviews.map((review) => (
+            {filteredReviews.map((review) => (
               <div key={review.id} className="p-5 rounded-2xl bg-dark-900 border border-dark-750 hover:border-dark-700 transition-colors shadow-card flex flex-col gap-4">
                 <div className="flex items-start justify-between gap-4">
                   <div className="flex items-center gap-3">

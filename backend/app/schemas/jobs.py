@@ -17,13 +17,13 @@ from pydantic import BaseModel, Field
 # ─────────────────────────────────────────────
 
 
-class JobPostCompany(BaseModel):
-    """Embedded company info returned in job post responses."""
+class JobPostUser(BaseModel):
+    """Embedded creator info returned in job post responses."""
 
     id: int
-    company_name: str
-    industry: Optional[str] = None
-    description: Optional[str] = None
+    full_name: str
+    avatar_url: Optional[str] = None
+    email: str
 
 
 class JobPostCreate(BaseModel):
@@ -48,14 +48,14 @@ class JobPostResponse(BaseModel):
     """Full job post response."""
 
     id: int
-    company_id: int
+    creator_id: int
     title: str
     description: Optional[str] = None
     requirements: Optional[str] = None
     is_active: bool
     application_count: int = 0
     created_at: datetime
-    company: Optional[JobPostCompany] = Field(None, alias="company_profile")
+    creator: Optional[JobPostUser] = Field(None, alias="creator")
 
     model_config = {"from_attributes": True, "populate_by_name": True}
 
@@ -87,7 +87,7 @@ class JobApplicationJobPost(BaseModel):
 
     id: int
     title: str
-    company_name: str = ""
+    creator_name: str = ""
     is_active: bool
 
 
@@ -103,18 +103,27 @@ class JobApplicationStatusUpdate(BaseModel):
     status: str = Field(..., pattern=r"^(applied|shortlisted|accepted|rejected)$")
 
 
+class JobApplicationUser(BaseModel):
+    """Embedded user info returned in application responses."""
+
+    id: int
+    full_name: str
+    email: str
+    phone: Optional[str] = None
+    avatar_url: Optional[str] = None
+
 class JobApplicationResponse(BaseModel):
     """Full job application response."""
 
     id: int
     job_post_id: int
-    technician_id: int
+    user_id: int
     cover_letter: Optional[str] = None
     status: str
     created_at: datetime
     job_post: Optional[JobApplicationJobPost] = None
-    technician: Optional[JobApplicationTechnician] = Field(
-        None, alias="technician_profile"
+    applicant: Optional[JobApplicationUser] = Field(
+        None, alias="user"
     )
 
     model_config = {"from_attributes": True, "populate_by_name": True}

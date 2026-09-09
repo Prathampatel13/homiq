@@ -33,17 +33,17 @@ class JobCRUD:
         return job_post
 
     def get_job_post(self, job_post_id: int) -> Optional[JobPost]:
-        """Fetch a single job post with its company relationship loaded."""
+        """Fetch a single job post with its creator relationship loaded."""
         stmt = (
             select(JobPost)
-            .options(joinedload(JobPost.company_profile))
+            .options(joinedload(JobPost.creator))
             .where(JobPost.id == job_post_id)
         )
         return self.db.scalar(stmt)
 
     def list_job_posts(
         self,
-        company_id: Optional[int] = None,
+        creator_id: Optional[int] = None,
         is_active: Optional[bool] = None,
         search: Optional[str] = None,
         offset: int = 0,
@@ -52,13 +52,13 @@ class JobCRUD:
         """List job posts with optional filters, newest first."""
         stmt = (
             select(JobPost)
-            .options(joinedload(JobPost.company_profile))
+            .options(joinedload(JobPost.creator))
             .order_by(JobPost.created_at.desc())
             .offset(offset)
             .limit(limit)
         )
-        if company_id is not None:
-            stmt = stmt.where(JobPost.company_id == company_id)
+        if creator_id is not None:
+            stmt = stmt.where(JobPost.creator_id == creator_id)
         if is_active is not None:
             stmt = stmt.where(JobPost.is_active == is_active)
         if search:
@@ -72,13 +72,13 @@ class JobCRUD:
 
     def count_job_posts(
         self,
-        company_id: Optional[int] = None,
+        creator_id: Optional[int] = None,
         is_active: Optional[bool] = None,
         search: Optional[str] = None,
     ) -> int:
         stmt = select(func.count(JobPost.id))
-        if company_id is not None:
-            stmt = stmt.where(JobPost.company_id == company_id)
+        if creator_id is not None:
+            stmt = stmt.where(JobPost.creator_id == creator_id)
         if is_active is not None:
             stmt = stmt.where(JobPost.is_active == is_active)
         if search:
@@ -127,32 +127,32 @@ class JobCRUD:
         return application
 
     def get_application(self, application_id: int) -> Optional[JobApplication]:
-        """Fetch a single application with job post and technician loaded."""
+        """Fetch a single application with job post and user loaded."""
         stmt = (
             select(JobApplication)
             .options(
                 joinedload(JobApplication.job_post),
-                joinedload(JobApplication.technician_profile),
+                joinedload(JobApplication.user),
             )
             .where(JobApplication.id == application_id)
         )
         return self.db.scalar(stmt)
 
-    def get_application_by_job_and_technician(
-        self, job_post_id: int, technician_id: int
+    def get_application_by_job_and_user(
+        self, job_post_id: int, user_id: int
     ) -> Optional[JobApplication]:
-        """Check if a technician has already applied to a job."""
+        """Check if a user has already applied to a job."""
         return self.db.scalar(
             select(JobApplication).where(
                 JobApplication.job_post_id == job_post_id,
-                JobApplication.technician_id == technician_id,
+                JobApplication.user_id == user_id,
             )
         )
 
     def list_applications(
         self,
         job_post_id: Optional[int] = None,
-        technician_id: Optional[int] = None,
+        user_id: Optional[int] = None,
         status: Optional[str] = None,
         offset: int = 0,
         limit: int = 100,
@@ -162,11 +162,9 @@ class JobCRUD:
             select(JobApplication)
             .options(
                 joinedload(JobApplication.job_post).joinedload(
-                    JobPost.company_profile
+                    JobPost.creator
                 ),
-                joinedload(JobApplication.technician_profile).joinedload(
-                    Technician.user
-                ),
+                joinedload(JobApplication.user),
             )
             .order_by(JobApplication.created_at.desc())
             .offset(offset)
@@ -174,8 +172,8 @@ class JobCRUD:
         )
         if job_post_id is not None:
             stmt = stmt.where(JobApplication.job_post_id == job_post_id)
-        if technician_id is not None:
-            stmt = stmt.where(JobApplication.technician_id == technician_id)
+        if user_id is not None:
+            stmt = stmt.where(JobApplication.user_id == user_id)
         if status:
             stmt = stmt.where(JobApplication.status == status)
         return list(self.db.execute(stmt).scalars().all())
@@ -183,14 +181,14 @@ class JobCRUD:
     def count_applications(
         self,
         job_post_id: Optional[int] = None,
-        technician_id: Optional[int] = None,
+        user_id: Optional[int] = None,
         status: Optional[str] = None,
     ) -> int:
         stmt = select(func.count(JobApplication.id))
         if job_post_id is not None:
             stmt = stmt.where(JobApplication.job_post_id == job_post_id)
-        if technician_id is not None:
-            stmt = stmt.where(JobApplication.technician_id == technician_id)
+        if user_id is not None:
+            stmt = stmt.where(JobApplication.user_id == user_id)
         if status:
             stmt = stmt.where(JobApplication.status == status)
         return self.db.scalar(stmt) or 0

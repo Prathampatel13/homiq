@@ -23,6 +23,7 @@ def register(payload: RegisterRequest, db: Session = Depends(get_db)) -> Token:
     try:
         user = crud.create_user(
             email=str(payload.email),
+            username=payload.username,
             password=payload.password,
             full_name=payload.full_name,
             phone=payload.phone,
@@ -34,6 +35,7 @@ def register(payload: RegisterRequest, db: Session = Depends(get_db)) -> Token:
     tokens["user"] = {
         "id": user.id,
         "email": user.email,
+        "username": user.username,
         "full_name": user.full_name,
         "phone": user.phone,
         "role": f"ROLE_{user.role.name.upper()}" if user.role else "ROLE_CUSTOMER",
@@ -53,6 +55,7 @@ def login(payload: LoginRequest, db: Session = Depends(get_db)) -> Token:
     tokens["user"] = {
         "id": user.id,
         "email": user.email,
+        "username": user.username,
         "full_name": user.full_name,
         "phone": user.phone,
         "role": f"ROLE_{user.role.name.upper()}" if user.role else "ROLE_CUSTOMER",
@@ -236,6 +239,7 @@ def get_current_user_profile(
     return {
         "id": current_user.id,
         "email": current_user.email,
+        "username": current_user.username,
         "full_name": current_user.full_name,
         "phone": current_user.phone,
         "role": f"ROLE_{current_user.role.name.upper()}" if current_user.role else "ROLE_CUSTOMER",
