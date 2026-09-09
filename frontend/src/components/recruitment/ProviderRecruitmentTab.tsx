@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Plus, Users, Briefcase, Trash2, Edit } from 'lucide-react';
-import { api } from '../../api/axios';
+import api from '../../api/axios';
 import { EmptyState } from '../ui/EmptyState';
 import { LoadingState } from '../ui/LoadingState';
 import { useAuthStore } from '../../store/useAuthStore';

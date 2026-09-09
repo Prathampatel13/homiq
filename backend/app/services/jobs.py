@@ -28,16 +28,14 @@ from app.models.auth import User
 from app.models.jobs import JobApplication, JobPost
 from app.schemas.jobs import (
     JobApplicationCreate,
-    JobApplicationJobPost,
     JobApplicationListResponse,
     JobApplicationResponse,
     JobApplicationStatusUpdate,
-    JobApplicationTechnician,
-    JobPostCompany,
     JobPostCreate,
     JobPostListResponse,
     JobPostResponse,
     JobPostUpdate,
+    JobPostUser,
 )
 
 VALID_APPLICATION_STATUSES = {"applied", "shortlisted", "accepted", "rejected"}
@@ -317,14 +315,15 @@ class JobService:
     def _build_job_post_response(
         self, job_post: JobPost, include_inactive: bool = False
     ) -> JobPostResponse:
-        company = job_post.company_profile
-        company_data = None
-        if company:
-            company_data = JobPostCompany(
-                id=company.id,
-                company_name=company.company_name,
-                industry=company.industry,
-                description=company.description,
+        from app.schemas.jobs import JobPostUser
+        creator = job_post.creator
+        creator_data = None
+        if creator:
+            creator_data = JobPostUser(
+                id=creator.id,
+                full_name=creator.full_name,
+                email=creator.email,
+                avatar_url=creator.avatar_url,
             )
 
         application_count = self.crud.count_applications(
@@ -333,34 +332,34 @@ class JobService:
 
         return JobPostResponse(
             id=job_post.id,
-            company_id=job_post.company_id,
+            creator_id=job_post.creator_id,
             title=job_post.title,
             description=job_post.description,
             requirements=job_post.requirements,
             is_active=job_post.is_active,
             application_count=int(application_count),
             created_at=job_post.created_at,
-            company=company_data,
+            creator=creator_data,
         )
 
     def _build_application_response(
         self, application: JobApplication
     ) -> JobApplicationResponse:
-        from app.schemas.jobs import JobApplicationUser
+        from app.schemas.jobs import JobApplicationUser, JobApplicationJobPost
         job_post = application.job_post
         user = application.user
 
         job_post_data = None
         if job_post:
-            company_name = (
-                job_post.company_profile.company_name
-                if job_post.company_profile
+            creator_name = (
+                job_post.creator.full_name
+                if job_post.creator
                 else ""
             )
             job_post_data = JobApplicationJobPost(
                 id=job_post.id,
                 title=job_post.title,
-                company_name=company_name,
+                creator_name=creator_name,
                 is_active=job_post.is_active,
             )
 

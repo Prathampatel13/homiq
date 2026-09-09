@@ -129,7 +129,7 @@ export const JobsPage: React.FC = () => {
                       Verified Role
                     </span>
                     <span className="text-xs font-mono font-bold text-white">
-                      {job.salary_range || 'Competitive Compensation'}
+                      Competitive Compensation
                     </span>
                   </div>
 
@@ -144,7 +144,7 @@ export const JobsPage: React.FC = () => {
                   <div className="space-y-1.5 text-xs text-slate-400 font-mono">
                     <div className="flex items-center gap-1.5">
                       <MapPin className="w-3.5 h-3.5 text-slate-500" />
-                      <span>{job.location || 'Metro Hub & Regional Fleet'}</span>
+                      <span>Metro Hub & Regional Fleet</span>
                     </div>
                     <div className="flex items-center gap-1.5">
                       <Building2 className="w-3.5 h-3.5 text-slate-500" />
