@@ -89,17 +89,37 @@ class CloudinaryClient:
                     "bytes": result.get("bytes", 1024),
                 }
             except Exception as exc:
-                pass  # Fall through to standard url generation below
+                pass  # Fall through to local storage below
 
-        mock_url = f"https://res.cloudinary.com/{cloud}/image/upload/v1/{pid}.png"
+        # Fallback to local storage
+        import os
+        from app.core.config import BASE_DIR
+        file.file.seek(0)
+        content = file.file.read()
+        
+        # Build local directory path
+        upload_dir = os.path.join(BASE_DIR, settings.UPLOAD_DIR, folder)
+        os.makedirs(upload_dir, exist_ok=True)
+        
+        filename = f"{uuid4().hex[:12]}.png"
+        file_path = os.path.join(upload_dir, filename)
+        
+        with open(file_path, "wb") as f:
+            f.write(content)
+            
+        # The frontend uses Vite, backend is at API_BASE_URL.
+        # We store the relative path, frontend will prepend base URL, OR we return absolute.
+        # Since it's mounted as `/{settings.UPLOAD_DIR}`, the relative URL is:
+        local_url = f"/{settings.UPLOAD_DIR}/{folder}/{filename}"
+        
         return {
-            "url": mock_url,
-            "secure_url": mock_url,
+            "url": local_url,
+            "secure_url": local_url,
             "public_id": pid,
             "format": "png",
             "width": 800,
             "height": 600,
-            "bytes": 1024,
+            "bytes": len(content),
         }
 
     def delete_image(self, public_id: str) -> bool:

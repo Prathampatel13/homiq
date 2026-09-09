@@ -105,7 +105,13 @@ export const BookingMediaSection: React.FC<BookingMediaSectionProps> = ({
                  onClick={() => setLightboxData({ images: items, index: 0 })}>
               {items[0].resource_type === 'image' ? (
                 <>
-                  <img src={items[0].thumbnail_url || items[0].secure_url} alt={title} className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105" />
+                  <img 
+                    src={(items[0].thumbnail_url || items[0].secure_url).startsWith('http') 
+                      ? (items[0].thumbnail_url || items[0].secure_url) 
+                      : `${import.meta.env.VITE_API_BASE_URL || 'https://homiq-backend-af73.onrender.com'}${(items[0].thumbnail_url || items[0].secure_url)}`} 
+                    alt={title} 
+                    className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105" 
+                  />
                   <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
                     <span className="text-white text-xs font-semibold">View All</span>
                   </div>

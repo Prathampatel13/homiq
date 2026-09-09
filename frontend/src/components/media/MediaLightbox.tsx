@@ -73,9 +73,9 @@ export const MediaLightbox: React.FC<MediaLightboxProps> = ({
       <div className="relative w-full max-w-5xl max-h-[85vh] flex items-center justify-center p-4">
         {currentImage.resource_type === 'image' ? (
           <img
-            src={currentImage.secure_url}
-            alt="Work Evidence"
-            className="max-w-full max-h-full object-contain rounded-lg shadow-2xl"
+            src={images[currentIndex].secure_url.startsWith('http') ? images[currentIndex].secure_url : `${import.meta.env.VITE_API_BASE_URL || 'https://homiq-backend-af73.onrender.com'}${images[currentIndex].secure_url}`}
+            alt="Fullscreen media"
+            className="max-h-[85vh] max-w-full object-contain"
           />
         ) : (
           <div className="w-full h-96 flex flex-col items-center justify-center bg-dark-800 rounded-lg">
