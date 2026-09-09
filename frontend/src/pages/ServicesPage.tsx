@@ -37,6 +37,12 @@ export const ServicesPage: React.FC = () => {
   const role = getEffectiveRole();
 
   useEffect(() => {
+    if (role === UserRole.TECHNICIAN) {
+      navigate('/provider/dashboard', { replace: true });
+    }
+  }, [role, navigate]);
+
+  useEffect(() => {
     const fetchData = async () => {
       try {
         setLoading(true);
@@ -168,15 +174,15 @@ export const ServicesPage: React.FC = () => {
                 </div>
 
                 <div 
-                  onClick={() => navigate(role === UserRole.TECHNICIAN ? '/provider/dashboard' : '/booking/new')}
-                  className="pt-5 mt-5 border-t border-dark-750/70 flex items-center justify-between text-xs text-slate-400 font-mono"
+                  onClick={() => navigate(`/booking/new?serviceId=${service.id}`)}
+                  className="pt-5 mt-5 border-t border-dark-750/70 flex items-center justify-between text-xs text-slate-400 font-mono cursor-pointer hover:text-sage-300"
                 >
                   <span className="flex items-center gap-1.5">
                     <Clock className="w-3.5 h-3.5 text-sage-400" />
                     <span>~{service.duration_minutes || 60} mins</span>
                   </span>
                   <span className="text-sage-400 group-hover:translate-x-1 transition-transform flex items-center gap-1 font-semibold">
-                    <span>{role === UserRole.TECHNICIAN ? 'Order Received' : 'Book Service'}</span>
+                    <span>Book Service</span>
                     <ChevronRight className="w-3.5 h-3.5" />
                   </span>
                 </div>

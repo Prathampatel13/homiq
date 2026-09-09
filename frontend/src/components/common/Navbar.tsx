@@ -10,8 +10,7 @@ import {
   LayoutDashboard, 
   Briefcase, 
   Layers,
-  Moon,
-  Sun,
+  Wrench,
   Bell,
   Wallet,
   Settings,
@@ -33,29 +32,20 @@ export const Navbar: React.FC = () => {
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
   const [notifications, setNotifications] = useState<any[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
-  const [isDarkMode, setIsDarkMode] = useState(() => {
-    return localStorage.getItem('theme') === 'dark';
-  });
+  useEffect(() => {
+    document.documentElement.classList.remove('dark');
+    localStorage.setItem('theme', 'light');
+  }, []);
 
   useEffect(() => {
     if (isAuthenticated) {
       notificationsApi.getNotifications({ limit: 5 }).then(res => {
         const items = Array.isArray(res) ? res : res.items;
-        setNotifications(items);
-        setUnreadCount(items.filter(i => !i.is_read).length);
+        setNotifications(items || []);
+        setUnreadCount((items || []).filter(i => !i.is_read).length);
       }).catch(console.error);
     }
   }, [isAuthenticated]);
-
-  useEffect(() => {
-    if (isDarkMode) {
-      document.documentElement.classList.add('dark');
-      localStorage.setItem('theme', 'dark');
-    } else {
-      document.documentElement.classList.remove('dark');
-      localStorage.setItem('theme', 'light');
-    }
-  }, [isDarkMode]);
 
   const navigate = useNavigate();
   const location = useLocation();
@@ -89,7 +79,7 @@ export const Navbar: React.FC = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-20">
           {/* Official HomiQ Logo */}
-          <Link to="/" className="flex items-center gap-2 group">
+          <Link to={role === UserRole.TECHNICIAN ? "/provider/dashboard" : "/"} className="flex items-center gap-2 group">
             <HomiQLogo variant="horizontal" size="md" />
           </Link>
 
@@ -126,8 +116,8 @@ export const Navbar: React.FC = () => {
                   location.pathname.includes('dashboard') ? 'text-sage-400 font-semibold' : 'text-slate-300 hover:text-white'
                 }`}
               >
-                <LayoutDashboard className="w-4 h-4" />
-                <span>Dashboard</span>
+                {role === UserRole.TECHNICIAN ? <Wrench className="w-4 h-4" /> : <LayoutDashboard className="w-4 h-4" />}
+                <span>{role === UserRole.TECHNICIAN ? 'Technician Workspace' : 'Dashboard'}</span>
               </Link>
             )}
           </div>
@@ -136,15 +126,6 @@ export const Navbar: React.FC = () => {
           <div className="hidden md:flex items-center gap-3">
             {isAuthenticated && user ? (
               <div className="flex items-center gap-3">
-                {/* Theme Toggle */}
-                <button
-                  onClick={() => setIsDarkMode(!isDarkMode)}
-                  className="p-2 rounded-xl bg-dark-850 hover:bg-dark-800 border border-dark-750 text-slate-500 hover:text-slate-900 transition-colors flex items-center justify-center"
-                  aria-label="Toggle theme"
-                  title={isDarkMode ? "Switch to Light Theme" : "Switch to Dark Theme"}
-                >
-                  {isDarkMode ? <Sun className="w-4 h-4 text-amber-400" /> : <Moon className="w-4 h-4 text-slate-600" />}
-                </button>
 
                 {/* Notification Dropdown */}
                 <div className="relative">
@@ -333,16 +314,6 @@ export const Navbar: React.FC = () => {
                   <span className="tracking-wide">Support Available</span>
                 </div>
 
-                {/* Theme Toggle */}
-                <button
-                  onClick={() => setIsDarkMode(!isDarkMode)}
-                  className="p-2 rounded-xl bg-dark-850 hover:bg-dark-800 border border-dark-750 text-slate-500 hover:text-slate-900 transition-colors flex items-center justify-center"
-                  aria-label="Toggle theme"
-                  title={isDarkMode ? "Switch to Light Theme" : "Switch to Dark Theme"}
-                >
-                  {isDarkMode ? <Sun className="w-4 h-4 text-amber-400" /> : <Moon className="w-4 h-4 text-slate-600" />}
-                </button>
-
                 <Link
                   to="/login"
                   className="btn-secondary text-xs px-4 py-2"
@@ -362,21 +333,12 @@ export const Navbar: React.FC = () => {
 
           {/* Mobile menu button */}
           <div className="md:hidden flex items-center gap-2">
-            {/* Mobile Theme Toggle */}
-            <button
-              onClick={() => setIsDarkMode(!isDarkMode)}
-              className="p-2 rounded-xl bg-dark-850 border border-dark-750 text-slate-500 hover:text-slate-900 transition-colors flex items-center justify-center"
-              aria-label="Toggle theme"
-            >
-              {isDarkMode ? <Sun className="w-4 h-4 text-amber-400" /> : <Moon className="w-4 h-4 text-slate-600" />}
-            </button>
-
             {isAuthenticated && (
               <button
                 onClick={() => navigate(getDashboardPath())}
                 className="p-2 rounded-xl bg-dark-850 border border-dark-750 text-slate-300"
               >
-                <LayoutDashboard className="w-4 h-4" />
+                {role === UserRole.TECHNICIAN ? <Wrench className="w-4 h-4 text-sage-400" /> : <LayoutDashboard className="w-4 h-4 text-sage-400" />}
               </button>
             )}
             <button
@@ -392,14 +354,14 @@ export const Navbar: React.FC = () => {
 
       {/* Mobile dropdown drawer */}
       {isMenuOpen && (
-        <div className="md:hidden border-t border-dark-750 bg-white/95 dark:bg-dark-950/95 backdrop-blur-2xl px-4 pt-3 pb-6 space-y-2">
+        <div className="md:hidden border-t border-dark-750 bg-white/95 backdrop-blur-2xl px-4 pt-3 pb-6 space-y-2 shadow-lg">
           {role !== UserRole.TECHNICIAN && (
             <Link
               to="/services"
               onClick={() => setIsMenuOpen(false)}
-              className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-slate-200 hover:bg-dark-850"
+              className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-slate-800 hover:bg-slate-100"
             >
-              <Layers className="w-4 h-4 text-sage-400" />
+              <Layers className="w-4 h-4 text-sage-600" />
               <span>Services</span>
             </Link>
           )}
@@ -407,9 +369,9 @@ export const Navbar: React.FC = () => {
             <Link
               to="/jobs"
               onClick={() => setIsMenuOpen(false)}
-              className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-slate-200 hover:bg-dark-850"
+              className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-slate-800 hover:bg-slate-100"
             >
-              <Briefcase className="w-4 h-4 text-sage-400" />
+              <Briefcase className="w-4 h-4 text-sage-600" />
               <span>Recruitment</span>
             </Link>
           )}
@@ -418,14 +380,14 @@ export const Navbar: React.FC = () => {
               <Link
                 to={getDashboardPath()}
                 onClick={() => setIsMenuOpen(false)}
-                className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-slate-200 hover:bg-dark-850"
+                className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-slate-800 hover:bg-slate-100"
               >
-                <LayoutDashboard className="w-4 h-4 text-sage-400" />
-                <span>Dashboard</span>
+                {role === UserRole.TECHNICIAN ? <Wrench className="w-4 h-4 text-sage-600" /> : <LayoutDashboard className="w-4 h-4 text-sage-600" />}
+                <span>{role === UserRole.TECHNICIAN ? 'Technician Workspace' : 'Dashboard'}</span>
               </Link>
               <button
                 onClick={handleLogout}
-                className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-rose-400 hover:bg-rose-500/10 text-left"
+                className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-rose-600 hover:bg-rose-50 text-left"
               >
                 <LogOut className="w-4 h-4" />
                 <span>Sign Out</span>

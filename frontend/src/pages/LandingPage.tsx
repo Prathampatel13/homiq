@@ -125,6 +125,12 @@ export const LandingPage: React.FC = () => {
   const yBg = useTransform(scrollYProgress, [0, 1], ['0%', '25%']);
 
   useEffect(() => {
+    if (role === UserRole.TECHNICIAN) {
+      navigate('/provider/dashboard', { replace: true });
+    }
+  }, [role, navigate]);
+
+  useEffect(() => {
     const loadHomeData = async () => {
       try {
         const [cats, servs] = await Promise.all([
@@ -202,10 +208,10 @@ export const LandingPage: React.FC = () => {
               {/* Direct Actions */}
               <motion.div variants={itemVariants} className="flex flex-wrap items-center gap-3.5 pt-2">
                 <button
-                  onClick={() => navigate(role === UserRole.TECHNICIAN ? '/provider/dashboard' : '/booking/new')}
+                  onClick={() => navigate('/booking/new')}
                   className="px-7 py-3.5 bg-sage-400 hover:bg-sage-300 text-dark-950 font-bold text-sm rounded-xl transition-all duration-200 shadow-subtle hover:shadow-accent flex items-center gap-2.5 active:scale-98"
                 >
-                  <span>{role === UserRole.TECHNICIAN ? 'Technician Dashboard' : 'Book a Service'}</span>
+                  <span>Book a Service</span>
                   <ArrowRight className="w-4 h-4" />
                 </button>
 
@@ -467,7 +473,7 @@ export const LandingPage: React.FC = () => {
             {HERO_SERVICES.map((srv) => (
               <div
                 key={srv.id}
-                onClick={() => navigate(role === UserRole.TECHNICIAN ? '/provider/dashboard' : '/booking/new')}
+                onClick={() => navigate('/booking/new')}
                 className="p-6 bg-dark-900 rounded-3xl border border-dark-750/70 hover:border-sage-400/40 cursor-pointer transition-all duration-200 relative overflow-hidden shadow-card group"
               >
                 {/* Header: Icon & Price */}

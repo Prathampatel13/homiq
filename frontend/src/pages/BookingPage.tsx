@@ -24,7 +24,7 @@ import { bookingsApi } from '../api/bookings';
 import { couponsApi } from '../api/coupons';
 import { paymentsApi } from '../api/payments';
 import { useAuthStore } from '../store/useAuthStore';
-import { Service, ServiceCategory, CustomerAddress, Booking } from '../types';
+import { Service, ServiceCategory, CustomerAddress, Booking, UserRole } from '../types';
 import { AddressModal } from '../components/modals/AddressModal';
 import { LoadingState } from '../components/ui/LoadingState';
 import { triggerLocalSync } from '../services/realtime';
@@ -39,7 +39,14 @@ const STEPS = [
 export const BookingPage: React.FC = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const { isAuthenticated } = useAuthStore();
+  const { isAuthenticated, getEffectiveRole } = useAuthStore();
+  const role = getEffectiveRole();
+
+  useEffect(() => {
+    if (role === UserRole.TECHNICIAN) {
+      navigate('/provider/dashboard', { replace: true });
+    }
+  }, [role, navigate]);
 
   const [currentStep, setCurrentStep] = useState(1);
   const [services, setServices] = useState<Service[]>([]);

@@ -11,7 +11,7 @@ export interface HomiQLogoProps {
 export const HomiQLogo: React.FC<HomiQLogoProps> = ({
   variant = 'horizontal',
   size = 'md',
-  theme = 'dark',
+  theme = 'light',
   showTagline = false,
   className = '',
 }) => {
@@ -81,12 +81,12 @@ export const HomiQLogo: React.FC<HomiQLogoProps> = ({
   // Clean, Minimal Editorial Wordmark
   const Wordmark = () => (
     <div className="flex items-baseline">
-      <span className={`font-bold tracking-tight select-none ${sizeMap.text} leading-none font-sans text-white`}>
+      <span className={`font-bold tracking-tight select-none ${sizeMap.text} leading-none font-sans ${theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>
         Homi
       </span>
-      <span className={`font-black tracking-tight select-none ${sizeMap.text} leading-none font-sans text-sage-400 ml-0.5 relative`}>
+      <span className={`font-black tracking-tight select-none ${sizeMap.text} leading-none font-sans text-sage-500 ml-0.5 relative`}>
         Q
-        <span className="inline-block w-1.5 h-1.5 rounded-full bg-sage-400 ml-0.5 shadow-[0_0_8px_rgba(184,219,128,0.7)]" />
+        <span className="inline-block w-1.5 h-1.5 rounded-full bg-sage-500 ml-0.5 shadow-[0_0_8px_rgba(184,219,128,0.7)]" />
       </span>
     </div>
   );

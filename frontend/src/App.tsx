@@ -57,9 +57,22 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, allowedRoles 
     if (effectiveRole === UserRole.ADMIN) {
       return <>{children}</>;
     }
+    if (effectiveRole === UserRole.TECHNICIAN) {
+      return <Navigate to="/provider/dashboard" replace />;
+    }
     return <Navigate to="/" replace />;
   }
 
+  return <>{children}</>;
+};
+
+// Technicians are strictly prohibited from consumer pages (booking, catalog, home)
+const NonTechnicianRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const { isAuthenticated, getEffectiveRole } = useAuthStore();
+  const effectiveRole = getEffectiveRole();
+  if (isAuthenticated && effectiveRole === UserRole.TECHNICIAN) {
+    return <Navigate to="/provider/dashboard" replace />;
+  }
   return <>{children}</>;
 };
 
@@ -83,11 +96,11 @@ export const App: React.FC = () => {
             <Navbar />
             <main className="flex-1">
               <Routes>
-                {/* Public Routes */}
-                <Route path="/" element={<LandingPage />} />
-                <Route path="/services" element={<ServicesPage />} />
-                <Route path="/categories" element={<ServicesPage />} />
-                <Route path="/jobs" element={<JobsPage />} />
+                {/* Public & Customer Routes - Technicians are strictly redirected to Provider Dashboard */}
+                <Route path="/" element={<NonTechnicianRoute><LandingPage /></NonTechnicianRoute>} />
+                <Route path="/services" element={<NonTechnicianRoute><ServicesPage /></NonTechnicianRoute>} />
+                <Route path="/categories" element={<NonTechnicianRoute><ServicesPage /></NonTechnicianRoute>} />
+                <Route path="/jobs" element={<NonTechnicianRoute><JobsPage /></NonTechnicianRoute>} />
                 <Route path="/login" element={<LoginPage />} />
                 <Route path="/register" element={<RegisterPage />} />
                 <Route path="/forgot-password" element={<ForgotPasswordPage />} />
@@ -137,7 +150,7 @@ export const App: React.FC = () => {
                 <Route
                   path="/booking/new"
                   element={
-                    <ProtectedRoute>
+                    <ProtectedRoute allowedRoles={[UserRole.CUSTOMER]}>
                       <BookingPage />
                     </ProtectedRoute>
                   }
@@ -145,7 +158,7 @@ export const App: React.FC = () => {
                 <Route
                   path="/customer/invoices/:id"
                   element={
-                    <ProtectedRoute>
+                    <ProtectedRoute allowedRoles={[UserRole.CUSTOMER]}>
                       <InvoicePage />
                     </ProtectedRoute>
                   }

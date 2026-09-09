@@ -6,7 +6,11 @@ import {
   PlusCircle, 
   Briefcase, 
   LayoutDashboard, 
-  UserCheck 
+  UserCheck,
+  Wrench,
+  Bell,
+  History,
+  Star
 } from 'lucide-react';
 import { useAuthStore } from '../../store/useAuthStore';
 import { UserRole } from '../../types';
@@ -18,6 +22,55 @@ export const MobileBottomNav: React.FC = () => {
   const role = getEffectiveRole();
 
   const isCurrent = (path: string) => location.pathname === path;
+
+  // Technicians have a strictly technical workflow mobile bar
+  if (isAuthenticated && role === UserRole.TECHNICIAN) {
+    return (
+      <div className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-2xl border-t border-slate-200 px-4 py-2 shadow-lg">
+        <div className="flex items-center justify-around">
+          <button
+            onClick={() => navigate('/provider/dashboard')}
+            className={`flex flex-col items-center gap-1 py-1 px-3 rounded-xl transition-colors ${
+              location.pathname.includes('/provider/dashboard') ? 'text-sage-600 font-semibold' : 'text-slate-500 hover:text-slate-800'
+            }`}
+          >
+            <Wrench className="w-5 h-5" />
+            <span className="text-[10px] font-medium">Workspace</span>
+          </button>
+
+          <button
+            onClick={() => navigate('/notifications')}
+            className={`flex flex-col items-center gap-1 py-1 px-3 rounded-xl transition-colors ${
+              isCurrent('/notifications') ? 'text-sage-600 font-semibold' : 'text-slate-500 hover:text-slate-800'
+            }`}
+          >
+            <Bell className="w-5 h-5" />
+            <span className="text-[10px] font-medium">Alerts</span>
+          </button>
+
+          <button
+            onClick={() => navigate('/history')}
+            className={`flex flex-col items-center gap-1 py-1 px-3 rounded-xl transition-colors ${
+              isCurrent('/history') ? 'text-sage-600 font-semibold' : 'text-slate-500 hover:text-slate-800'
+            }`}
+          >
+            <History className="w-5 h-5" />
+            <span className="text-[10px] font-medium">Missions</span>
+          </button>
+
+          <button
+            onClick={() => navigate('/reviews')}
+            className={`flex flex-col items-center gap-1 py-1 px-3 rounded-xl transition-colors ${
+              isCurrent('/reviews') ? 'text-sage-600 font-semibold' : 'text-slate-500 hover:text-slate-800'
+            }`}
+          >
+            <Star className="w-5 h-5" />
+            <span className="text-[10px] font-medium">Ratings</span>
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   const getDashboardPath = () => {
     switch (role) {

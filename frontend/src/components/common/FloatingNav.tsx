@@ -28,7 +28,7 @@ export const FloatingNav: React.FC = () => {
     if (pathname === '/') return { name: 'Landing Page', icon: Home };
     if (pathname === '/customer/dashboard') return { name: 'Customer Dashboard', icon: LayoutGrid };
     if (pathname === '/booking/new') return { name: 'Book Service', icon: Calendar };
-    if (pathname.includes('/provider/dashboard')) return { name: 'Technician Panel', icon: Wrench };
+    if (pathname.includes('/provider/dashboard')) return { name: 'Technician Workspace', icon: Wrench };
     if (pathname.includes('/jobs')) return { name: 'Recruitment', icon: Briefcase };
     if (pathname.includes('/company/dashboard')) return { name: 'Company Dashboard', icon: Building2 };
     if (pathname.includes('/admin/dashboard')) return { name: 'Admin Panel', icon: ShieldCheck };
@@ -69,14 +69,16 @@ export const FloatingNav: React.FC = () => {
           </div>
           
           <div className="p-4 max-h-[60vh] overflow-y-auto">
-            {/* PUBLIC */}
-            <div className="mb-6">
-              <p className="text-[11px] font-bold text-slate-500 tracking-widest mb-3 px-3 uppercase">PUBLIC</p>
-              <NavItem path="/" icon={Home} label="Landing Page" isActive={location.pathname === '/'} />
-            </div>
+            {/* PUBLIC (Only for Non-Technicians) */}
+            {role !== UserRole.TECHNICIAN && (
+              <div className="mb-6">
+                <p className="text-[11px] font-bold text-slate-500 tracking-widest mb-3 px-3 uppercase">PUBLIC</p>
+                <NavItem path="/" icon={Home} label="Landing Page" isActive={location.pathname === '/'} />
+              </div>
+            )}
 
-            {/* CUSTOMER */}
-            {(!role || role === UserRole.CUSTOMER || role === UserRole.ADMIN) && (
+            {/* CUSTOMER (Only for Customers / Admins) */}
+            {role !== UserRole.TECHNICIAN && (!role || role === UserRole.CUSTOMER || role === UserRole.ADMIN) && (
               <div className="mb-6">
                 <p className="text-[11px] font-bold text-slate-500 tracking-widest mb-3 px-3 uppercase">CUSTOMER</p>
                 <NavItem path="/customer/dashboard" icon={LayoutGrid} label="Customer Dashboard" isActive={location.pathname === '/customer/dashboard'} />
@@ -86,11 +88,17 @@ export const FloatingNav: React.FC = () => {
               </div>
             )}
 
-            {/* PROFESSIONAL */}
+            {/* PROFESSIONAL / TECHNICIAN */}
             {(role === UserRole.TECHNICIAN || role === UserRole.ADMIN) && (
               <div className="mb-6">
-                <p className="text-[11px] font-bold text-slate-500 tracking-widest mb-3 px-3 uppercase">PROFESSIONAL</p>
-                <NavItem path="/provider/dashboard" icon={Wrench} label="Technician Panel" isActive={location.pathname.includes('/provider/dashboard')} />
+                <p className="text-[11px] font-bold text-slate-500 tracking-widest mb-3 px-3 uppercase">TECHNICIAN WORKSPACE</p>
+                <NavItem path="/provider/dashboard" icon={Wrench} label="Technician Workspace" isActive={location.pathname.includes('/provider/dashboard')} />
+                {role === UserRole.TECHNICIAN && (
+                  <>
+                    <NavItem path="/history" icon={LayoutGrid} label="Mission History" isActive={location.pathname === '/history'} />
+                    <NavItem path="/reviews" icon={ShieldCheck} label="Ratings & Feedback" isActive={location.pathname === '/reviews'} />
+                  </>
+                )}
               </div>
             )}
 

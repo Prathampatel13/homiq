@@ -426,10 +426,10 @@ export const HeroScene3D: React.FC = () => {
             <span>Details</span>
           </button>
           <button
-            onClick={() => navigate(role === UserRole.TECHNICIAN ? '/provider/dashboard' : '/booking/new')}
+            onClick={() => navigate('/booking/new')}
             className="flex-1 sm:flex-none px-4 py-2 rounded-xl text-xs font-semibold bg-sage-400 hover:bg-sage-300 text-dark-950 shadow-accent transition-all flex items-center justify-center gap-1.5"
           >
-            <span>{role === UserRole.TECHNICIAN ? 'Order Received' : 'Book Service'}</span>
+            <span>Book Service</span>
             <ChevronRight className="w-3.5 h-3.5" />
           </button>
         </div>

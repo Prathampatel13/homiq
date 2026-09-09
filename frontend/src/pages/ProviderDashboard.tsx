@@ -25,7 +25,6 @@ import { bookingsApi } from '../api/bookings';
 import { notificationsApi } from '../api/notifications';
 import { BookingMediaSection } from '../components/media/BookingMediaSection';
 import { JobCompletionModal } from '../components/modals/JobCompletionModal';
-import { ProviderRecruitmentTab } from '../components/recruitment/ProviderRecruitmentTab';
 import { useAuthStore } from '../store/useAuthStore';
 import { Booking, TechnicianProfile, NotificationItem } from '../types';
 import { StatusBadge } from '../components/ui/StatusBadge';
@@ -43,7 +42,7 @@ export const ProviderDashboard: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState<number | null>(null);
   const [completingJobId, setCompletingJobId] = useState<number | null>(null);
-  const [activeTab, setActiveTab] = useState<'today' | 'active' | 'pending' | 'completed' | 'all' | 'earnings' | 'documents' | 'notifications' | 'recruitment'>('today');
+  const [activeTab, setActiveTab] = useState<'today' | 'active' | 'pending' | 'completed' | 'all' | 'earnings' | 'documents' | 'notifications'>('today');
 
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
@@ -209,10 +208,9 @@ export const ProviderDashboard: React.FC = () => {
             { id: 'active', label: 'In Execution', count: activeJobs.length },
             { id: 'pending', label: 'Incoming Dispatches', count: pendingJobs.length },
             { id: 'completed', label: 'Completed Missions', count: completedJobs.length },
-            { id: 'all', label: 'All Services', count: jobs.length },
+            { id: 'all', label: 'All Missions', count: jobs.length },
             { id: 'earnings', label: 'Earnings & Payouts' },
             { id: 'notifications', label: 'Alerts', count: unreadCount },
-            { id: 'recruitment', label: 'Recruitment' },
             { id: 'documents', label: 'KYC & Credentials' },
           ].map((tab) => (
             <button
@@ -432,7 +430,7 @@ export const ProviderDashboard: React.FC = () => {
             ) : (
               <EmptyState
                 title="NO ACTIVE DISPATCHES"
-                description="Keep your status toggled to Online to receive upcoming assignments in your zone."
+                description="Incoming dispatches and assignments in your area will appear here automatically."
               />
             )}
           </div>
@@ -445,7 +443,7 @@ export const ProviderDashboard: React.FC = () => {
                 <span className="text-[10px] text-emerald-400 font-mono mt-1 block">Direct Bank Transfer Active</span>
               </div>
               <div className="p-6 rounded-3xl bg-dark-900 border border-dark-750 shadow-card">
-                <span className="text-xs font-mono text-slate-400 uppercase">Completed Services</span>
+                <span className="text-xs font-mono text-slate-400 uppercase">Completed Missions</span>
                 <p className="text-3xl font-bold font-mono text-white mt-1">{completedJobs.length}</p>
                 <span className="text-[10px] text-slate-400 font-mono mt-1 block">100% On-Time Precision</span>
               </div>
@@ -529,8 +527,6 @@ export const ProviderDashboard: React.FC = () => {
               />
             )}
           </div>
-        ) : activeTab === 'recruitment' ? (
-          <ProviderRecruitmentTab />
         ) : (
           <div className="p-6 rounded-3xl bg-dark-900 border border-dark-750 space-y-4">
             <h3 className="text-base font-bold text-white">KYC Verification & Master Credentials</h3>
