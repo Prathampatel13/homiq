@@ -88,6 +88,11 @@ export const JobCompletionModal: React.FC<JobCompletionModalProps> = ({
 
   if (!isOpen) return null;
 
+  const getMediaUrl = (url: string) => {
+    if (!url) return '';
+    return url.startsWith('http') ? url : `${import.meta.env.VITE_API_BASE_URL || 'https://homiq-backend-af73.onrender.com'}${url}`;
+  };
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-md animate-in fade-in duration-200">
       <div className="bg-dark-900 border border-dark-750 rounded-3xl shadow-modal w-full max-w-lg overflow-hidden flex flex-col">
@@ -145,7 +150,7 @@ export const JobCompletionModal: React.FC<JobCompletionModalProps> = ({
               <div className="grid grid-cols-2 gap-3">
                 {beforeImages.map(img => (
                   <div key={img.id} className="relative h-28 rounded-2xl overflow-hidden border border-dark-700 bg-dark-950 group">
-                    <img src={img.secure_url || (img as any).url || img.thumbnail_url} alt="Before work" className="w-full h-full object-cover" />
+                    <img src={getMediaUrl(img.secure_url || (img as any).url || img.thumbnail_url)} alt="Before work" className="w-full h-full object-cover" />
                     <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                       <span className="text-[10px] font-mono text-white bg-dark-900/80 px-2 py-1 rounded">Before</span>
                     </div>
@@ -178,7 +183,7 @@ export const JobCompletionModal: React.FC<JobCompletionModalProps> = ({
               <div className="grid grid-cols-2 gap-3">
                 {afterImages.map(img => (
                   <div key={img.id} className="relative h-28 rounded-2xl overflow-hidden border border-dark-700 bg-dark-950 group">
-                    <img src={img.thumbnail_url || img.secure_url} alt="After work" className="w-full h-full object-cover" />
+                    <img src={getMediaUrl(img.thumbnail_url || img.secure_url)} alt="After work" className="w-full h-full object-cover" />
                     <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                       <span className="text-[10px] font-mono text-white bg-dark-900/80 px-2 py-1 rounded">After</span>
                     </div>
