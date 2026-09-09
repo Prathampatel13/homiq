@@ -9,30 +9,30 @@ export default {
     extend: {
       colors: {
         sage: {
-          50: '#F5F9EE',
-          100: '#EAF4DC',
-          200: '#D8EBB8',
-          300: '#C6E294',
-          400: '#B8DB80', // Soft Matcha / Sage Green (Primary Accent)
-          500: '#9FC964',
-          600: '#83AA48',
-          700: '#658636',
-          800: '#4D6729',
-          900: '#374B1D',
-          950: '#1D280E',
+          50: '#F0FDF4',
+          100: '#DCFCE7',
+          200: '#BBF7D0',
+          300: '#4ADE80',
+          400: '#16A34A', // High-contrast vibrant Sage / Emerald Green
+          500: '#15803D',
+          600: '#166534',
+          700: '#14532D',
+          800: '#14532D',
+          900: '#052E16',
+          950: '#022C22',
         },
         brand: {
-          50: '#F5F9EE',
-          100: '#EAF4DC',
-          200: '#D8EBB8',
-          300: '#C6E294',
-          400: '#B8DB80',
-          500: '#9FC964',
-          600: '#83AA48',
-          700: '#658636',
-          800: '#4D6729',
-          900: '#374B1D',
-          950: '#1D280E',
+          50: '#F0FDF4',
+          100: '#DCFCE7',
+          200: '#BBF7D0',
+          300: '#4ADE80',
+          400: '#16A34A',
+          500: '#15803D',
+          600: '#166534',
+          700: '#14532D',
+          800: '#14532D',
+          900: '#052E16',
+          950: '#022C22',
         },
         cream: {
           50: '#FFFEFA',
@@ -62,17 +62,29 @@ export default {
           950: '#2E0F19',
         },
         dark: {
-          950: '#0B0D11', // Refined deep slate charcoal
-          900: '#12151B',
-          850: '#181C24', 
-          800: '#202530', 
-          750: '#2A303E', 
-          700: '#373F50', 
-          600: '#4B5569',
+          950: '#F8FAFC', // Canvas background (crisp slate-50)
+          900: '#FFFFFF', // Card background (pure white)
+          850: '#F1F5F9', // Elevated surface / sub-panel (slate-100)
+          800: '#E2E8F0', // Hover / pills (slate-200)
+          750: '#E2E8F0', // Subtle card borders
+          700: '#CBD5E1', // Input & focus borders (slate-300)
+          600: '#94A3B8', // Active border
+        },
+        slate: {
+          50: '#F8FAFC',
+          100: '#F1F5F9',
+          200: '#E2E8F0',
+          300: '#334155', // Slate-700 for high-contrast readable body text
+          400: '#475569', // Slate-600 for clear secondary descriptions
+          500: '#64748B', // Slate-500 for captions and metadata
+          600: '#475569',
+          700: '#334155',
+          800: '#1E293B',
+          900: '#0F172A',
         },
         light: {
-          primary: '#F8F9FA',
-          secondary: '#E5E7EB',
+          primary: '#0F172A',
+          secondary: '#334155',
           pure: '#FFFFFF',
           cream: '#F7F6D3',
           blush: '#FFE4EF',
@@ -88,13 +100,13 @@ export default {
         '3xl': '22px',
       },
       boxShadow: {
-        'subtle': '0 1px 3px 0 rgba(0, 0, 0, 0.25)',
-        'card': '0 4px 20px -2px rgba(0, 0, 0, 0.35)',
-        'modal': '0 20px 45px -10px rgba(0, 0, 0, 0.65)',
-        'accent': '0 0 25px -5px rgba(184, 219, 128, 0.35)',
-        'rose': '0 0 25px -5px rgba(243, 158, 182, 0.35)',
+        'subtle': '0 1px 2px 0 rgba(0, 0, 0, 0.05)',
+        'card': '0 4px 20px -2px rgba(15, 23, 42, 0.06), 0 2px 6px -1px rgba(15, 23, 42, 0.04)',
+        'modal': '0 20px 45px -10px rgba(15, 23, 42, 0.15), 0 10px 20px -5px rgba(15, 23, 42, 0.08)',
+        'accent': '0 0 25px -5px rgba(22, 163, 74, 0.25)',
+        'rose': '0 0 25px -5px rgba(225, 29, 72, 0.25)',
         'cream': '0 0 25px -5px rgba(247, 246, 211, 0.35)',
-        'metallic': '0 0 20px -5px rgba(232, 233, 231, 0.1)',
+        'metallic': '0 2px 8px 0 rgba(15, 23, 42, 0.08)',
       },
     },
   },

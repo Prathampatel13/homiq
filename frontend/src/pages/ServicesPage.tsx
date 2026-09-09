@@ -63,7 +63,7 @@ export const ServicesPage: React.FC = () => {
   });
 
   return (
-    <div className="min-h-screen bg-dark-950 py-12 text-white">
+    <div className="min-h-screen bg-dark-950 py-12 text-slate-900">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
         <div className="max-w-3xl mb-12">

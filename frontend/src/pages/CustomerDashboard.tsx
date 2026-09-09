@@ -183,7 +183,7 @@ export const CustomerDashboard: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-dark-950 py-10 text-white selection:bg-sage-400/20 selection:text-white">
+    <div className="min-h-screen bg-dark-950 py-10 text-slate-900 selection:bg-sage-400/20 selection:text-slate-900">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-10">
         {/* ──────────────────────────────────────────────────────────────────────────
             HEADER & PRIMARY TOP ACTION

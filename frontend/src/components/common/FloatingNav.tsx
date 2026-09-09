@@ -134,9 +134,9 @@ export const FloatingNav: React.FC = () => {
           className="px-5 py-3.5 hover:bg-dark-850 transition-colors"
         >
           {isOpen ? (
-            <X className="w-4 h-4 text-slate-400 hover:text-white transition-colors" />
+            <X className="w-4 h-4 text-slate-400 hover:text-slate-900 transition-colors" />
           ) : (
-            <ChevronUp className="w-4 h-4 text-slate-400 hover:text-white transition-colors" />
+            <ChevronUp className="w-4 h-4 text-slate-400 hover:text-slate-900 transition-colors" />
           )}
         </button>
       </div>

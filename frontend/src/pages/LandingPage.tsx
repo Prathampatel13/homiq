@@ -155,7 +155,7 @@ export const LandingPage: React.FC = () => {
   };
 
   return (
-    <div className="bg-dark-950 text-white min-h-screen overflow-hidden selection:bg-sage-500 selection:text-white font-sans">
+    <div className="bg-dark-950 text-slate-900 min-h-screen overflow-hidden selection:bg-sage-500 selection:text-white font-sans">
       
       {/* ──────────────────────────────────────────────────────────────────────────
           1. HERO SECTION: MINIMAL & ELEGANT

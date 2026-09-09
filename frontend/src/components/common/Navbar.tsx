@@ -34,7 +34,7 @@ export const Navbar: React.FC = () => {
   const [notifications, setNotifications] = useState<any[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [isDarkMode, setIsDarkMode] = useState(() => {
-    return localStorage.getItem('theme') !== 'light';
+    return localStorage.getItem('theme') === 'dark';
   });
 
   useEffect(() => {
@@ -50,8 +50,10 @@ export const Navbar: React.FC = () => {
   useEffect(() => {
     if (isDarkMode) {
       document.documentElement.classList.add('dark');
+      localStorage.setItem('theme', 'dark');
     } else {
       document.documentElement.classList.remove('dark');
+      localStorage.setItem('theme', 'light');
     }
   }, [isDarkMode]);
 
@@ -134,11 +136,21 @@ export const Navbar: React.FC = () => {
           <div className="hidden md:flex items-center gap-3">
             {isAuthenticated && user ? (
               <div className="flex items-center gap-3">
+                {/* Theme Toggle */}
+                <button
+                  onClick={() => setIsDarkMode(!isDarkMode)}
+                  className="p-2 rounded-xl bg-dark-850 hover:bg-dark-800 border border-dark-750 text-slate-500 hover:text-slate-900 transition-colors flex items-center justify-center"
+                  aria-label="Toggle theme"
+                  title={isDarkMode ? "Switch to Light Theme" : "Switch to Dark Theme"}
+                >
+                  {isDarkMode ? <Sun className="w-4 h-4 text-amber-400" /> : <Moon className="w-4 h-4 text-slate-600" />}
+                </button>
+
                 {/* Notification Dropdown */}
                 <div className="relative">
                   <button
                     onClick={() => setIsNotificationsOpen(!isNotificationsOpen)}
-                    className="p-2 relative rounded-xl bg-dark-850 hover:bg-dark-800 border border-dark-750 text-slate-300 hover:text-white transition-colors flex items-center justify-center"
+                    className="p-2 relative rounded-xl bg-dark-850 hover:bg-dark-800 border border-dark-750 text-slate-500 hover:text-slate-900 transition-colors flex items-center justify-center"
                     aria-label="Notifications"
                   >
                     <Bell className="w-4 h-4" />
@@ -321,6 +333,16 @@ export const Navbar: React.FC = () => {
                   <span className="tracking-wide">Support Available</span>
                 </div>
 
+                {/* Theme Toggle */}
+                <button
+                  onClick={() => setIsDarkMode(!isDarkMode)}
+                  className="p-2 rounded-xl bg-dark-850 hover:bg-dark-800 border border-dark-750 text-slate-500 hover:text-slate-900 transition-colors flex items-center justify-center"
+                  aria-label="Toggle theme"
+                  title={isDarkMode ? "Switch to Light Theme" : "Switch to Dark Theme"}
+                >
+                  {isDarkMode ? <Sun className="w-4 h-4 text-amber-400" /> : <Moon className="w-4 h-4 text-slate-600" />}
+                </button>
+
                 <Link
                   to="/login"
                   className="btn-secondary text-xs px-4 py-2"
@@ -329,7 +351,7 @@ export const Navbar: React.FC = () => {
                 </Link>
                 <a
                   href="tel:+919800046647"
-                  className="hidden sm:flex items-center gap-2 px-4 py-2 rounded-xl bg-sage-400 hover:bg-sage-300 text-dark-950 font-semibold text-xs transition-all shadow-subtle hover:shadow-accent active:scale-95"
+                  className="hidden sm:flex items-center gap-2 px-4 py-2 rounded-xl bg-sage-500 hover:bg-sage-600 text-white font-semibold text-xs transition-all shadow-subtle hover:shadow-accent active:scale-95"
                 >
                   <PhoneCall className="w-3.5 h-3.5" />
                   <span>Call Support</span>
@@ -340,6 +362,15 @@ export const Navbar: React.FC = () => {
 
           {/* Mobile menu button */}
           <div className="md:hidden flex items-center gap-2">
+            {/* Mobile Theme Toggle */}
+            <button
+              onClick={() => setIsDarkMode(!isDarkMode)}
+              className="p-2 rounded-xl bg-dark-850 border border-dark-750 text-slate-500 hover:text-slate-900 transition-colors flex items-center justify-center"
+              aria-label="Toggle theme"
+            >
+              {isDarkMode ? <Sun className="w-4 h-4 text-amber-400" /> : <Moon className="w-4 h-4 text-slate-600" />}
+            </button>
+
             {isAuthenticated && (
               <button
                 onClick={() => navigate(getDashboardPath())}
