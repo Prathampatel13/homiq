@@ -82,17 +82,17 @@ export const MediaUploader: React.FC<MediaUploaderProps> = ({
   };
 
   return (
-    <div className="p-4 rounded-2xl bg-dark-900 border border-dark-750 animate-in fade-in zoom-in-95 duration-150">
+    <div className="p-4 rounded-2xl bg-white border border-slate-200 shadow-card animate-in fade-in zoom-in-95 duration-150">
       <div className="flex items-center justify-between mb-4">
-        <h4 className="text-sm font-bold text-white tracking-tight">{title}</h4>
-        <button onClick={onCancel} className="text-slate-400 hover:text-white transition-colors">
+        <h4 className="text-sm font-bold text-slate-900 tracking-tight">{title}</h4>
+        <button onClick={onCancel} className="text-slate-400 hover:text-slate-700 transition-colors">
           <X className="w-4 h-4" />
         </button>
       </div>
 
       {error && (
-        <div className="mb-4 p-3 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-400 text-xs flex items-start gap-2">
-          <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+        <div className="mb-4 p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs flex items-start gap-2">
+          <AlertCircle className="w-4 h-4 shrink-0 mt-0.5 text-rose-600" />
           <span>{error}</span>
         </div>
       )}
@@ -101,7 +101,7 @@ export const MediaUploader: React.FC<MediaUploaderProps> = ({
         <div className="space-y-4">
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
             {previewUrls.map((url, i) => (
-              <div key={i} className="relative aspect-square rounded-xl overflow-hidden border border-dark-700 bg-dark-950 group">
+              <div key={i} className="relative aspect-square rounded-xl overflow-hidden border border-slate-200 bg-slate-100 group">
                 <img 
                   src={url} 
                   alt="Preview" 
@@ -120,25 +120,25 @@ export const MediaUploader: React.FC<MediaUploaderProps> = ({
             <button
               onClick={() => fileInputRef.current?.click()}
               disabled={isUploading}
-              className="aspect-square rounded-xl border border-dashed border-dark-600 bg-dark-850 hover:bg-dark-800 flex flex-col items-center justify-center gap-2 text-slate-400 hover:text-white transition-colors"
+              className="aspect-square rounded-xl border border-dashed border-slate-300 bg-slate-50 hover:bg-slate-100 flex flex-col items-center justify-center gap-2 text-slate-500 hover:text-slate-900 transition-colors"
             >
               <ImagePlus className="w-6 h-6" />
-              <span className="text-[10px] uppercase tracking-wider font-mono">Add More</span>
+              <span className="text-[10px] uppercase tracking-wider font-mono font-semibold">Add More</span>
             </button>
           </div>
           
-          <div className="flex items-center justify-end gap-3 pt-4 border-t border-dark-750">
+          <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-100">
             <button
               onClick={onCancel}
               disabled={isUploading}
-              className="px-4 py-2 text-xs font-semibold text-slate-300 hover:text-white transition-colors disabled:opacity-50"
+              className="btn-secondary text-xs px-4 py-2"
             >
               Cancel
             </button>
             <button
               onClick={handleUpload}
               disabled={isUploading}
-              className="btn-primary text-xs px-5 py-2 flex items-center gap-2 shadow-subtle hover:shadow-metallic disabled:opacity-50"
+              className="btn-primary text-xs px-5 py-2 flex items-center gap-2 shadow-subtle hover:shadow-accent disabled:opacity-50"
             >
               {isUploading ? (
                 <>
@@ -157,14 +157,14 @@ export const MediaUploader: React.FC<MediaUploaderProps> = ({
       ) : (
         <div 
           onClick={() => fileInputRef.current?.click()}
-          className="w-full h-32 rounded-xl border-2 border-dashed border-dark-700 bg-dark-850 hover:bg-dark-800 hover:border-dark-600 cursor-pointer flex flex-col items-center justify-center gap-3 transition-colors group"
+          className="w-full h-32 rounded-xl border-2 border-dashed border-slate-300 bg-slate-50 hover:bg-slate-100 hover:border-slate-400 cursor-pointer flex flex-col items-center justify-center gap-3 transition-colors group"
         >
-          <div className="w-10 h-10 rounded-full bg-blue-500/10 text-blue-400 flex items-center justify-center group-hover:scale-110 transition-transform">
+          <div className="w-10 h-10 rounded-full bg-sage-50 text-sage-600 flex items-center justify-center group-hover:scale-110 transition-transform">
             <ImagePlus className="w-5 h-5" />
           </div>
           <div className="text-center">
-            <p className="text-xs font-semibold text-white">Click to select files</p>
-            <p className="text-[10px] text-slate-400 mt-1">JPG, PNG up to 10MB</p>
+            <p className="text-xs font-bold text-slate-800">Click to select files</p>
+            <p className="text-[10px] text-slate-500 mt-1 font-mono">JPG, PNG up to 10MB</p>
           </div>
         </div>
       )}

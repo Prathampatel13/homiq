@@ -86,7 +86,7 @@ export const ResetPasswordPage: React.FC = () => {
   const renderOtpForm = () => (
     <form onSubmit={handleVerifyOtp} className="space-y-4">
       <div>
-        <label className="block text-xs font-semibold text-slate-300 mb-1.5">Enter 6-Digit OTP</label>
+        <label className="block text-xs font-semibold text-slate-700 mb-1.5">Enter 6-Digit OTP</label>
         <div className="relative">
           <KeyRound className="w-4 h-4 text-slate-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
           <input
@@ -99,13 +99,13 @@ export const ResetPasswordPage: React.FC = () => {
             required
           />
         </div>
-        <p className="text-xs text-slate-400 mt-2 text-center">
-          Sent to: <span className="text-white font-mono">{stateEmail}</span>
+        <p className="text-xs text-slate-600 mt-2 text-center">
+          Sent to: <span className="text-slate-900 font-mono font-semibold">{stateEmail}</span>
         </p>
       </div>
 
       {error && (
-        <div className="p-3 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-400 text-xs flex items-center gap-2">
+        <div className="p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs flex items-center gap-2">
           <AlertCircle className="w-4 h-4 shrink-0" />
           <span>{error}</span>
         </div>
@@ -125,7 +125,7 @@ export const ResetPasswordPage: React.FC = () => {
   const renderPasswordForm = () => (
     <form onSubmit={handleResetPassword} className="space-y-4">
       <div>
-        <label className="block text-xs font-semibold text-slate-300 mb-1.5">New Password</label>
+        <label className="block text-xs font-semibold text-slate-700 mb-1.5">New Password</label>
         <div className="relative">
           <Lock className="w-4 h-4 text-slate-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
           <input
@@ -140,7 +140,7 @@ export const ResetPasswordPage: React.FC = () => {
           <button
             type="button"
             onClick={() => setShowPassword(!showPassword)}
-            className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300 transition-colors"
+            className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-700 transition-colors"
           >
             {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
           </button>
@@ -148,7 +148,7 @@ export const ResetPasswordPage: React.FC = () => {
       </div>
 
       <div>
-        <label className="block text-xs font-semibold text-slate-300 mb-1.5">Confirm New Password</label>
+        <label className="block text-xs font-semibold text-slate-700 mb-1.5">Confirm New Password</label>
         <div className="relative">
           <Lock className="w-4 h-4 text-slate-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
           <input
@@ -163,7 +163,7 @@ export const ResetPasswordPage: React.FC = () => {
           <button
             type="button"
             onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-            className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300 transition-colors"
+            className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-700 transition-colors"
           >
             {showConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
           </button>
@@ -171,7 +171,7 @@ export const ResetPasswordPage: React.FC = () => {
       </div>
 
       {error && (
-        <div className="p-3 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-400 text-xs flex items-center gap-2">
+        <div className="p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs flex items-center gap-2">
           <AlertCircle className="w-4 h-4 shrink-0" />
           <span>{error}</span>
         </div>
@@ -189,23 +189,23 @@ export const ResetPasswordPage: React.FC = () => {
   );
 
   return (
-    <div className="min-h-screen bg-dark-950 flex flex-col justify-center py-12 sm:px-6 lg:px-8 text-white relative">
+    <div className="min-h-screen bg-[#F8FAFC] flex flex-col justify-center py-12 sm:px-6 lg:px-8 text-slate-900 relative">
       <div className="sm:mx-auto sm:w-full sm:max-w-md text-center space-y-4">
         <HomiQLogo variant="stacked" size="lg" showTagline className="mx-auto" />
-        <h2 className="text-xl sm:text-2xl font-bold tracking-tight text-white mt-4">
+        <h2 className="text-xl sm:text-2xl font-bold tracking-tight text-slate-900 mt-4">
           {method === 'otp' && !otpVerified ? 'Verify Identity' : 'Create New Password'}
         </h2>
       </div>
 
       <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md px-4 sm:px-0">
-        <div className="p-6 sm:p-8 rounded-3xl bg-dark-900 border border-dark-750 shadow-modal space-y-6">
+        <div className="p-6 sm:p-8 rounded-3xl bg-white border border-slate-200 shadow-card space-y-6">
           {success ? (
             <div className="text-center py-4 space-y-3">
-              <div className="w-12 h-12 rounded-full bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center text-emerald-400 mx-auto">
+              <div className="w-12 h-12 rounded-full bg-emerald-50 border border-emerald-200 flex items-center justify-center text-emerald-600 mx-auto">
                 <CheckCircle2 className="w-6 h-6" />
               </div>
-              <h3 className="text-base font-bold text-white">Password Updated</h3>
-              <p className="text-xs text-slate-400">Redirecting to sign in...</p>
+              <h3 className="text-base font-bold text-slate-900">Password Updated</h3>
+              <p className="text-xs text-slate-600">Redirecting to sign in...</p>
             </div>
           ) : (
             method === 'otp' && !otpVerified ? renderOtpForm() : renderPasswordForm()

@@ -25,7 +25,7 @@ export const Tabs: React.FC<TabsProps> = ({
 }) => {
   if (variant === 'underline') {
     return (
-      <div className={clsx('flex items-center gap-6 border-b border-dark-700/80', className)}>
+      <div className={clsx('flex items-center gap-6 border-b border-slate-200', className)}>
         {tabs.map((tab) => {
           const isActive = tab.id === activeTab;
           const Icon = tab.icon;
@@ -35,7 +35,7 @@ export const Tabs: React.FC<TabsProps> = ({
               onClick={() => onChange(tab.id)}
               className={clsx(
                 'flex items-center gap-2 pb-3 text-sm font-medium transition-all relative',
-                isActive ? 'text-brand-400 font-semibold' : 'text-slate-400 hover:text-slate-200'
+                isActive ? 'text-sage-600 font-bold' : 'text-slate-600 hover:text-slate-900'
               )}
             >
               {Icon && <Icon className="w-4 h-4" />}
@@ -44,14 +44,14 @@ export const Tabs: React.FC<TabsProps> = ({
                 <span
                   className={clsx(
                     'px-2 py-0.5 text-xs rounded-full font-mono',
-                    isActive ? 'bg-brand-500/20 text-brand-400' : 'bg-dark-800 text-slate-400'
+                    isActive ? 'bg-sage-100 text-sage-800' : 'bg-slate-100 text-slate-600'
                   )}
                 >
                   {tab.count}
                 </span>
               )}
               {isActive && (
-                <span className="absolute bottom-0 inset-x-0 h-0.5 bg-brand-500 rounded-full" />
+                <span className="absolute bottom-0 inset-x-0 h-0.5 bg-sage-600 rounded-full" />
               )}
             </button>
           );
@@ -61,7 +61,7 @@ export const Tabs: React.FC<TabsProps> = ({
   }
 
   return (
-    <div className={clsx('inline-flex items-center p-1 bg-dark-900 border border-dark-700/80 rounded-xl gap-1', className)}>
+    <div className={clsx('inline-flex items-center p-1 bg-slate-100 border border-slate-200 rounded-xl gap-1', className)}>
       {tabs.map((tab) => {
         const isActive = tab.id === activeTab;
         const Icon = tab.icon;
@@ -70,10 +70,10 @@ export const Tabs: React.FC<TabsProps> = ({
             key={tab.id}
             onClick={() => onChange(tab.id)}
             className={clsx(
-              'flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium transition-all',
+              'flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all',
               isActive
-                ? 'bg-dark-800 text-white shadow-subtle border border-dark-700'
-                : 'text-slate-400 hover:text-slate-200 hover:bg-dark-850/50'
+                ? 'bg-white text-slate-900 shadow-subtle border border-slate-200'
+                : 'text-slate-600 hover:text-slate-900 hover:bg-white/60'
             )}
           >
             {Icon && <Icon className="w-3.5 h-3.5" />}
@@ -81,8 +81,8 @@ export const Tabs: React.FC<TabsProps> = ({
             {typeof tab.count === 'number' && (
               <span
                 className={clsx(
-                  'px-1.5 py-0.2 rounded text-[10px] font-mono',
-                  isActive ? 'bg-brand-500/20 text-brand-400' : 'bg-dark-750 text-slate-400'
+                  'px-1.5 py-0.5 rounded text-[10px] font-mono',
+                  isActive ? 'bg-sage-100 text-sage-800' : 'bg-slate-200 text-slate-700'
                 )}
               >
                 {tab.count}

@@ -81,25 +81,25 @@ export const SmartHomeLayeredView: React.FC = () => {
   const selectedZone = ZONES.find((z) => z.id === activeZone) || ZONES[0];
 
   return (
-    <section className="py-24 border-t border-dark-750/80 bg-dark-950 relative overflow-hidden">
+    <section className="py-24 border-t border-slate-200 bg-[#F8FAFC] relative overflow-hidden">
       {/* Subtle Radial Glow */}
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-sage-400/5 rounded-full blur-3xl pointer-events-none" />
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-sage-500/5 rounded-full blur-3xl pointer-events-none" />
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
         {/* Section Headline */}
         <div className="text-center max-w-3xl mx-auto mb-16 space-y-3">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-dark-850 border border-dark-750">
-            <span className="w-2 h-2 rounded-full bg-sage-400" />
-            <span className="text-[11px] font-mono tracking-widest text-slate-300 uppercase">
+          <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-sage-50 border border-sage-200">
+            <span className="w-2 h-2 rounded-full bg-sage-600" />
+            <span className="text-[11px] font-mono tracking-widest text-sage-800 uppercase font-bold">
               ARCHITECTURAL ECOSYSTEM
             </span>
           </div>
 
-          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-tight text-white uppercase">
+          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-tight text-slate-900 uppercase">
             YOUR HOME. ONE INTELLIGENT PLATFORM.
           </h2>
 
-          <p className="text-sm sm:text-base text-slate-400 max-w-xl mx-auto leading-relaxed">
+          <p className="text-sm sm:text-base text-slate-600 max-w-xl mx-auto leading-relaxed">
             Every architectural zone of your residence is mapped to verified, certified maintenance procedures.
           </p>
         </div>
@@ -115,19 +115,19 @@ export const SmartHomeLayeredView: React.FC = () => {
                 onClick={() => setActiveZone(zone.id)}
                 className={`p-4 rounded-2xl border text-left transition-all duration-200 flex flex-col justify-between ${
                   isSelected
-                    ? 'bg-dark-850 border-sage-400 text-white shadow-accent ring-1 ring-sage-400/40'
-                    : 'bg-dark-900/90 border-dark-750 hover:border-dark-700 text-slate-400 hover:text-white hover:bg-dark-850'
+                    ? 'bg-sage-50/90 border-sage-500 text-slate-900 shadow-subtle ring-1 ring-sage-500/40'
+                    : 'bg-white border-slate-200 hover:border-slate-300 text-slate-700 hover:bg-slate-50 shadow-subtle'
                 }`}
               >
                 <div className="flex items-center justify-between mb-3">
-                  <div className={`p-2.5 rounded-xl ${isSelected ? 'bg-sage-400 text-dark-950 font-bold' : 'bg-dark-800 text-sage-400'}`}>
+                  <div className={`p-2.5 rounded-xl ${isSelected ? 'bg-sage-600 text-white font-bold' : 'bg-slate-100 text-slate-700'}`}>
                     <ZoneIcon className="w-5 h-5" />
                   </div>
-                  <ChevronRight className={`w-4 h-4 transition-transform ${isSelected ? 'rotate-90 text-sage-400' : 'text-slate-600'}`} />
+                  <ChevronRight className={`w-4 h-4 transition-transform ${isSelected ? 'rotate-90 text-sage-600' : 'text-slate-400'}`} />
                 </div>
                 <div>
-                  <h4 className="text-xs font-bold text-white tracking-tight">{zone.name}</h4>
-                  <span className="text-[10px] font-mono text-slate-400 block mt-0.5">{zone.subtitle}</span>
+                  <h4 className="text-xs font-bold text-slate-900 tracking-tight">{zone.name}</h4>
+                  <span className="text-[10px] font-mono text-slate-500 block mt-0.5">{zone.subtitle}</span>
                 </div>
               </button>
             );
@@ -135,34 +135,34 @@ export const SmartHomeLayeredView: React.FC = () => {
         </div>
 
         {/* Active Zone Interactive Blueprint Card */}
-        <div className="rounded-3xl bg-gradient-to-b from-dark-900 via-dark-850 to-dark-900 border border-dark-750 p-6 sm:p-10 shadow-modal grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
+        <div className="rounded-3xl bg-white border border-slate-200 p-6 sm:p-10 shadow-card grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
           {/* Left: Zone Schematic & Description */}
           <div className="lg:col-span-5 space-y-4">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-dark-800 border border-dark-750">
-              <ShieldCheck className="w-3.5 h-3.5 text-sage-400" />
-              <span className="text-xs font-mono tracking-wider text-sage-300 uppercase">{selectedZone.subtitle}</span>
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-slate-100 border border-slate-200">
+              <ShieldCheck className="w-3.5 h-3.5 text-sage-600" />
+              <span className="text-xs font-mono tracking-wider text-slate-700 uppercase font-semibold">{selectedZone.subtitle}</span>
             </div>
 
-            <h3 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
+            <h3 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
               {selectedZone.name}
             </h3>
 
-            <p className="text-xs sm:text-sm text-slate-400 leading-relaxed">
+            <p className="text-xs sm:text-sm text-slate-600 leading-relaxed">
               {selectedZone.description}
             </p>
 
-            <div className="pt-4 border-t border-dark-750 flex items-center gap-4 text-xs font-mono text-slate-400">
-              <span className="flex items-center gap-1 text-slate-300">
-                <ShieldCheck className="w-4 h-4 text-sage-400" /> SmartVerify Protocols
+            <div className="pt-4 border-t border-slate-200 flex items-center gap-4 text-xs font-mono text-slate-500">
+              <span className="flex items-center gap-1 text-slate-700 font-medium">
+                <ShieldCheck className="w-4 h-4 text-sage-600" /> SmartVerify Protocols
               </span>
               <span>•</span>
-              <span>100% Guaranteed</span>
+              <span className="text-emerald-700 font-semibold">100% Guaranteed</span>
             </div>
           </div>
 
           {/* Right: Specialized Service Tasks */}
           <div className="lg:col-span-7 space-y-3">
-            <span className="text-xs font-mono text-slate-400 uppercase tracking-wider block mb-2">
+            <span className="text-xs font-mono text-slate-500 uppercase tracking-wider block mb-2 font-semibold">
               Verified Maintenance Procedures
             </span>
 
@@ -170,25 +170,25 @@ export const SmartHomeLayeredView: React.FC = () => {
               <div
                 key={idx}
                 onClick={() => navigate('/booking/new')}
-                className="group p-4 rounded-2xl bg-dark-900/90 hover:bg-dark-800 border border-dark-750 hover:border-sage-400/50 transition-all duration-200 cursor-pointer flex items-center justify-between shadow-subtle"
+                className="group p-4 rounded-2xl bg-slate-50 hover:bg-white border border-slate-200 hover:border-slate-300 transition-all duration-200 cursor-pointer flex items-center justify-between shadow-subtle hover:shadow-card"
               >
                 <div className="space-y-1">
                   <div className="flex items-center gap-2">
-                    <span className="text-xs sm:text-sm font-bold text-white group-hover:text-sage-300 transition-colors">
+                    <span className="text-xs sm:text-sm font-bold text-slate-900 group-hover:text-sage-700 transition-colors">
                       {service.name}
                     </span>
-                    <span className="text-[9px] font-mono uppercase px-2 py-0.5 rounded bg-dark-800 text-slate-300 border border-dark-750">
+                    <span className="text-[9px] font-mono uppercase px-2 py-0.5 rounded bg-slate-200 text-slate-700 font-semibold border border-slate-300">
                       {service.tag}
                     </span>
                   </div>
-                  <p className="text-[11px] font-mono text-slate-400">Standard Duration: {service.time}</p>
+                  <p className="text-[11px] font-mono text-slate-500">Standard Duration: {service.time}</p>
                 </div>
 
                 <div className="flex items-center gap-3 shrink-0">
-                  <span className="text-xs font-mono font-bold text-white px-2.5 py-1 rounded-lg bg-dark-850 border border-dark-750">
+                  <span className="text-xs font-mono font-bold text-slate-900 px-2.5 py-1 rounded-lg bg-white border border-slate-200 shadow-sm">
                     ₹{service.price.toFixed(2)}
                   </span>
-                  <div className="w-8 h-8 rounded-xl bg-dark-800 group-hover:bg-sage-400 text-slate-400 group-hover:text-dark-950 flex items-center justify-center transition-colors">
+                  <div className="w-8 h-8 rounded-xl bg-slate-100 group-hover:bg-sage-600 text-slate-600 group-hover:text-white flex items-center justify-center transition-colors">
                     <ArrowRight className="w-4 h-4" />
                   </div>
                 </div>

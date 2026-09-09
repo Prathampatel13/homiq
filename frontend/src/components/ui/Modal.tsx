@@ -56,19 +56,19 @@ export const Modal: React.FC<ModalProps> = ({
       {/* Dialog card */}
       <div
         className={clsx(
-          'relative w-full bg-dark-900 border border-dark-700/90 rounded-2xl shadow-modal z-10 p-6 my-8 text-left transition-all',
+          'relative w-full bg-white border border-slate-200 rounded-3xl shadow-modal z-10 p-6 my-8 text-left text-slate-900 transition-all',
           widthStyles[maxWidth]
         )}
       >
-        <div className="flex items-start justify-between pb-3 border-b border-dark-750">
+        <div className="flex items-start justify-between pb-3 border-b border-slate-100">
           <div>
-            {title && <h3 className="text-lg font-semibold text-white tracking-tight">{title}</h3>}
-            {description && <p className="text-xs text-slate-400 mt-1">{description}</p>}
+            {title && <h3 className="text-lg font-bold text-slate-900 tracking-tight">{title}</h3>}
+            {description && <p className="text-xs text-slate-500 mt-1">{description}</p>}
           </div>
           <button
             type="button"
             onClick={onClose}
-            className="text-slate-400 hover:text-white p-1.5 rounded-lg hover:bg-dark-800 transition-colors -mr-1.5 -mt-1.5"
+            className="text-slate-400 hover:text-slate-700 p-1.5 rounded-lg hover:bg-slate-100 transition-colors -mr-1.5 -mt-1.5"
           >
             <X className="w-4 h-4" />
           </button>

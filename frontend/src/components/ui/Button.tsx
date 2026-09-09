@@ -31,11 +31,11 @@ export const Button: React.FC<ButtonProps> = ({
   };
 
   const variantStyles = {
-    primary: 'bg-brand-500 hover:bg-brand-600 active:bg-brand-700 text-white shadow-subtle hover:shadow-accent',
-    secondary: 'bg-dark-850 hover:bg-dark-800 text-slate-200 border border-dark-700/80 hover:border-dark-750',
-    outline: 'bg-transparent hover:bg-dark-850 text-slate-300 hover:text-white border border-dark-700/80 hover:border-dark-750',
-    danger: 'bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/30 hover:border-rose-500/50',
-    ghost: 'bg-transparent hover:bg-dark-850/80 text-slate-400 hover:text-slate-200',
+    primary: 'bg-sage-600 hover:bg-sage-700 active:bg-sage-800 text-white shadow-subtle hover:shadow-accent font-semibold',
+    secondary: 'bg-white hover:bg-slate-50 active:bg-slate-100 text-slate-800 border border-slate-200 shadow-sm font-semibold',
+    outline: 'bg-transparent hover:bg-slate-100 text-slate-700 hover:text-slate-900 border border-slate-300 font-semibold',
+    danger: 'bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 font-semibold',
+    ghost: 'bg-transparent hover:bg-slate-100 text-slate-600 hover:text-slate-900 font-semibold',
   };
 
   return (

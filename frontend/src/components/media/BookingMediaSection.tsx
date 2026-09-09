@@ -87,13 +87,13 @@ export const BookingMediaSection: React.FC<BookingMediaSectionProps> = ({
     }
 
     return (
-      <div className="p-3 rounded-xl bg-dark-900 border border-dark-750 flex flex-col h-full">
+      <div className="p-3 rounded-xl bg-white border border-slate-200 shadow-subtle flex flex-col h-full">
         <div className="flex items-center justify-between mb-2">
-          <span className="text-[10px] font-mono text-slate-400 uppercase">{title}</span>
+          <span className="text-[10px] font-mono text-slate-500 uppercase font-semibold">{title}</span>
           {canUpload && (
             <button
               onClick={() => setActiveUploader(assetType)}
-              className="p-1 rounded bg-dark-800 hover:bg-blue-600/20 hover:text-blue-400 text-slate-400 transition-colors"
+              className="p-1 rounded bg-slate-100 hover:bg-sage-50 hover:text-sage-700 text-slate-600 transition-colors border border-slate-200"
             >
               <Plus className="w-3.5 h-3.5" />
             </button>
@@ -102,7 +102,7 @@ export const BookingMediaSection: React.FC<BookingMediaSectionProps> = ({
 
         {items.length > 0 ? (
           <div className="flex-1 flex flex-col gap-2">
-            <div className="relative w-full h-20 rounded-lg overflow-hidden border border-dark-750 bg-dark-950 group cursor-pointer"
+            <div className="relative w-full h-20 rounded-lg overflow-hidden border border-slate-200 bg-slate-100 group cursor-pointer"
                  onClick={() => setLightboxData({ images: items, index: 0 })}>
               {items[0].resource_type === 'image' ? (
                 <>
@@ -117,7 +117,7 @@ export const BookingMediaSection: React.FC<BookingMediaSectionProps> = ({
                   </div>
                 </>
               ) : (
-                <div className="w-full h-full flex flex-col items-center justify-center text-slate-400">
+                <div className="w-full h-full flex flex-col items-center justify-center text-slate-500">
                   <FileText className="w-6 h-6 mb-1" />
                   <span className="text-[10px] font-mono">{items[0].format.toUpperCase()}</span>
                 </div>
@@ -134,7 +134,7 @@ export const BookingMediaSection: React.FC<BookingMediaSectionProps> = ({
             </div>
           </div>
         ) : (
-          <div className="flex-1 w-full h-24 rounded-lg bg-dark-850 border border-dashed border-dark-700 flex flex-col items-center justify-center text-slate-500">
+          <div className="flex-1 w-full h-24 rounded-lg bg-slate-50 border border-dashed border-slate-300 flex flex-col items-center justify-center text-slate-500">
             {icon}
             <span className="text-[10px] mt-2">
               {title === 'Invoice / Docs' 
@@ -144,7 +144,7 @@ export const BookingMediaSection: React.FC<BookingMediaSectionProps> = ({
             {canUpload && (
               <button
                 onClick={() => setActiveUploader(assetType)}
-                className="mt-2 text-xs text-blue-400 hover:text-blue-300 transition-colors"
+                className="mt-2 text-xs text-sage-600 hover:text-sage-700 font-semibold transition-colors"
               >
                 Upload Now
               </button>
@@ -156,12 +156,12 @@ export const BookingMediaSection: React.FC<BookingMediaSectionProps> = ({
   };
 
   return (
-    <div className="p-4 rounded-2xl bg-dark-850 border border-dark-750 space-y-3">
+    <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-3">
       <div className="flex items-center justify-between">
-        <span className="text-[11px] font-mono text-sage-400 uppercase tracking-wider block">
+        <span className="text-[11px] font-mono text-sage-700 uppercase tracking-wider block font-bold">
           Site Media & Work Evidence
         </span>
-        {isLoading && <Loader2 className="w-3.5 h-3.5 text-sage-400 animate-spin" />}
+        {isLoading && <Loader2 className="w-3.5 h-3.5 text-sage-600 animate-spin" />}
       </div>
 
       <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 items-stretch">
@@ -170,24 +170,24 @@ export const BookingMediaSection: React.FC<BookingMediaSectionProps> = ({
         
         <div className="col-span-2 sm:col-span-1 h-full">
           {invoice ? (
-            <div className="p-4 rounded-xl bg-dark-900 border border-dark-750 flex flex-col h-full">
-              <span className="text-[10px] font-mono text-sage-400 uppercase mb-3">Invoice & Payment</span>
-              <div className="flex-1 bg-dark-950 rounded-lg border border-dark-750 p-3 flex flex-col justify-between">
+            <div className="p-4 rounded-xl bg-white border border-slate-200 flex flex-col h-full shadow-subtle">
+              <span className="text-[10px] font-mono text-sage-700 uppercase mb-3 font-bold">Invoice & Payment</span>
+              <div className="flex-1 bg-slate-50 rounded-lg border border-slate-200 p-3 flex flex-col justify-between">
                 <div>
                   <div className="flex justify-between items-start mb-2">
-                    <span className="text-xs font-bold text-white">#{invoice.invoice_number}</span>
-                    <span className={`text-[10px] uppercase font-mono px-1.5 py-0.5 rounded ${
-                      invoice.status === 'paid' ? 'bg-sage-400/20 text-sage-400' : 'bg-blue-400/20 text-blue-400'
+                    <span className="text-xs font-bold text-slate-900">#{invoice.invoice_number}</span>
+                    <span className={`text-[10px] uppercase font-mono px-1.5 py-0.5 rounded font-bold ${
+                      invoice.status === 'paid' ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-sky-50 text-sky-700 border border-sky-200'
                     }`}>
                       {invoice.status}
                     </span>
                   </div>
-                  <div className="text-[10px] text-slate-400 font-mono mb-0.5">Date: {new Date(invoice.created_at).toLocaleDateString()}</div>
-                  <div className="text-[10px] text-slate-400 font-mono mb-2">Total: ₹{invoice.total_amount}</div>
+                  <div className="text-[10px] text-slate-600 font-mono mb-0.5">Date: {new Date(invoice.created_at).toLocaleDateString()}</div>
+                  <div className="text-[10px] text-slate-900 font-mono font-bold mb-2">Total: ₹{invoice.total_amount}</div>
                 </div>
                 <button 
                   onClick={() => window.open(`/customer/invoices/${invoice.id}`, '_blank')}
-                  className="w-full py-1.5 mt-2 bg-dark-800 hover:bg-dark-700 text-xs font-semibold text-white rounded transition-colors border border-dark-700"
+                  className="w-full py-1.5 mt-2 btn-secondary text-xs font-semibold"
                 >
                   View Details
                 </button>

@@ -335,11 +335,11 @@ export const BookingPage: React.FC = () => {
                     ? 'bg-sage-600 text-white font-bold shadow-subtle'
                     : isCompleted
                     ? 'bg-sage-50 text-sage-700 hover:bg-sage-100 font-semibold'
-                    : 'text-slate-400 hover:text-slate-700 hover:bg-slate-50 font-medium'
+                    : 'text-slate-700 hover:text-slate-900 hover:bg-slate-100 font-semibold'
                 }`}
               >
                 <div className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-mono shrink-0 ${
-                  isCurrent ? 'bg-white/20 text-white' : isCompleted ? 'bg-sage-200 text-sage-800' : 'bg-slate-100 text-slate-500'
+                  isCurrent ? 'bg-white/25 text-white font-bold' : isCompleted ? 'bg-sage-200 text-sage-800' : 'bg-slate-200 text-slate-700 font-bold'
                 }`}>
                   {isCompleted ? <Check className="w-3 h-3" /> : step.id}
                 </div>

@@ -65,32 +65,32 @@ export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ childre
               key={t.id}
               className={`pointer-events-auto flex items-start gap-3 p-4 rounded-2xl shadow-modal border backdrop-blur-xl transition-all duration-200 animate-in slide-in-from-bottom-5 ${
                 isSuccess
-                  ? 'bg-dark-900/95 border-emerald-500/30 text-slate-100'
+                  ? 'bg-white/95 border-emerald-300 text-slate-900'
                   : isError
-                  ? 'bg-dark-900/95 border-rose-500/30 text-slate-100'
+                  ? 'bg-white/95 border-rose-300 text-slate-900'
                   : isWarning
-                  ? 'bg-dark-900/95 border-amber-500/30 text-slate-100'
-                  : 'bg-dark-900/95 border-dark-700 text-slate-100'
+                  ? 'bg-white/95 border-amber-300 text-slate-900'
+                  : 'bg-white/95 border-slate-200 text-slate-900'
               }`}
             >
               <Icon
                 className={`w-5 h-5 flex-shrink-0 mt-0.5 ${
                   isSuccess
-                    ? 'text-emerald-400'
+                    ? 'text-emerald-600'
                     : isError
-                    ? 'text-rose-400'
+                    ? 'text-rose-600'
                     : isWarning
-                    ? 'text-amber-400'
-                    : 'text-brand-400'
+                    ? 'text-amber-600'
+                    : 'text-sage-600'
                 }`}
               />
               <div className="flex-1 text-left">
-                <h5 className="text-sm font-semibold text-white">{t.title}</h5>
-                {t.message && <p className="text-xs text-slate-400 mt-0.5 leading-relaxed">{t.message}</p>}
+                <h5 className="text-sm font-bold text-slate-900">{t.title}</h5>
+                {t.message && <p className="text-xs text-slate-600 mt-0.5 leading-relaxed">{t.message}</p>}
               </div>
               <button
                 onClick={() => removeToast(t.id)}
-                className="text-slate-400 hover:text-white p-1 rounded-md transition-colors -mr-1 -mt-1"
+                className="text-slate-400 hover:text-slate-700 p-1 rounded-md transition-colors -mr-1 -mt-1"
               >
                 <X className="w-3.5 h-3.5" />
               </button>

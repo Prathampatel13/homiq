@@ -22,27 +22,27 @@ export const StatsCard: React.FC<StatsCardProps> = ({
   className = '',
 }) => {
   return (
-    <Card className={`p-5 relative overflow-hidden ${className}`}>
+    <Card className={`p-5 relative overflow-hidden bg-white border border-slate-200 shadow-card ${className}`}>
       <div className="flex items-start justify-between">
         <div>
-          <p className="text-xs font-medium text-slate-400 uppercase tracking-wider">{label}</p>
-          <h3 className="text-2xl font-bold text-white mt-1.5 font-mono tracking-tight">{value}</h3>
+          <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">{label}</p>
+          <h3 className="text-2xl font-bold text-slate-900 mt-1.5 font-mono tracking-tight">{value}</h3>
         </div>
-        <div className="w-10 h-10 rounded-xl bg-dark-850 border border-dark-750 flex items-center justify-center text-slate-300 shadow-subtle">
-          <Icon className="w-5 h-5 text-brand-400" />
+        <div className="w-10 h-10 rounded-xl bg-sage-50 border border-sage-200 flex items-center justify-center text-sage-600 shadow-subtle">
+          <Icon className="w-5 h-5" />
         </div>
       </div>
 
       {(change !== undefined || subtext) && (
-        <div className="flex items-center gap-2 mt-4 pt-3 border-t border-dark-800/80 text-xs">
+        <div className="flex items-center gap-2 mt-4 pt-3 border-t border-slate-100 text-xs">
           {change !== undefined && (
             <span
               className={`inline-flex items-center gap-1 font-semibold ${
                 changeType === 'increase'
-                  ? 'text-emerald-400'
+                  ? 'text-emerald-700 font-bold'
                   : changeType === 'decrease'
-                  ? 'text-rose-400'
-                  : 'text-slate-400'
+                  ? 'text-rose-700 font-bold'
+                  : 'text-slate-600'
               }`}
             >
               {changeType === 'increase' ? (

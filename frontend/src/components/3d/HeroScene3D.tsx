@@ -246,8 +246,8 @@ const ArchitecturalHouse: React.FC<{
                 {/* Outer Pulsing Ring */}
                 <div className={`w-8 h-8 rounded-full flex items-center justify-center transition-all duration-300 ${
                   isSelected 
-                    ? 'bg-sage-400 text-dark-950 ring-4 ring-sage-400/30 scale-110 shadow-accent' 
-                    : 'bg-dark-900/90 text-sage-400 border border-sage-400/40 hover:border-sage-400 hover:scale-110 hover:bg-dark-850 shadow-card backdrop-blur-md'
+                    ? 'bg-sage-600 text-white ring-4 ring-sage-500/30 scale-110 shadow-subtle' 
+                    : 'bg-white text-sage-600 border border-slate-200 hover:border-sage-500 hover:scale-110 hover:bg-sage-50 shadow-card backdrop-blur-md'
                 }`}>
                   <IconComponent className="w-4 h-4 transition-transform group-hover:scale-110" />
                 </div>
@@ -259,17 +259,17 @@ const ArchitecturalHouse: React.FC<{
                     : hotspot.position[0] > 1.0 
                       ? 'right-0' 
                       : 'left-1/2 -translate-x-1/2'
-                } w-52 p-3 rounded-xl bg-dark-900/95 border border-dark-750 backdrop-blur-xl shadow-modal pointer-events-none transition-all duration-200 ${
+                } w-52 p-3 rounded-xl bg-white/95 border border-slate-200 backdrop-blur-xl shadow-modal pointer-events-none transition-all duration-200 ${
                   isSelected ? 'opacity-100 translate-y-0 scale-100' : 'opacity-0 translate-y-2 scale-95 group-hover:opacity-100 group-hover:translate-y-0 group-hover:scale-100'
                 }`}>
                   <div className="flex items-center justify-between gap-2 mb-1">
-                    <span className="text-xs font-semibold text-white tracking-tight">{hotspot.name}</span>
-                    <span className="text-[9px] font-mono uppercase px-1.5 py-0.5 rounded bg-sage-400/15 text-sage-300 border border-sage-400/30">
+                    <span className="text-xs font-bold text-slate-900 tracking-tight">{hotspot.name}</span>
+                    <span className="text-[9px] font-mono uppercase px-1.5 py-0.5 rounded bg-sage-50 text-sage-700 font-semibold border border-sage-200">
                       {hotspot.tag}
                     </span>
                   </div>
-                  <p className="text-[11px] text-slate-400 leading-snug mb-2">{hotspot.description}</p>
-                  <div className="flex items-center justify-between text-[10px] font-medium text-sage-400">
+                  <p className="text-[11px] text-slate-600 leading-snug mb-2">{hotspot.description}</p>
+                  <div className="flex items-center justify-between text-[10px] font-semibold text-sage-600">
                     <span>Click to select</span>
                     <ChevronRight className="w-3 h-3" />
                   </div>
@@ -289,22 +289,22 @@ const FallbackArchitecturalView: React.FC<{
   onSelectHotspot: (id: string) => void;
 }> = ({ activeHotspot, onSelectHotspot }) => {
   return (
-    <div className="relative w-full h-full min-h-[420px] rounded-3xl bg-gradient-to-b from-dark-900 via-dark-850 to-dark-950 border border-dark-750 p-6 flex flex-col justify-between overflow-hidden shadow-card">
+    <div className="relative w-full h-full min-h-[420px] rounded-3xl bg-white border border-slate-200 p-6 flex flex-col justify-between overflow-hidden shadow-card">
       {/* Background Architectural Blueprint Grid */}
       <div 
         className="absolute inset-0 opacity-15 pointer-events-none"
         style={{
-          backgroundImage: 'radial-gradient(circle, #8FA8A0 1px, transparent 1px)',
+          backgroundImage: 'radial-gradient(circle, #94A3B8 1px, transparent 1px)',
           backgroundSize: '24px 24px'
         }}
       />
 
       <div className="relative z-10 flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <span className="w-2.5 h-2.5 rounded-full bg-sage-400 animate-pulse" />
-          <span className="text-xs font-mono tracking-widest text-slate-400 uppercase">ARCHITECTURAL SERVICE ECOSYSTEM</span>
+          <span className="w-2.5 h-2.5 rounded-full bg-sage-500 animate-pulse" />
+          <span className="text-xs font-mono tracking-widest text-slate-700 uppercase font-bold">ARCHITECTURAL SERVICE ECOSYSTEM</span>
         </div>
-        <span className="text-xs font-mono px-2.5 py-1 rounded bg-dark-800 text-slate-300 border border-dark-750">
+        <span className="text-xs font-mono px-2.5 py-1 rounded bg-slate-100 text-slate-700 font-semibold border border-slate-200">
           8 Service Points Active
         </span>
       </div>
@@ -320,18 +320,18 @@ const FallbackArchitecturalView: React.FC<{
               onClick={() => onSelectHotspot(hotspot.id)}
               className={`p-3.5 rounded-xl text-left transition-all duration-200 border ${
                 isSelected
-                  ? 'bg-sage-400/15 border-sage-400 text-white shadow-accent'
-                  : 'bg-dark-900/80 border-dark-750 hover:border-dark-700 text-slate-300 hover:bg-dark-850'
+                  ? 'bg-sage-50 border-sage-500 text-slate-900 shadow-subtle'
+                  : 'bg-white border-slate-200 hover:border-slate-300 text-slate-700 hover:bg-slate-50'
               }`}
             >
               <div className="flex items-center justify-between mb-2">
-                <div className={`p-2 rounded-lg ${isSelected ? 'bg-sage-400 text-dark-950' : 'bg-dark-800 text-sage-400'}`}>
+                <div className={`p-2 rounded-lg ${isSelected ? 'bg-sage-600 text-white' : 'bg-slate-100 text-slate-700'}`}>
                   <Icon className="w-4 h-4" />
                 </div>
-                <span className="text-[9px] font-mono text-slate-400">{hotspot.category}</span>
+                <span className="text-[9px] font-mono text-slate-500">{hotspot.category}</span>
               </div>
-              <p className="text-xs font-semibold text-white">{hotspot.name}</p>
-              <p className="text-[10px] text-slate-400 line-clamp-1 mt-0.5">{hotspot.description}</p>
+              <p className="text-xs font-bold text-slate-900">{hotspot.name}</p>
+              <p className="text-[10px] text-slate-500 line-clamp-1 mt-0.5">{hotspot.description}</p>
             </button>
           );
         })}
@@ -364,7 +364,7 @@ export const HeroScene3D: React.FC = () => {
   const selectedData = SERVICE_HOTSPOTS.find((s) => s.id === activeHotspot) || SERVICE_HOTSPOTS[0];
 
   return (
-    <div className="relative w-full h-[520px] lg:h-[620px] rounded-3xl overflow-hidden border border-dark-750 bg-gradient-to-b from-dark-950 via-dark-900 to-dark-950 shadow-modal">
+    <div className="relative w-full h-[520px] lg:h-[620px] rounded-3xl overflow-hidden border border-slate-200 bg-gradient-to-b from-slate-50 via-white to-slate-100 shadow-card">
       {/* 3D Canvas / Fallback */}
       {hasWebGL ? (
         <Suspense fallback={<FallbackArchitecturalView activeHotspot={activeHotspot} onSelectHotspot={setActiveHotspot} />}>
@@ -401,37 +401,49 @@ export const HeroScene3D: React.FC = () => {
       )}
 
       {/* Floating Active Service Highlight Bar at Bottom */}
-      <div className="absolute bottom-4 left-4 right-4 sm:left-6 sm:right-6 p-4 rounded-2xl bg-dark-900/90 backdrop-blur-xl border border-dark-750 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-card">
+      <div className="absolute bottom-4 left-4 right-4 sm:left-6 sm:right-6 p-4 rounded-2xl bg-white/95 backdrop-blur-xl border border-slate-200 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-card">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-sage-400/15 border border-sage-400/30 flex items-center justify-center text-sage-400 shrink-0">
+          <div className="w-10 h-10 rounded-xl bg-sage-50 border border-sage-200 flex items-center justify-center text-sage-600 shrink-0">
             <selectedData.icon className="w-5 h-5" />
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <h4 className="text-sm font-semibold text-white">{selectedData.name}</h4>
-              <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-dark-800 text-slate-300 border border-dark-750">
+              <h4 className="text-sm font-bold text-slate-900">{selectedData.name}</h4>
+              <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-slate-100 text-slate-700 border border-slate-200 font-semibold">
                 {selectedData.category}
               </span>
             </div>
-            <p className="text-xs text-slate-400 line-clamp-1 mt-0.5">{selectedData.description}</p>
+            <p className="text-xs text-slate-600 line-clamp-1 mt-0.5">{selectedData.description}</p>
           </div>
         </div>
 
         <div className="flex items-center gap-2 w-full sm:w-auto shrink-0">
-          <button
-            onClick={() => navigate('/services')}
-            className="flex-1 sm:flex-none px-3.5 py-2 rounded-xl text-xs font-medium bg-dark-850 hover:bg-dark-800 text-slate-300 hover:text-white border border-dark-750 transition-colors flex items-center justify-center gap-1.5"
-          >
-            <Eye className="w-3.5 h-3.5" />
-            <span>Details</span>
-          </button>
-          <button
-            onClick={() => navigate('/booking/new')}
-            className="flex-1 sm:flex-none px-4 py-2 rounded-xl text-xs font-semibold bg-sage-400 hover:bg-sage-300 text-dark-950 shadow-accent transition-all flex items-center justify-center gap-1.5"
-          >
-            <span>Book Service</span>
-            <ChevronRight className="w-3.5 h-3.5" />
-          </button>
+          {role === UserRole.TECHNICIAN ? (
+            <button
+              onClick={() => navigate('/provider/dashboard')}
+              className="flex-1 sm:flex-none btn-primary text-xs px-4 py-2 font-semibold shadow-subtle flex items-center justify-center gap-1.5"
+            >
+              <span>Technician Workspace</span>
+              <ChevronRight className="w-3.5 h-3.5" />
+            </button>
+          ) : (
+            <>
+              <button
+                onClick={() => navigate('/services')}
+                className="flex-1 sm:flex-none btn-secondary text-xs px-3.5 py-2 flex items-center justify-center gap-1.5"
+              >
+                <Eye className="w-3.5 h-3.5" />
+                <span>Details</span>
+              </button>
+              <button
+                onClick={() => navigate('/booking/new')}
+                className="flex-1 sm:flex-none btn-primary text-xs px-4 py-2 font-semibold shadow-subtle flex items-center justify-center gap-1.5"
+              >
+                <span>Book Service</span>
+                <ChevronRight className="w-3.5 h-3.5" />
+              </button>
+            </>
+          )}
         </div>
       </div>
     </div>

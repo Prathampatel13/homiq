@@ -179,21 +179,21 @@ export const AdminDashboard: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-dark-950 py-8 text-white selection:bg-sage-400/20 selection:text-white">
+    <div className="min-h-screen bg-[#F8FAFC] py-8 text-slate-900 selection:bg-sage-500/20 selection:text-slate-900">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
         {/* Top Control Bar */}
-        <div className="p-6 sm:p-8 rounded-3xl bg-dark-900 border border-dark-750 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-card">
+        <div className="p-6 sm:p-8 rounded-3xl bg-white border border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-card">
           <div>
             <div className="flex items-center gap-2 mb-1">
-              <span className="w-2.5 h-2.5 rounded-full bg-sage-400 animate-pulse" />
-              <span className="text-xs font-mono tracking-widest text-sage-400 uppercase">
+              <span className="w-2.5 h-2.5 rounded-full bg-sage-600 animate-pulse" />
+              <span className="text-xs font-mono tracking-widest text-sage-700 font-bold uppercase">
                 CENTRAL OPERATIONS CONTROLLER
               </span>
             </div>
-            <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-white">
+            <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-900">
               System Administration & Overseer
             </h1>
-            <p className="text-xs text-slate-400 mt-0.5 font-mono">
+            <p className="text-xs text-slate-500 mt-0.5 font-mono">
               Live FastAPI DB Sync • TLS 1.3 Validated
             </p>
           </div>
@@ -208,7 +208,7 @@ export const AdminDashboard: React.FC = () => {
         </div>
 
         {/* Admin Navigation Tabs */}
-        <div className="flex items-center gap-2 border-b border-dark-750 pb-3 overflow-x-auto">
+        <div className="flex items-center gap-2 border-b border-slate-200 pb-3 overflow-x-auto">
           {[
             { id: 'overview', label: 'Operations Overview' },
             { id: 'users', label: 'Users & Customers', count: users.length },
@@ -223,13 +223,15 @@ export const AdminDashboard: React.FC = () => {
               onClick={() => setActiveTab(tab.id as any)}
               className={`px-4 py-2 rounded-xl text-xs font-semibold whitespace-nowrap transition-all border ${
                 activeTab === tab.id
-                  ? 'bg-sage-400 text-dark-950 border-sage-400 shadow-accent'
-                  : 'bg-dark-900 text-slate-400 hover:text-white border-dark-750 hover:border-dark-700'
+                  ? 'bg-sage-600 text-white border-sage-600 shadow-subtle font-bold'
+                  : 'bg-white text-slate-600 hover:text-slate-900 border-slate-200 hover:border-slate-300'
               }`}
             >
               <span>{tab.label}</span>
               {tab.count !== undefined && (
-                <span className="ml-2 text-[10px] font-mono px-1.5 py-0.2 rounded bg-dark-800 text-slate-300">
+                <span className={`ml-2 text-[10px] font-mono px-1.5 py-0.5 rounded ${
+                  activeTab === tab.id ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-700'
+                }`}>
                   {tab.count}
                 </span>
               )}
@@ -244,45 +246,45 @@ export const AdminDashboard: React.FC = () => {
           <div className="space-y-6">
             {/* Real KPIs from Backend */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-              <div className="p-5 rounded-2xl bg-dark-900 border border-dark-750 shadow-card">
-                <span className="text-xs font-mono text-slate-400 uppercase">Total Users</span>
-                <p className="text-3xl font-bold font-mono text-white mt-1">
+              <div className="p-5 rounded-2xl bg-white border border-slate-200 shadow-card">
+                <span className="text-xs font-mono text-slate-500 uppercase">Total Users</span>
+                <p className="text-3xl font-bold font-mono text-slate-900 mt-1">
                   {stats?.total_users ?? users.length}
                 </p>
-                <span className="text-[10px] text-sage-400 font-mono mt-0.5 block">Verified Customers & Pros</span>
+                <span className="text-[10px] text-sage-600 font-mono mt-0.5 block font-semibold">Verified Customers & Pros</span>
               </div>
 
-              <div className="p-5 rounded-2xl bg-dark-900 border border-dark-750 shadow-card">
-                <span className="text-xs font-mono text-slate-400 uppercase">Active Bookings</span>
-                <p className="text-3xl font-bold font-mono text-white mt-1">
+              <div className="p-5 rounded-2xl bg-white border border-slate-200 shadow-card">
+                <span className="text-xs font-mono text-slate-500 uppercase">Active Bookings</span>
+                <p className="text-3xl font-bold font-mono text-slate-900 mt-1">
                   {stats?.total_bookings ?? bookings.filter((b) => ['assigned', 'accepted', 'in_progress', 'arrived', 'on_the_way'].includes(b.status)).length}
                 </p>
-                <span className="text-[10px] text-cyan-400 font-mono mt-0.5 block">In Live Execution</span>
+                <span className="text-[10px] text-sky-700 font-mono mt-0.5 block font-semibold">In Live Execution</span>
               </div>
 
-              <div className="p-5 rounded-2xl bg-dark-900 border border-dark-750 shadow-card">
-                <span className="text-xs font-mono text-slate-400 uppercase">Completed Services</span>
-                <p className="text-3xl font-bold font-mono text-white mt-1">
+              <div className="p-5 rounded-2xl bg-white border border-slate-200 shadow-card">
+                <span className="text-xs font-mono text-slate-500 uppercase">Completed Services</span>
+                <p className="text-3xl font-bold font-mono text-slate-900 mt-1">
                   {bookings.filter((b) => b.status === 'completed').length}
                 </p>
-                <span className="text-[10px] text-emerald-400 font-mono mt-0.5 block">100% Verified Handshakes</span>
+                <span className="text-[10px] text-emerald-600 font-mono mt-0.5 block font-semibold">100% Verified Handshakes</span>
               </div>
 
-              <div className="p-5 rounded-2xl bg-dark-900 border border-dark-750 shadow-card">
-                <span className="text-xs font-mono text-slate-400 uppercase">Total Settled Revenue</span>
-                <p className="text-3xl font-bold font-mono text-white mt-1">
+              <div className="p-5 rounded-2xl bg-white border border-slate-200 shadow-card">
+                <span className="text-xs font-mono text-slate-500 uppercase">Total Settled Revenue</span>
+                <p className="text-3xl font-bold font-mono text-slate-900 mt-1">
                   ₹{(stats?.total_revenue ?? bookings.filter(b => b.status === 'completed').reduce((a, c) => a + (c.final_price || c.total_amount || c.estimated_price || 0), 0)).toFixed(2)}
                 </p>
-                <span className="text-[10px] text-sage-400 font-mono mt-0.5 block">Escrow Settled</span>
+                <span className="text-[10px] text-sage-600 font-mono mt-0.5 block font-semibold">Escrow Settled</span>
               </div>
             </div>
 
             {/* Recent Bookings Feed */}
-            <div className="p-6 rounded-3xl bg-dark-900 border border-dark-750 shadow-card space-y-4">
-              <h2 className="text-base font-bold text-white tracking-tight">Recent Dispatch Activity</h2>
+            <div className="p-6 rounded-3xl bg-white border border-slate-200 shadow-card space-y-4">
+              <h2 className="text-base font-bold text-slate-900 tracking-tight">Recent Dispatch Activity</h2>
               <div className="overflow-x-auto">
                 <table className="w-full text-left text-xs">
-                  <thead className="bg-dark-850 border-b border-dark-750 text-slate-400 font-mono uppercase text-[10px]">
+                  <thead className="bg-slate-50 border-b border-slate-200 text-slate-600 font-mono uppercase text-[10px]">
                     <tr>
                       <th className="py-3 px-4">Booking ID</th>
                       <th className="py-3 px-4">Service</th>
@@ -291,14 +293,14 @@ export const AdminDashboard: React.FC = () => {
                       <th className="py-3 px-4">Customer</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-dark-750/70 text-slate-300">
+                  <tbody className="divide-y divide-slate-200 text-slate-700">
                     {bookings.slice(0, 8).map((b) => (
-                      <tr key={b.id} className="hover:bg-dark-850/50">
-                        <td className="py-3 px-4 font-mono font-medium text-white">#{b.booking_number || b.id}</td>
-                        <td className="py-3 px-4 font-semibold text-white">{b.service?.name || 'Home Service'}</td>
+                      <tr key={b.id} className="hover:bg-slate-50 transition-colors">
+                        <td className="py-3 px-4 font-mono font-semibold text-slate-900">#{b.booking_number || b.id}</td>
+                        <td className="py-3 px-4 font-semibold text-slate-900">{b.service?.name || 'Home Service'}</td>
                         <td className="py-3 px-4"><StatusBadge status={b.status} size="sm" /></td>
-                        <td className="py-3 px-4 font-mono font-bold text-white">₹{(b.final_price || b.total_amount || b.estimated_price || 0).toFixed(2)}</td>
-                        <td className="py-3 px-4 text-slate-400">{b.customer?.full_name || 'Customer'}</td>
+                        <td className="py-3 px-4 font-mono font-bold text-slate-900">₹{(b.final_price || b.total_amount || b.estimated_price || 0).toFixed(2)}</td>
+                        <td className="py-3 px-4 text-slate-600">{b.customer?.full_name || 'Customer'}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -312,11 +314,11 @@ export const AdminDashboard: React.FC = () => {
             TAB 2: USERS & CUSTOMERS
         ────────────────────────────────────────────────────────────────────────── */}
         {activeTab === 'users' && (
-          <div className="p-6 rounded-3xl bg-dark-900 border border-dark-750 shadow-card space-y-4">
-            <h2 className="text-base font-bold text-white tracking-tight">Registered Platform Users</h2>
+          <div className="p-6 rounded-3xl bg-white border border-slate-200 shadow-card space-y-4">
+            <h2 className="text-base font-bold text-slate-900 tracking-tight">Registered Platform Users</h2>
             <div className="overflow-x-auto">
               <table className="w-full text-left text-xs">
-                <thead className="bg-dark-850 border-b border-dark-750 text-slate-400 font-mono uppercase text-[10px]">
+                <thead className="bg-slate-50 border-b border-slate-200 text-slate-600 font-mono uppercase text-[10px]">
                   <tr>
                     <th className="py-3 px-4">ID</th>
                     <th className="py-3 px-4">Full Name</th>
@@ -326,16 +328,16 @@ export const AdminDashboard: React.FC = () => {
                     <th className="py-3 px-4 text-right">Actions</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-dark-750/70 text-slate-300">
+                <tbody className="divide-y divide-slate-200 text-slate-700">
                   {users.map((u) => (
-                    <tr key={u.id} className="hover:bg-dark-850/50">
+                    <tr key={u.id} className="hover:bg-slate-50 transition-colors">
                       <td className="py-3 px-4 font-mono">#{u.id}</td>
-                      <td className="py-3 px-4 font-semibold text-white">{u.full_name}</td>
-                      <td className="py-3 px-4 font-mono text-slate-400">{u.email}</td>
-                      <td className="py-3 px-4 font-mono text-sage-300">{String(u.role).replace('ROLE_', '')}</td>
+                      <td className="py-3 px-4 font-semibold text-slate-900">{u.full_name}</td>
+                      <td className="py-3 px-4 font-mono text-slate-500">{u.email}</td>
+                      <td className="py-3 px-4 font-mono text-sage-700 font-semibold">{String(u.role).replace('ROLE_', '')}</td>
                       <td className="py-3 px-4">
-                        <span className={`text-[10px] font-mono px-2 py-0.5 rounded ${
-                          u.is_active ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/30' : 'bg-rose-500/10 text-rose-400 border border-rose-500/30'
+                        <span className={`text-[10px] font-mono px-2 py-0.5 rounded font-semibold ${
+                          u.is_active ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-rose-50 text-rose-700 border border-rose-200'
                         }`}>
                           {u.is_active ? 'ACTIVE' : 'SUSPENDED'}
                         </span>
@@ -343,7 +345,7 @@ export const AdminDashboard: React.FC = () => {
                       <td className="py-3 px-4 text-right">
                         <button
                           onClick={() => handleUserToggle(u.id, u.is_active)}
-                          className="px-2.5 py-1 rounded-lg text-[11px] bg-dark-800 hover:bg-dark-750 text-slate-300 border border-dark-750"
+                          className="px-2.5 py-1 rounded-lg text-[11px] bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200 font-medium"
                         >
                           {u.is_active ? 'Suspend' : 'Activate'}
                         </button>
@@ -360,11 +362,11 @@ export const AdminDashboard: React.FC = () => {
             TAB 3: TECHNICIANS APPROVAL
         ────────────────────────────────────────────────────────────────────────── */}
         {activeTab === 'technicians' && (
-          <div className="p-6 rounded-3xl bg-dark-900 border border-dark-750 shadow-card space-y-4">
-            <h2 className="text-base font-bold text-white tracking-tight">Master Technicians & KYC Verification</h2>
+          <div className="p-6 rounded-3xl bg-white border border-slate-200 shadow-card space-y-4">
+            <h2 className="text-base font-bold text-slate-900 tracking-tight">Master Technicians & KYC Verification</h2>
             <div className="overflow-x-auto">
               <table className="w-full text-left text-xs">
-                <thead className="bg-dark-850 border-b border-dark-750 text-slate-400 font-mono uppercase text-[10px]">
+                <thead className="bg-slate-50 border-b border-slate-200 text-slate-600 font-mono uppercase text-[10px]">
                   <tr>
                     <th className="py-3 px-4">Tech ID</th>
                     <th className="py-3 px-4">Name</th>
@@ -374,30 +376,30 @@ export const AdminDashboard: React.FC = () => {
                     <th className="py-3 px-4 text-right">Decision</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-dark-750/70 text-slate-300">
+                <tbody className="divide-y divide-slate-200 text-slate-700">
                   {technicians.map((t) => (
-                    <tr key={t.id} className="hover:bg-dark-850/50">
+                    <tr key={t.id} className="hover:bg-slate-50 transition-colors">
                       <td className="py-3 px-4 font-mono">#{t.id}</td>
-                      <td className="py-3 px-4 font-semibold text-white">{t.user?.full_name || 'Technician'}</td>
-                      <td className="py-3 px-4 text-slate-300">{t.specialization || 'Master HVAC / Power'}</td>
+                      <td className="py-3 px-4 font-semibold text-slate-900">{t.user?.full_name || 'Technician'}</td>
+                      <td className="py-3 px-4 text-slate-700">{t.specialization || 'Master HVAC / Power'}</td>
                       <td className="py-3 px-4">
-                        <span className={`text-[10px] font-mono px-2 py-0.5 rounded ${
-                          t.is_verified ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/30' : 'bg-amber-500/10 text-amber-400 border border-amber-500/30'
+                        <span className={`text-[10px] font-mono px-2 py-0.5 rounded font-semibold ${
+                          t.is_verified ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-amber-50 text-amber-700 border border-amber-200'
                         }`}>
                           {t.is_verified ? 'VERIFIED' : 'PENDING REVIEW'}
                         </span>
                       </td>
-                      <td className="py-3 px-4 font-mono text-sage-400">★ {t.rating_avg || '4.95'}</td>
+                      <td className="py-3 px-4 font-mono text-sage-700 font-bold">★ {t.rating_avg || '4.95'}</td>
                       <td className="py-3 px-4 text-right space-x-2">
                         <button
                           onClick={() => handleTechAction(t.id, 'approve')}
-                          className="px-2.5 py-1 rounded-lg text-[11px] bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-400 border border-emerald-500/30"
+                          className="px-2.5 py-1 rounded-lg text-[11px] bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 font-semibold"
                         >
                           Approve
                         </button>
                         <button
                           onClick={() => handleTechAction(t.id, 'reject')}
-                          className="px-2.5 py-1 rounded-lg text-[11px] bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/30"
+                          className="px-2.5 py-1 rounded-lg text-[11px] bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 font-semibold"
                         >
                           Reject
                         </button>
@@ -416,7 +418,7 @@ export const AdminDashboard: React.FC = () => {
         {activeTab === 'services' && (
           <div className="space-y-4">
             <div className="flex items-center justify-between">
-              <h2 className="text-base font-bold text-white tracking-tight">Services Catalog Management</h2>
+              <h2 className="text-base font-bold text-slate-900 tracking-tight">Services Catalog Management</h2>
               <button
                 onClick={() => {
                   setEditingService(null);
@@ -427,17 +429,17 @@ export const AdminDashboard: React.FC = () => {
                   setServiceCategory(1);
                   setServiceModalOpen(true);
                 }}
-                className="btn-primary text-xs px-4 py-2 flex items-center gap-1.5"
+                className="btn-primary text-xs px-4 py-2 flex items-center gap-1.5 shadow-subtle"
               >
                 <PlusCircle className="w-3.5 h-3.5" />
                 <span>Add Service</span>
               </button>
             </div>
 
-            <div className="p-6 rounded-3xl bg-dark-900 border border-dark-750 shadow-card">
+            <div className="p-6 rounded-3xl bg-white border border-slate-200 shadow-card">
               <div className="overflow-x-auto">
                 <table className="w-full text-left text-xs">
-                  <thead className="bg-dark-850 border-b border-dark-750 text-slate-400 font-mono uppercase text-[10px]">
+                  <thead className="bg-slate-50 border-b border-slate-200 text-slate-600 font-mono uppercase text-[10px]">
                     <tr>
                       <th className="py-3 px-4">Service Name</th>
                       <th className="py-3 px-4">Category</th>
@@ -446,13 +448,13 @@ export const AdminDashboard: React.FC = () => {
                       <th className="py-3 px-4 text-right">Actions</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-dark-750/70 text-slate-300">
+                  <tbody className="divide-y divide-slate-200 text-slate-700">
                     {services.map((s) => (
-                      <tr key={s.id} className="hover:bg-dark-850/50">
-                        <td className="py-3 px-4 font-semibold text-white">{s.name}</td>
-                        <td className="py-3 px-4 text-slate-400">{s.category_name || 'General'}</td>
-                        <td className="py-3 px-4 font-mono font-bold text-white">₹{(s.price || s.base_price || 0).toFixed(2)}</td>
-                        <td className="py-3 px-4 font-mono">{s.duration_minutes || 60} mins</td>
+                      <tr key={s.id} className="hover:bg-slate-50 transition-colors">
+                        <td className="py-3 px-4 font-semibold text-slate-900">{s.name}</td>
+                        <td className="py-3 px-4 text-slate-600">{s.category_name || 'General'}</td>
+                        <td className="py-3 px-4 font-mono font-bold text-slate-900">₹{(s.price || s.base_price || 0).toFixed(2)}</td>
+                        <td className="py-3 px-4 font-mono text-slate-600">{s.duration_minutes || 60} mins</td>
                         <td className="py-3 px-4 text-right space-x-2">
                           <button
                             onClick={() => {
@@ -464,13 +466,13 @@ export const AdminDashboard: React.FC = () => {
                               setServiceCategory(s.category_id || 1);
                               setServiceModalOpen(true);
                             }}
-                            className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-dark-850"
+                            className="p-1.5 rounded-lg text-slate-500 hover:text-slate-900 hover:bg-slate-100 transition-colors"
                           >
                             <Edit2 className="w-3.5 h-3.5" />
                           </button>
                           <button
                             onClick={() => handleDeleteService(s.id)}
-                            className="p-1.5 rounded-lg text-slate-400 hover:text-rose-400 hover:bg-dark-850"
+                            className="p-1.5 rounded-lg text-slate-500 hover:text-rose-600 hover:bg-rose-50 transition-colors"
                           >
                             <Trash2 className="w-3.5 h-3.5" />
                           </button>
@@ -488,11 +490,11 @@ export const AdminDashboard: React.FC = () => {
             TAB 5: BOOKINGS OVERSEER
         ────────────────────────────────────────────────────────────────────────── */}
         {activeTab === 'bookings' && (
-          <div className="p-6 rounded-3xl bg-dark-900 border border-dark-750 shadow-card space-y-4">
-            <h2 className="text-base font-bold text-white tracking-tight">Full System Bookings Master Record</h2>
+          <div className="p-6 rounded-3xl bg-white border border-slate-200 shadow-card space-y-4">
+            <h2 className="text-base font-bold text-slate-900 tracking-tight">Full System Bookings Master Record</h2>
             <div className="overflow-x-auto">
               <table className="w-full text-left text-xs">
-                <thead className="bg-dark-850 border-b border-dark-750 text-slate-400 font-mono uppercase text-[10px]">
+                <thead className="bg-slate-50 border-b border-slate-200 text-slate-600 font-mono uppercase text-[10px]">
                   <tr>
                     <th className="py-3 px-4">Booking Ref</th>
                     <th className="py-3 px-4">Service</th>
@@ -501,14 +503,14 @@ export const AdminDashboard: React.FC = () => {
                     <th className="py-3 px-4">Price</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-dark-750/70 text-slate-300">
+                <tbody className="divide-y divide-slate-200 text-slate-700">
                   {bookings.map((b) => (
-                    <tr key={b.id} className="hover:bg-dark-850/50">
-                      <td className="py-3 px-4 font-mono font-medium text-white">#{b.booking_number || b.id}</td>
-                      <td className="py-3 px-4 font-semibold text-white">{b.service?.name || 'Service'}</td>
+                    <tr key={b.id} className="hover:bg-slate-50 transition-colors">
+                      <td className="py-3 px-4 font-mono font-semibold text-slate-900">#{b.booking_number || b.id}</td>
+                      <td className="py-3 px-4 font-semibold text-slate-900">{b.service?.name || 'Service'}</td>
                       <td className="py-3 px-4"><StatusBadge status={b.status} size="sm" /></td>
-                      <td className="py-3 px-4 text-slate-300">{getTechName(b.technician)}</td>
-                      <td className="py-3 px-4 font-mono font-bold text-white">₹{(b.final_price || b.total_amount || b.estimated_price || 0).toFixed(2)}</td>
+                      <td className="py-3 px-4 text-slate-700">{getTechName(b.technician)}</td>
+                      <td className="py-3 px-4 font-mono font-bold text-slate-900">₹{(b.final_price || b.total_amount || b.estimated_price || 0).toFixed(2)}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -521,9 +523,9 @@ export const AdminDashboard: React.FC = () => {
             TAB 6: SECURITY & INTEGRITY
         ────────────────────────────────────────────────────────────────────────── */}
         {activeTab === 'security' && (
-          <div className="p-6 rounded-3xl bg-dark-900 border border-dark-750 shadow-card space-y-4">
-            <h2 className="text-base font-bold text-white tracking-tight">Security & SmartVerify™ Audit Controller</h2>
-            <div className="p-6 rounded-xl bg-dark-850 border border-dark-750 text-xs text-slate-400 font-mono space-y-2">
+          <div className="p-6 rounded-3xl bg-white border border-slate-200 shadow-card space-y-4">
+            <h2 className="text-base font-bold text-slate-900 tracking-tight">Security & SmartVerify™ Audit Controller</h2>
+            <div className="p-6 rounded-xl bg-slate-50 border border-slate-200 text-xs text-slate-700 font-mono space-y-2">
               <p>• Cryptographic SmartVerify Token Generation: ACTIVE</p>
               <p>• SHA-256 OTP Double-Blind Handshake: ACTIVE</p>
               <p>• Role-Based Guard Authorization (RBAC): ENFORCED</p>
@@ -535,20 +537,20 @@ export const AdminDashboard: React.FC = () => {
             TAB 7: SYSTEM HEALTH
         ────────────────────────────────────────────────────────────────────────── */}
         {activeTab === 'system' && (
-          <div className="p-6 rounded-3xl bg-dark-900 border border-dark-750 shadow-card space-y-4">
-            <h2 className="text-base font-bold text-white tracking-tight">System Infrastructure Health</h2>
+          <div className="p-6 rounded-3xl bg-white border border-slate-200 shadow-card space-y-4">
+            <h2 className="text-base font-bold text-slate-900 tracking-tight">System Infrastructure Health</h2>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-              <div className="p-4 rounded-2xl bg-dark-850 border border-dark-750">
-                <span className="text-[11px] font-mono text-slate-400">Database Connection</span>
-                <p className="text-lg font-bold text-emerald-400 font-mono mt-1">CONNECTED • OK</p>
+              <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200">
+                <span className="text-[11px] font-mono text-slate-500">Database Connection</span>
+                <p className="text-lg font-bold text-emerald-700 font-mono mt-1">CONNECTED • OK</p>
               </div>
-              <div className="p-4 rounded-2xl bg-dark-850 border border-dark-750">
-                <span className="text-[11px] font-mono text-slate-400">FastAPI Router Status</span>
-                <p className="text-lg font-bold text-emerald-400 font-mono mt-1">21 ROUTERS ONLINE</p>
+              <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200">
+                <span className="text-[11px] font-mono text-slate-500">FastAPI Router Status</span>
+                <p className="text-lg font-bold text-emerald-700 font-mono mt-1">21 ROUTERS ONLINE</p>
               </div>
-              <div className="p-4 rounded-2xl bg-dark-850 border border-dark-750">
-                <span className="text-[11px] font-mono text-slate-400">SmartVerify Engine</span>
-                <p className="text-lg font-bold text-sage-400 font-mono mt-1">CRYPTOGRAPHIC SYNC</p>
+              <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200">
+                <span className="text-[11px] font-mono text-slate-500">SmartVerify Engine</span>
+                <p className="text-lg font-bold text-sage-700 font-mono mt-1">CRYPTOGRAPHIC SYNC</p>
               </div>
             </div>
           </div>
@@ -557,14 +559,14 @@ export const AdminDashboard: React.FC = () => {
 
       {/* Service Modal */}
       {serviceModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-dark-950/85 backdrop-blur-md">
-          <div className="relative w-full max-w-md rounded-3xl bg-dark-900 border border-dark-750 p-6 shadow-modal text-white">
-            <h3 className="text-base font-bold text-white mb-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm">
+          <div className="relative w-full max-w-md rounded-3xl bg-white border border-slate-200 p-6 shadow-modal text-slate-900">
+            <h3 className="text-base font-bold text-slate-900 mb-4">
               {editingService ? 'Edit Service' : 'Add New Service'}
             </h3>
             <form onSubmit={handleSaveService} className="space-y-4">
               <div>
-                <label className="block text-xs font-semibold text-slate-300 mb-1">Service Name</label>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">Service Name</label>
                 <input
                   type="text"
                   value={serviceName}
@@ -575,7 +577,7 @@ export const AdminDashboard: React.FC = () => {
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-300 mb-1">Description</label>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">Description</label>
                 <textarea
                   value={serviceDesc}
                   onChange={(e) => setServiceDesc(e.target.value)}
@@ -587,7 +589,7 @@ export const AdminDashboard: React.FC = () => {
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-semibold text-slate-300 mb-1">Price (₹)</label>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">Price (₹)</label>
                   <input
                     type="number"
                     value={servicePrice}
@@ -597,7 +599,7 @@ export const AdminDashboard: React.FC = () => {
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-slate-300 mb-1">Duration (min)</label>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">Duration (min)</label>
                   <input
                     type="number"
                     value={serviceDuration}
@@ -609,7 +611,7 @@ export const AdminDashboard: React.FC = () => {
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-300 mb-1">Category</label>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">Category</label>
                 <select
                   value={serviceCategory}
                   onChange={(e) => setServiceCategory(Number(e.target.value))}

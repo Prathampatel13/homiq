@@ -33,13 +33,13 @@ export const InvoicePage: React.FC = () => {
     fetchInvoice();
   }, [id]);
 
-  if (loading) return <div className="min-h-screen bg-dark-950 flex items-center justify-center text-white">Loading...</div>;
+  if (loading) return <div className="min-h-screen bg-[#F8FAFC] flex items-center justify-center text-slate-700">Loading...</div>;
   if (error || !invoice) {
     return (
-      <div className="min-h-screen bg-dark-950 p-6 md:p-12">
+      <div className="min-h-screen bg-[#F8FAFC] p-6 md:p-12 text-slate-900">
         <div className="flex flex-col items-center justify-center min-h-[50vh]">
-          <h2 className="text-xl text-red-400 mb-2">Invoice Not Found</h2>
-          <p className="text-slate-400 mb-4">{error}</p>
+          <h2 className="text-xl font-bold text-rose-600 mb-2">Invoice Not Found</h2>
+          <p className="text-slate-600 mb-4">{error}</p>
           <button onClick={() => navigate(-1)} className="btn-secondary px-4 py-2 text-sm">
             Go Back
           </button>
@@ -53,15 +53,15 @@ export const InvoicePage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-dark-950 p-4 sm:p-8">
+    <div className="min-h-screen bg-[#F8FAFC] p-4 sm:p-8 text-slate-900">
       {/* Non-printable header */}
       <div className="max-w-4xl mx-auto flex items-center justify-between mb-6 print:hidden">
         <button
           onClick={() => navigate(-1)}
-          className="flex items-center gap-2 text-slate-400 hover:text-white transition-colors"
+          className="flex items-center gap-2 text-slate-600 hover:text-slate-900 transition-colors font-medium"
         >
           <ArrowLeft className="w-4 h-4" />
-          <span className="text-sm font-medium">Back</span>
+          <span className="text-sm">Back</span>
         </button>
         <div className="flex items-center gap-3">
           <button

@@ -19,7 +19,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
     return (
       <div className="w-full space-y-1.5 text-left">
         {label && (
-          <label htmlFor={inputId} className="block text-xs font-medium text-slate-300">
+          <label htmlFor={inputId} className="block text-xs font-semibold text-slate-700">
             {label}
           </label>
         )}
@@ -34,10 +34,10 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
             id={inputId}
             className={twMerge(
               clsx(
-                'w-full bg-dark-850/90 border border-dark-700/70 hover:border-dark-750 focus:border-brand-500 rounded-xl px-3.5 py-2 text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-brand-500 transition-all duration-150',
+                'w-full bg-white border border-slate-200 hover:border-slate-300 focus:border-sage-500 rounded-xl px-3.5 py-2 text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-sage-500/20 transition-all duration-150 shadow-sm',
                 LeftIcon && 'pl-10',
                 RightIcon && 'pr-10',
-                error && 'border-rose-500/80 focus:border-rose-500 focus:ring-rose-500/20',
+                error && 'border-rose-500 focus:border-rose-500 focus:ring-rose-500/20',
                 className
               )
             )}
@@ -49,7 +49,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
               onClick={onRightIconClick}
               tabIndex={-1}
               className={clsx(
-                'absolute inset-y-0 right-0 pr-3.5 flex items-center text-slate-400 hover:text-slate-200 transition-colors',
+                'absolute inset-y-0 right-0 pr-3.5 flex items-center text-slate-400 hover:text-slate-700 transition-colors',
                 !onRightIconClick && 'pointer-events-none'
               )}
             >

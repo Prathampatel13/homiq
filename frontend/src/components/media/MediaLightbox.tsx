@@ -80,7 +80,7 @@ export const MediaLightbox: React.FC<MediaLightboxProps> = ({
             className="max-h-[85vh] max-w-full object-contain rounded-xl"
           />
         ) : (
-          <div className="w-full h-96 flex flex-col items-center justify-center bg-dark-800 rounded-lg">
+          <div className="w-full h-96 flex flex-col items-center justify-center bg-slate-800 rounded-lg">
             <span className="text-white mb-4">Document: {currentImage.format.toUpperCase()}</span>
             <a
               href={currentImage.secure_url}

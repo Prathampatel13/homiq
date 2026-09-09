@@ -51,27 +51,27 @@ export const ForgotPasswordPage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-dark-950 flex flex-col justify-center py-12 sm:px-6 lg:px-8 text-white relative">
+    <div className="min-h-screen bg-[#F8FAFC] flex flex-col justify-center py-12 sm:px-6 lg:px-8 text-slate-900 relative">
       <div className="sm:mx-auto sm:w-full sm:max-w-md text-center space-y-4">
         <HomiQLogo variant="stacked" size="lg" showTagline className="mx-auto" />
-        <h2 className="text-xl sm:text-2xl font-bold tracking-tight text-white mt-4">
+        <h2 className="text-xl sm:text-2xl font-bold tracking-tight text-slate-900 mt-4">
           Reset Your Access Password
         </h2>
-        <p className="text-xs text-slate-400">
+        <p className="text-xs text-slate-600">
           Enter your registered email to receive secure recovery instructions.
         </p>
       </div>
 
       <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md px-4 sm:px-0">
-        <div className="p-6 sm:p-8 rounded-3xl bg-dark-900 border border-dark-750 shadow-modal space-y-6">
+        <div className="p-6 sm:p-8 rounded-3xl bg-white border border-slate-200 shadow-card space-y-6">
           {success && method === 'link' ? (
             <div className="text-center py-4 space-y-3">
-              <div className="w-12 h-12 rounded-full bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center text-emerald-400 mx-auto">
+              <div className="w-12 h-12 rounded-full bg-emerald-50 border border-emerald-200 flex items-center justify-center text-emerald-600 mx-auto">
                 <CheckCircle2 className="w-6 h-6" />
               </div>
-              <h3 className="text-base font-bold text-white">Instructions Dispatched</h3>
-              <p className="text-xs text-slate-400 leading-relaxed">
-                If an account exists with <span className="text-white font-mono">{email}</span>, password reset instructions have been transmitted.
+              <h3 className="text-base font-bold text-slate-900">Instructions Dispatched</h3>
+              <p className="text-xs text-slate-600 leading-relaxed">
+                If an account exists with <span className="text-slate-900 font-mono font-semibold">{email}</span>, password reset instructions have been transmitted.
               </p>
               <Link to="/login" className="btn-secondary text-xs px-4 py-2 inline-flex items-center gap-1.5 mt-2">
                 <ArrowLeft className="w-3.5 h-3.5" />
@@ -81,7 +81,7 @@ export const ForgotPasswordPage: React.FC = () => {
           ) : (
             <form onSubmit={handleSendLink} className="space-y-4">
               <div>
-                <label className="block text-xs font-semibold text-slate-300 mb-1.5">Registered Email</label>
+                <label className="block text-xs font-semibold text-slate-700 mb-1.5">Registered Email</label>
                 <div className="relative">
                   <Mail className="w-4 h-4 text-slate-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
                   <input
@@ -96,7 +96,7 @@ export const ForgotPasswordPage: React.FC = () => {
               </div>
 
               {error && (
-                <div className="p-3 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-400 text-xs flex items-center gap-2">
+                <div className="p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs flex items-center gap-2">
                   <AlertCircle className="w-4 h-4 shrink-0" />
                   <span>{error}</span>
                 </div>
@@ -113,9 +113,9 @@ export const ForgotPasswordPage: React.FC = () => {
                 </button>
                 
                 <div className="relative flex items-center py-1">
-                  <div className="flex-grow border-t border-dark-750"></div>
-                  <span className="mx-4 text-xs font-semibold text-slate-500 uppercase">Or</span>
-                  <div className="flex-grow border-t border-dark-750"></div>
+                  <div className="flex-grow border-t border-slate-200"></div>
+                  <span className="mx-4 text-xs font-semibold text-slate-400 uppercase">Or</span>
+                  <div className="flex-grow border-t border-slate-200"></div>
                 </div>
 
                 <button
@@ -130,7 +130,7 @@ export const ForgotPasswordPage: React.FC = () => {
               </div>
 
               <div className="pt-4 text-center">
-                <Link to="/login" className="text-xs text-slate-400 hover:text-white inline-flex items-center gap-1">
+                <Link to="/login" className="text-xs text-slate-600 hover:text-slate-900 inline-flex items-center gap-1 font-medium">
                   <ArrowLeft className="w-3 h-3" />
                   <span>Back to Sign In</span>
                 </Link>

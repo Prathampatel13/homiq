@@ -67,24 +67,24 @@ export const LoginPage: React.FC = () => {
 
 
   return (
-    <div className="min-h-screen bg-dark-950 flex flex-col justify-center py-12 sm:px-6 lg:px-8 text-white relative">
+    <div className="min-h-screen bg-[#F8FAFC] flex flex-col justify-center py-12 sm:px-6 lg:px-8 text-slate-900 relative selection:bg-sage-500/20 selection:text-slate-900">
       <div className="sm:mx-auto sm:w-full sm:max-w-md text-center space-y-4">
         <HomiQLogo variant="stacked" size="lg" showTagline className="mx-auto" />
-        <h2 className="text-xl sm:text-2xl font-bold tracking-tight text-white mt-4">
+        <h2 className="text-xl sm:text-2xl font-extrabold tracking-tight text-slate-900 mt-4">
           Sign In to Your Workspace
         </h2>
-        <p className="text-xs text-slate-400">
+        <p className="text-xs text-slate-600">
           Enter your registered credentials to access your home or fleet console.
         </p>
       </div>
 
       <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md px-4 sm:px-0">
-        <div className="p-6 sm:p-8 rounded-3xl bg-dark-900 border border-dark-750 shadow-modal space-y-6">
+        <div className="p-6 sm:p-8 rounded-3xl bg-white border border-slate-200 shadow-modal space-y-6">
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <label className="block text-xs font-semibold text-slate-300 mb-1.5">Email, Mobile Number or Username</label>
+              <label className="block text-xs font-bold text-slate-700 mb-1.5">Email, Mobile Number or Username</label>
               <div className="relative">
-                <UserIcon className="w-4 h-4 text-slate-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                <UserIcon className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
                 <input
                   type="text"
                   value={identifier}
@@ -98,13 +98,13 @@ export const LoginPage: React.FC = () => {
 
             <div>
               <div className="flex items-center justify-between mb-1.5">
-                <label className="block text-xs font-semibold text-slate-300">Password</label>
-                <Link to="/forgot-password" className="text-[11px] text-sage-400 hover:underline">
+                <label className="block text-xs font-bold text-slate-700">Password</label>
+                <Link to="/forgot-password" className="text-[11px] text-sage-600 hover:text-sage-700 font-semibold hover:underline">
                   Forgot Password?
                 </Link>
               </div>
               <div className="relative">
-                <Lock className="w-4 h-4 text-slate-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                <Lock className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
                 <input
                   type={showPassword ? "text" : "password"}
                   value={password}
@@ -116,7 +116,7 @@ export const LoginPage: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300 transition-colors"
+                  className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700 transition-colors"
                 >
                   {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                 </button>
@@ -124,8 +124,8 @@ export const LoginPage: React.FC = () => {
             </div>
 
             {error && (
-              <div className="p-3 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-400 text-xs flex items-center gap-2">
-                <AlertCircle className="w-4 h-4 shrink-0" />
+              <div className="p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs flex items-center gap-2">
+                <AlertCircle className="w-4 h-4 shrink-0 text-rose-600" />
                 <span>{error}</span>
               </div>
             )}
@@ -133,7 +133,7 @@ export const LoginPage: React.FC = () => {
             <button
               type="submit"
               disabled={loading}
-              className="w-full btn-primary text-xs py-3 font-semibold flex items-center justify-center gap-1.5 shadow-subtle hover:shadow-metallic disabled:opacity-40"
+              className="w-full btn-primary text-xs py-3 font-semibold flex items-center justify-center gap-1.5 shadow-subtle hover:shadow-accent disabled:opacity-40"
             >
               {loading ? (
                 <>
@@ -149,11 +149,9 @@ export const LoginPage: React.FC = () => {
             </button>
           </form>
 
-
-
-          <div className="pt-4 border-t border-dark-750 text-center text-xs text-slate-400">
+          <div className="pt-4 border-t border-slate-100 text-center text-xs text-slate-600">
             Don't have a HomiQ account yet?{' '}
-            <Link to="/register" className="text-sage-300 hover:text-white font-semibold">
+            <Link to="/register" className="text-sage-600 hover:text-sage-700 font-bold hover:underline">
               Create Account
             </Link>
           </div>
