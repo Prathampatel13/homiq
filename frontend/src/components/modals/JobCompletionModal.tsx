@@ -90,24 +90,24 @@ export const JobCompletionModal: React.FC<JobCompletionModalProps> = ({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-md animate-in fade-in duration-200">
-      <div className="bg-dark-900 border border-dark-750 rounded-3xl shadow-modal w-full max-w-lg overflow-hidden flex flex-col">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm animate-in fade-in duration-200">
+      <div className="bg-white border border-slate-200 rounded-3xl shadow-modal w-full max-w-lg overflow-hidden flex flex-col">
         {/* Modal Header */}
-        <div className="px-6 py-5 border-b border-dark-750 flex items-center justify-between bg-dark-950">
+        <div className="px-6 py-5 border-b border-slate-100 flex items-center justify-between bg-slate-50">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-2xl bg-sage-500/15 border border-sage-500/30 flex items-center justify-center text-sage-400">
+            <div className="w-10 h-10 rounded-2xl bg-sage-50 border border-sage-200 flex items-center justify-center text-sage-600">
               <ShieldCheck className="w-5 h-5" />
             </div>
             <div>
-              <h2 className="text-base font-bold text-white tracking-tight">
+              <h2 className="text-base font-bold text-slate-900 tracking-tight">
                 Submit Proof of Work
               </h2>
-              <p className="text-[11px] text-slate-400 font-mono">
+              <p className="text-[11px] text-slate-500 font-mono">
                 Mandatory Before & After Audit • Customer Review Step
               </p>
             </div>
           </div>
-          <button onClick={onClose} className="p-2 text-slate-400 hover:text-white rounded-xl hover:bg-dark-850 transition-colors">
+          <button onClick={onClose} className="p-2 text-slate-400 hover:text-slate-900 rounded-xl hover:bg-slate-200 transition-colors">
             <X className="w-5 h-5" />
           </button>
         </div>
@@ -115,19 +115,19 @@ export const JobCompletionModal: React.FC<JobCompletionModalProps> = ({
         {/* Modal Content */}
         <div className="p-6 overflow-y-auto max-h-[75vh] space-y-6">
           {error && (
-            <div className="p-3.5 rounded-xl bg-red-500/10 border border-red-500/30 flex items-start gap-3">
-              <AlertCircle className="w-5 h-5 text-red-400 shrink-0 mt-0.5" />
-              <p className="text-xs text-red-300 font-mono leading-relaxed">{error}</p>
+            <div className="p-3.5 rounded-xl bg-rose-50 border border-rose-200 flex items-start gap-3">
+              <AlertCircle className="w-5 h-5 text-rose-600 shrink-0 mt-0.5" />
+              <p className="text-xs text-rose-700 font-mono leading-relaxed">{error}</p>
             </div>
           )}
 
           {/* Workflow Notice */}
-          <div className="p-4 rounded-2xl bg-dark-850 border border-dark-750 space-y-2">
-            <div className="flex items-center gap-2 text-xs font-mono font-bold text-sage-400">
-              <Clock className="w-4 h-4" />
+          <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-2">
+            <div className="flex items-center gap-2 text-xs font-mono font-bold text-sage-700">
+              <Clock className="w-4 h-4 text-sage-600" />
               <span>STAGE: CUSTOMER APPROVAL REQUIRED</span>
             </div>
-            <p className="text-xs text-slate-400 leading-relaxed">
+            <p className="text-xs text-slate-600 leading-relaxed">
               Upload clear evidence of the site before and after the work. Once you submit, the customer will receive an alert to inspect and approve the photos. Final completion and checkout unlock immediately upon customer approval.
             </p>
           </div>
@@ -136,8 +136,8 @@ export const JobCompletionModal: React.FC<JobCompletionModalProps> = ({
             {/* Before Images */}
             <div>
               <div className="flex items-center justify-between mb-2">
-                <label className="text-xs font-bold text-slate-300 uppercase font-mono tracking-wider">
-                  1. Before-Work Evidence <span className="text-sage-500">*</span>
+                <label className="text-xs font-bold text-slate-800 uppercase font-mono tracking-wider">
+                  1. Before-Work Evidence <span className="text-sage-600">*</span>
                 </label>
                 <span className="text-[10px] font-mono text-slate-500">
                   {beforeImages.length > 0 ? `${beforeImages.length} uploaded` : 'Required'}
@@ -145,7 +145,7 @@ export const JobCompletionModal: React.FC<JobCompletionModalProps> = ({
               </div>
               <div className="grid grid-cols-2 gap-3">
                 {beforeImages.map(img => (
-                  <div key={img.id} className="relative h-28 rounded-2xl overflow-hidden border border-dark-700 bg-dark-950 group">
+                  <div key={img.id} className="relative h-28 rounded-2xl overflow-hidden border border-slate-200 bg-slate-100 group shadow-subtle">
                     <img
                       src={getSafeMediaUrl(img.secure_url || (img as any).url || img.thumbnail_url, 'before')}
                       alt="Before work"
@@ -153,17 +153,17 @@ export const JobCompletionModal: React.FC<JobCompletionModalProps> = ({
                       className="w-full h-full object-cover"
                     />
                     <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                      <span className="text-[10px] font-mono text-white bg-dark-900/80 px-2 py-1 rounded">Before</span>
+                      <span className="text-[10px] font-mono text-white bg-slate-900/80 px-2 py-1 rounded">Before</span>
                     </div>
                   </div>
                 ))}
-                <label className="h-28 rounded-2xl border border-dashed border-dark-700 hover:border-sage-500/50 flex flex-col items-center justify-center cursor-pointer bg-dark-950 hover:bg-dark-850 transition-colors group">
+                <label className="h-28 rounded-2xl border border-dashed border-slate-300 hover:border-sage-500 flex flex-col items-center justify-center cursor-pointer bg-slate-50 hover:bg-slate-100 transition-colors group">
                   {uploading === 'before' ? (
-                    <span className="text-xs font-mono text-sage-400 animate-pulse">Uploading...</span>
+                    <span className="text-xs font-mono text-sage-600 animate-pulse">Uploading...</span>
                   ) : (
                     <>
-                      <Camera className="w-5 h-5 text-slate-500 group-hover:text-sage-400 mb-1 transition-colors" />
-                      <span className="text-xs text-slate-400 font-medium group-hover:text-white transition-colors">Add Before Photo</span>
+                      <Camera className="w-5 h-5 text-slate-400 group-hover:text-sage-600 mb-1 transition-colors" />
+                      <span className="text-xs text-slate-600 font-medium group-hover:text-slate-900 transition-colors">Add Before Photo</span>
                     </>
                   )}
                   <input type="file" accept="image/*" className="hidden" onChange={(e) => handleFileUpload(e, 'before')} disabled={uploading !== null} />
@@ -174,8 +174,8 @@ export const JobCompletionModal: React.FC<JobCompletionModalProps> = ({
             {/* After Images */}
             <div>
               <div className="flex items-center justify-between mb-2">
-                <label className="text-xs font-bold text-slate-300 uppercase font-mono tracking-wider">
-                  2. After-Work Evidence <span className="text-sage-500">*</span>
+                <label className="text-xs font-bold text-slate-800 uppercase font-mono tracking-wider">
+                  2. After-Work Evidence <span className="text-sage-600">*</span>
                 </label>
                 <span className="text-[10px] font-mono text-slate-500">
                   {afterImages.length > 0 ? `${afterImages.length} uploaded` : 'Required'}
@@ -183,7 +183,7 @@ export const JobCompletionModal: React.FC<JobCompletionModalProps> = ({
               </div>
               <div className="grid grid-cols-2 gap-3">
                 {afterImages.map(img => (
-                  <div key={img.id} className="relative h-28 rounded-2xl overflow-hidden border border-dark-700 bg-dark-950 group">
+                  <div key={img.id} className="relative h-28 rounded-2xl overflow-hidden border border-slate-200 bg-slate-100 group shadow-subtle">
                     <img
                       src={getSafeMediaUrl(img.thumbnail_url || img.secure_url, 'after')}
                       alt="After work"
@@ -191,17 +191,17 @@ export const JobCompletionModal: React.FC<JobCompletionModalProps> = ({
                       className="w-full h-full object-cover"
                     />
                     <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                      <span className="text-[10px] font-mono text-white bg-dark-900/80 px-2 py-1 rounded">After</span>
+                      <span className="text-[10px] font-mono text-white bg-slate-900/80 px-2 py-1 rounded">After</span>
                     </div>
                   </div>
                 ))}
-                <label className="h-28 rounded-2xl border border-dashed border-dark-700 hover:border-sage-500/50 flex flex-col items-center justify-center cursor-pointer bg-dark-950 hover:bg-dark-850 transition-colors group">
+                <label className="h-28 rounded-2xl border border-dashed border-slate-300 hover:border-sage-500 flex flex-col items-center justify-center cursor-pointer bg-slate-50 hover:bg-slate-100 transition-colors group">
                   {uploading === 'after' ? (
-                    <span className="text-xs font-mono text-sage-400 animate-pulse">Uploading...</span>
+                    <span className="text-xs font-mono text-sage-600 animate-pulse">Uploading...</span>
                   ) : (
                     <>
-                      <Camera className="w-5 h-5 text-slate-500 group-hover:text-sage-400 mb-1 transition-colors" />
-                      <span className="text-xs text-slate-400 font-medium group-hover:text-white transition-colors">Add After Photo</span>
+                      <Camera className="w-5 h-5 text-slate-400 group-hover:text-sage-600 mb-1 transition-colors" />
+                      <span className="text-xs text-slate-600 font-medium group-hover:text-slate-900 transition-colors">Add After Photo</span>
                     </>
                   )}
                   <input type="file" accept="image/*" className="hidden" onChange={(e) => handleFileUpload(e, 'after')} disabled={uploading !== null} />
@@ -211,11 +211,11 @@ export const JobCompletionModal: React.FC<JobCompletionModalProps> = ({
 
             {/* Remarks */}
             <div>
-              <label className="block text-xs font-bold text-slate-300 uppercase font-mono tracking-wider mb-2">
+              <label className="block text-xs font-bold text-slate-800 uppercase font-mono tracking-wider mb-2">
                 Technician Notes & Diagnostics (Optional)
               </label>
               <textarea
-                className="w-full bg-dark-950 border border-dark-750 rounded-2xl p-3.5 text-xs text-slate-200 placeholder-slate-600 focus:outline-none focus:border-sage-500 focus:ring-1 focus:ring-sage-500 transition-all resize-none h-24 font-mono"
+                className="w-full bg-slate-50 border border-slate-300 rounded-2xl p-3.5 text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:border-sage-500 focus:bg-white focus:ring-1 focus:ring-sage-500 transition-all resize-none h-24 font-mono"
                 placeholder="Details of the repair, replaced parts, or recommendations for the customer..."
                 value={remarks}
                 onChange={(e) => setRemarks(e.target.value)}
@@ -225,11 +225,11 @@ export const JobCompletionModal: React.FC<JobCompletionModalProps> = ({
         </div>
 
         {/* Modal Footer */}
-        <div className="p-5 border-t border-dark-750 bg-dark-950 flex items-center justify-between">
+        <div className="p-5 border-t border-slate-100 bg-slate-50 flex items-center justify-between">
           <button
             onClick={onClose}
             disabled={loading || uploading !== null}
-            className="px-4 py-2 text-xs font-mono text-slate-400 hover:text-white transition-colors"
+            className="px-4 py-2 text-xs font-mono text-slate-500 hover:text-slate-900 transition-colors"
           >
             Cancel
           </button>
@@ -237,7 +237,7 @@ export const JobCompletionModal: React.FC<JobCompletionModalProps> = ({
           <button
             onClick={handleSubmitProof}
             disabled={loading || uploading !== null || beforeImages.length === 0 || afterImages.length === 0}
-            className="btn-primary px-6 py-2.5 text-xs font-bold flex items-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed shadow-accent"
+            className="btn-primary px-6 py-2.5 text-xs font-bold flex items-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed shadow-subtle"
           >
             <ShieldCheck className="w-4 h-4" />
             <span>{loading ? 'Submitting Evidence...' : 'Submit Proof for Customer Approval'}</span>

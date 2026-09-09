@@ -25,6 +25,7 @@ import { Service, ServiceCategory, UserRole } from '../types';
 import { EmptyState } from '../components/ui/EmptyState';
 import { useAuthStore } from '../store/useAuthStore';
 import { LoadingState } from '../components/ui/LoadingState';
+import { ServiceEmblem } from '../components/brand/ServiceEmblem';
 
 export const ServicesPage: React.FC = () => {
   const navigate = useNavigate();
@@ -69,24 +70,24 @@ export const ServicesPage: React.FC = () => {
   });
 
   return (
-    <div className="min-h-screen bg-dark-950 py-12 text-slate-900">
+    <div className="min-h-screen bg-[#F8FAFC] py-12 text-slate-900">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
         <div className="max-w-3xl mb-12">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-dark-850 border border-dark-750 mb-3">
-            <Layers className="w-3.5 h-3.5 text-sage-400" />
-            <span className="text-xs font-semibold tracking-wider text-slate-300 uppercase">SERVICE CATALOG</span>
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white border border-slate-200 shadow-subtle mb-3">
+            <Layers className="w-3.5 h-3.5 text-sage-600" />
+            <span className="text-xs font-semibold tracking-wider text-slate-700 uppercase">SERVICE CATALOG</span>
           </div>
-          <h1 className="text-3xl sm:text-4xl font-bold tracking-tight text-white">
+          <h1 className="text-3xl sm:text-4xl font-bold tracking-tight text-slate-900">
             Explore All Services
           </h1>
-          <p className="text-sm text-slate-400 mt-2">
+          <p className="text-sm text-slate-600 mt-2">
             Transparent upfront rates from verified professionals. Instant booking with guaranteed quality.
           </p>
         </div>
 
         {/* Search & Category Filter Bar */}
-        <div className="p-4 rounded-3xl bg-dark-900 border border-dark-750 mb-10 shadow-card flex flex-col md:flex-row gap-4 justify-between items-center">
+        <div className="p-4 rounded-3xl bg-white border border-slate-200 mb-10 shadow-card flex flex-col md:flex-row gap-4 justify-between items-center">
           {/* Search Input */}
           <div className="relative w-full md:w-80">
             <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
@@ -105,8 +106,8 @@ export const ServicesPage: React.FC = () => {
               onClick={() => setSelectedCategory(null)}
               className={`px-3.5 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-all border ${
                 selectedCategory === null
-                  ? 'bg-sage-400 text-dark-950 border-sage-400 shadow-accent'
-                  : 'bg-dark-850 text-slate-400 hover:text-white border-dark-750 hover:border-dark-700'
+                  ? 'bg-sage-500 text-white border-sage-500 shadow-sm'
+                  : 'bg-slate-100 text-slate-600 hover:text-slate-900 border-slate-200 hover:border-slate-300'
               }`}
             >
               All Categories
@@ -117,8 +118,8 @@ export const ServicesPage: React.FC = () => {
                 onClick={() => setSelectedCategory(c.id)}
                 className={`px-3.5 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-all border ${
                   selectedCategory === c.id
-                    ? 'bg-sage-400 text-dark-950 border-sage-400 shadow-accent'
-                    : 'bg-dark-850 text-slate-400 hover:text-white border-dark-750 hover:border-dark-700'
+                    ? 'bg-sage-500 text-white border-sage-500 shadow-sm'
+                    : 'bg-slate-100 text-slate-600 hover:text-slate-900 border-slate-200 hover:border-slate-300'
                 }`}
               >
                 {c.name}
@@ -153,35 +154,35 @@ export const ServicesPage: React.FC = () => {
               <div
                 key={service.id}
                 onClick={() => navigate(`/booking/new?category_id=${service.category_id}`)}
-                className="group p-6 rounded-3xl bg-dark-900/90 hover:bg-dark-850 border border-dark-750 hover:border-dark-700 transition-all duration-200 cursor-pointer flex flex-col justify-between shadow-card"
+                className="group p-6 rounded-3xl bg-white hover:bg-slate-50/80 border border-slate-200 hover:border-sage-400/50 transition-all duration-200 cursor-pointer flex flex-col justify-between shadow-card"
               >
                 <div>
                   <div className="flex items-center justify-between mb-4">
-                    <div className="w-12 h-12 rounded-2xl bg-dark-800 group-hover:bg-sage-400/15 border border-dark-750 group-hover:border-sage-400/30 flex items-center justify-center text-sage-400 transition-colors">
-                      <Icon className="w-6 h-6" />
+                    <div className="rounded-2xl overflow-hidden">
+                      <ServiceEmblem category={service.name} size="sm" />
                     </div>
-                    <span className="text-xs font-mono font-bold text-white px-2.5 py-1 rounded-lg bg-dark-800 border border-dark-750">
+                    <span className="text-xs font-mono font-bold text-slate-900 px-2.5 py-1 rounded-lg bg-slate-100 border border-slate-200">
                       Starts ₹{(service.price || service.base_price || 0).toFixed(2)}
                     </span>
                   </div>
 
-                  <h3 className="text-base font-bold text-white tracking-tight group-hover:text-sage-300 transition-colors mb-2">
+                  <h3 className="text-base font-bold text-slate-900 tracking-tight group-hover:text-sage-600 transition-colors mb-2">
                     {service.name}
                   </h3>
-                  <p className="text-xs text-slate-400 leading-relaxed">
+                  <p className="text-xs text-slate-600 leading-relaxed">
                     {service.description || 'Certified multi-point checkup, troubleshooting, precision servicing and workmanship guarantee.'}
                   </p>
                 </div>
 
                 <div 
                   onClick={() => navigate(`/booking/new?serviceId=${service.id}`)}
-                  className="pt-5 mt-5 border-t border-dark-750/70 flex items-center justify-between text-xs text-slate-400 font-mono cursor-pointer hover:text-sage-300"
+                  className="pt-5 mt-5 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500 font-mono cursor-pointer hover:text-sage-600"
                 >
                   <span className="flex items-center gap-1.5">
-                    <Clock className="w-3.5 h-3.5 text-sage-400" />
+                    <Clock className="w-3.5 h-3.5 text-sage-600" />
                     <span>~{service.duration_minutes || 60} mins</span>
                   </span>
-                  <span className="text-sage-400 group-hover:translate-x-1 transition-transform flex items-center gap-1 font-semibold">
+                  <span className="text-sage-600 group-hover:translate-x-1 transition-transform flex items-center gap-1 font-semibold">
                     <span>Book Service</span>
                     <ChevronRight className="w-3.5 h-3.5" />
                   </span>

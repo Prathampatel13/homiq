@@ -177,15 +177,7 @@ export async function uploadReviewImage(reviewId, file) {
   return uploadMultipart(`/reviews/${reviewId}/images`, formData);
 }
 
-// ── 7. JOB & RECRUITMENT ─────────────────────────────────────────────────
-
-export async function uploadJobResume(jobId, file) {
-  const formData = new FormData();
-  formData.append('file', file);
-  return uploadMultipart(`/jobs/${jobId}/resumes`, formData);
-}
-
-// ── 8. CLOUDINARY URL TRANSFORMATION ─────────────────────────────────────
+// ── 7. CLOUDINARY URL TRANSFORMATION ─────────────────────────────────────
 
 export async function getTransformedImageUrl(publicId, options = {}) {
   const { width = 400, height = 400, crop = 'fill', quality = 'auto', fetch_format = 'webp' } = options;

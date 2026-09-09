@@ -9,7 +9,6 @@ import { ToastProvider } from './components/ui/Toast';
 
 import { LandingPage } from './pages/LandingPage';
 import { ServicesPage } from './pages/ServicesPage';
-import { JobsPage } from './pages/JobsPage';
 import { BookingPage } from './pages/BookingPage';
 import { CustomerDashboard } from './pages/CustomerDashboard';
 import { ProviderDashboard } from './pages/ProviderDashboard';
@@ -92,7 +91,7 @@ export const App: React.FC = () => {
     <QueryClientProvider client={queryClient}>
       <ToastProvider>
         <Router>
-          <div className="min-h-screen flex flex-col justify-between bg-dark-950 text-light-primary font-sans selection:bg-sage-400/20 selection:text-white pb-16 md:pb-0">
+          <div className="min-h-screen flex flex-col justify-between bg-[#F8FAFC] text-light-primary font-sans selection:bg-sage-400/20 selection:text-white pb-16 md:pb-0">
             <Navbar />
             <main className="flex-1">
               <Routes>
@@ -100,7 +99,6 @@ export const App: React.FC = () => {
                 <Route path="/" element={<NonTechnicianRoute><LandingPage /></NonTechnicianRoute>} />
                 <Route path="/services" element={<NonTechnicianRoute><ServicesPage /></NonTechnicianRoute>} />
                 <Route path="/categories" element={<NonTechnicianRoute><ServicesPage /></NonTechnicianRoute>} />
-                <Route path="/jobs" element={<NonTechnicianRoute><JobsPage /></NonTechnicianRoute>} />
                 <Route path="/login" element={<LoginPage />} />
                 <Route path="/register" element={<RegisterPage />} />
                 <Route path="/forgot-password" element={<ForgotPasswordPage />} />

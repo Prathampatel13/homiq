@@ -79,31 +79,31 @@ export const AddressModal: React.FC<AddressModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-dark-950/85 backdrop-blur-md animate-in fade-in duration-150">
-      <div className="relative w-full max-w-lg rounded-3xl bg-dark-900 border border-dark-750 p-6 sm:p-8 shadow-modal text-white">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm animate-in fade-in duration-150">
+      <div className="relative w-full max-w-lg rounded-3xl bg-white border border-slate-200 p-6 sm:p-8 shadow-modal text-slate-900">
         <button
           onClick={onClose}
-          className="absolute top-5 right-5 p-2 rounded-xl bg-dark-850 hover:bg-dark-800 text-slate-400 hover:text-white border border-dark-750 transition-colors"
+          className="absolute top-5 right-5 p-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-500 hover:text-slate-900 border border-slate-200 transition-colors"
         >
           <X className="w-4 h-4" />
         </button>
 
         <div className="flex items-center gap-3 mb-6">
-          <div className="w-10 h-10 rounded-xl bg-sage-400/15 border border-sage-400/30 flex items-center justify-center text-sage-400 shrink-0">
+          <div className="w-10 h-10 rounded-xl bg-sage-50 border border-sage-200 flex items-center justify-center text-sage-600 shrink-0">
             <MapPin className="w-5 h-5" />
           </div>
           <div>
-            <h3 className="text-base font-bold text-white tracking-tight">
+            <h3 className="text-base font-bold text-slate-900 tracking-tight">
               {initialData ? 'Edit Residence Address' : 'Add Residence Address'}
             </h3>
-            <p className="text-xs text-slate-400">Precision dispatch location for service technicians</p>
+            <p className="text-xs text-slate-500">Precision dispatch location for service technicians</p>
           </div>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-semibold text-slate-300 mb-1.5">House / Villa No *</label>
+              <label className="block text-xs font-semibold text-slate-700 mb-1.5">House / Villa No *</label>
               <input
                 type="text"
                 value={houseNo}
@@ -114,7 +114,7 @@ export const AddressModal: React.FC<AddressModalProps> = ({
               />
             </div>
             <div>
-              <label className="block text-xs font-semibold text-slate-300 mb-1.5">Building / Society (Optional)</label>
+              <label className="block text-xs font-semibold text-slate-700 mb-1.5">Building / Society (Optional)</label>
               <input
                 type="text"
                 value={building}
@@ -126,7 +126,7 @@ export const AddressModal: React.FC<AddressModalProps> = ({
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-slate-300 mb-1.5">Street / Area *</label>
+            <label className="block text-xs font-semibold text-slate-700 mb-1.5">Street / Area *</label>
             <input
               type="text"
               value={area}
@@ -139,7 +139,7 @@ export const AddressModal: React.FC<AddressModalProps> = ({
 
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-semibold text-slate-300 mb-1.5">City *</label>
+              <label className="block text-xs font-semibold text-slate-700 mb-1.5">City *</label>
               <input
                 type="text"
                 value={city}
@@ -150,11 +150,11 @@ export const AddressModal: React.FC<AddressModalProps> = ({
               />
             </div>
             <div>
-              <label className="block text-xs font-semibold text-slate-300 mb-1.5">State *</label>
+              <label className="block text-xs font-semibold text-slate-700 mb-1.5">State *</label>
               <select
                 value={stateName}
                 onChange={(e) => setStateName(e.target.value)}
-                className="input-field appearance-none bg-dark-900"
+                className="input-field appearance-none bg-white text-slate-900"
                 required
               >
                 <option value="" disabled>Select State</option>
@@ -176,7 +176,7 @@ export const AddressModal: React.FC<AddressModalProps> = ({
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-slate-300 mb-1.5">Pincode *</label>
+            <label className="block text-xs font-semibold text-slate-700 mb-1.5">Pincode *</label>
             <input
               type="text"
               inputMode="numeric"
@@ -187,11 +187,11 @@ export const AddressModal: React.FC<AddressModalProps> = ({
                 if (val.length <= 6) setPincode(val);
               }}
               placeholder="6-digit PIN"
-              className={`input-field ${pincode.length > 0 && pincode.length < 6 ? 'border-rose-500/80 focus:border-rose-500 focus:ring-rose-500/20' : ''}`}
+              className={`input-field ${pincode.length > 0 && pincode.length < 6 ? 'border-rose-500 focus:border-rose-500 focus:ring-rose-500/20' : ''}`}
               required
             />
             {pincode.length > 0 && pincode.length < 6 && (
-              <p className="text-[10px] text-rose-400 mt-1.5">Pincode must be exactly 6 digits</p>
+              <p className="text-[10px] text-rose-600 mt-1.5">Pincode must be exactly 6 digits</p>
             )}
           </div>
 
@@ -201,16 +201,16 @@ export const AddressModal: React.FC<AddressModalProps> = ({
               id="isDefaultAddr"
               checked={isDefault}
               onChange={(e) => setIsDefault(e.target.checked)}
-              className="w-4 h-4 rounded bg-dark-850 border-dark-750 text-sage-400 focus:ring-0"
+              className="w-4 h-4 rounded border-slate-300 text-sage-600 focus:ring-sage-500"
             />
-            <label htmlFor="isDefaultAddr" className="text-xs text-slate-300 cursor-pointer">
+            <label htmlFor="isDefaultAddr" className="text-xs text-slate-600 cursor-pointer">
               Set as default service address
             </label>
           </div>
 
           {error && (
-            <div className="p-3 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-400 text-xs flex items-center gap-2">
-              <AlertCircle className="w-4 h-4 shrink-0" />
+            <div className="p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs flex items-center gap-2">
+              <AlertCircle className="w-4 h-4 shrink-0 text-rose-600" />
               <span>{error}</span>
             </div>
           )}

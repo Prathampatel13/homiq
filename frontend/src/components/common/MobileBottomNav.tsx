@@ -4,7 +4,6 @@ import {
   Home, 
   Layers, 
   PlusCircle, 
-  Briefcase, 
   LayoutDashboard, 
   UserCheck,
   Wrench,
@@ -86,12 +85,12 @@ export const MobileBottomNav: React.FC = () => {
   };
 
   return (
-    <div className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-dark-950/90 backdrop-blur-2xl border-t border-dark-750 px-4 py-2">
+    <div className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-2xl border-t border-slate-200 px-4 py-2 shadow-lg">
       <div className="flex items-center justify-around">
         <button
           onClick={() => navigate('/')}
           className={`flex flex-col items-center gap-1 py-1 px-2 rounded-xl transition-colors ${
-            isCurrent('/') ? 'text-sage-400' : 'text-slate-400 hover:text-slate-200'
+            isCurrent('/') ? 'text-sage-600 font-semibold' : 'text-slate-500 hover:text-slate-800'
           }`}
         >
           <Home className="w-5 h-5" />
@@ -102,7 +101,7 @@ export const MobileBottomNav: React.FC = () => {
           <button
             onClick={() => navigate('/services')}
             className={`flex flex-col items-center gap-1 py-1 px-2 rounded-xl transition-colors ${
-              isCurrent('/services') ? 'text-sage-400' : 'text-slate-400 hover:text-slate-200'
+              isCurrent('/services') ? 'text-sage-600 font-semibold' : 'text-slate-500 hover:text-slate-800'
             }`}
           >
             <Layers className="w-5 h-5" />
@@ -115,28 +114,18 @@ export const MobileBottomNav: React.FC = () => {
             onClick={() => navigate('/booking/new')}
             className="flex flex-col items-center gap-1 -mt-5"
           >
-            <div className="w-11 h-11 rounded-full bg-sage-400 text-dark-950 flex items-center justify-center shadow-accent ring-4 ring-dark-950">
+            <div className="w-11 h-11 rounded-full bg-sage-500 text-white flex items-center justify-center shadow-accent ring-4 ring-white">
               <PlusCircle className="w-6 h-6 stroke-[2.5]" />
             </div>
-            <span className="text-[10px] font-semibold text-white mt-0.5">Book</span>
+            <span className="text-[10px] font-semibold text-slate-800 mt-0.5">Book</span>
           </button>
         )}
-
-        <button
-          onClick={() => navigate('/jobs')}
-          className={`flex flex-col items-center gap-1 py-1 px-2 rounded-xl transition-colors ${
-            isCurrent('/jobs') ? 'text-sage-400' : 'text-slate-400 hover:text-slate-200'
-          }`}
-        >
-          <Briefcase className="w-5 h-5" />
-          <span className="text-[10px] font-medium">Careers</span>
-        </button>
 
         {isAuthenticated ? (
           <button
             onClick={() => navigate(getDashboardPath())}
             className={`flex flex-col items-center gap-1 py-1 px-2 rounded-xl transition-colors ${
-              location.pathname.includes('dashboard') ? 'text-sage-400' : 'text-slate-400 hover:text-slate-200'
+              location.pathname.includes('dashboard') ? 'text-sage-600 font-semibold' : 'text-slate-500 hover:text-slate-800'
             }`}
           >
             <LayoutDashboard className="w-5 h-5" />
@@ -145,7 +134,7 @@ export const MobileBottomNav: React.FC = () => {
         ) : (
           <button
             onClick={() => navigate('/login')}
-            className="flex flex-col items-center gap-1 py-1 px-2 rounded-xl text-slate-400 hover:text-slate-200"
+            className="flex flex-col items-center gap-1 py-1 px-2 rounded-xl text-slate-500 hover:text-slate-800"
           >
             <UserCheck className="w-5 h-5" />
             <span className="text-[10px] font-medium">Sign In</span>

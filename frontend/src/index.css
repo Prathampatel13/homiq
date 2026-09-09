@@ -93,30 +93,6 @@
   }
 }
 
-/* In light theme, general text-white on light cards automatically resolves to primary dark slate */
-.text-white {
-  color: #0F172A;
-}
-
-/* Preserve crisp white text ONLY on solid dark/colored buttons, saturated badges, and overlays */
-.btn-primary, .btn-primary *,
-.btn-accent, .btn-accent *,
-.btn-rose, .btn-rose *,
-.btn-danger, .btn-danger *,
-.bg-slate-900, .bg-slate-900 *,
-.bg-slate-950, .bg-slate-950 *,
-.bg-black, .bg-black *,
-.bg-emerald-500, .bg-emerald-500 *,
-.bg-emerald-600, .bg-emerald-600 *,
-.bg-sage-500, .bg-sage-500 *,
-.bg-sage-600, .bg-sage-600 *,
-.bg-rose-500, .bg-rose-500 *,
-.bg-rose-600, .bg-rose-600 *,
-.bg-blue-600, .bg-blue-600 *,
-.badge-dark, .badge-dark *,
-[data-theme-inverted="true"], [data-theme-inverted="true"] * {
-  color: #FFFFFF !important;
-}
 
 /* Subtle modern light-theme scrollbar */
 ::-webkit-scrollbar {

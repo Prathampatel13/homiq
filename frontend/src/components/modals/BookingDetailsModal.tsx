@@ -69,33 +69,33 @@ export const BookingDetailsModal: React.FC<BookingDetailsModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-dark-950/85 backdrop-blur-md animate-in fade-in duration-150">
-      <div className="relative w-full max-w-2xl rounded-3xl bg-dark-900 border border-dark-750 p-6 sm:p-8 shadow-modal text-white max-h-[90vh] overflow-y-auto">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm animate-in fade-in duration-150">
+      <div className="relative w-full max-w-2xl rounded-3xl bg-white border border-slate-200 p-6 sm:p-8 shadow-modal text-slate-900 max-h-[90vh] overflow-y-auto">
         {/* Close Button */}
         <button
           onClick={onClose}
-          className="absolute top-5 right-5 p-2 rounded-xl bg-dark-850 hover:bg-dark-800 text-slate-400 hover:text-white border border-dark-750 transition-colors"
+          className="absolute top-5 right-5 p-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-500 hover:text-slate-900 border border-slate-200 transition-colors"
         >
           <X className="w-4 h-4" />
         </button>
 
         {/* Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6 pb-6 border-b border-dark-750">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6 pb-6 border-b border-slate-100">
           <div>
             <div className="flex items-center gap-3">
-              <h3 className="text-xl font-bold text-white tracking-tight">
+              <h3 className="text-xl font-bold text-slate-900 tracking-tight">
                 {booking.service?.name || 'Service Order'}
               </h3>
               <StatusBadge status={booking.status} size="sm" />
             </div>
-            <p className="text-xs font-mono text-slate-400 mt-1">
+            <p className="text-xs font-mono text-slate-500 mt-1">
               Booking Reference: #{booking.booking_number || booking.id}
             </p>
           </div>
 
           <div className="text-right">
-            <span className="text-xs text-slate-400 block">Total Amount</span>
-            <span className="text-xl font-bold font-mono text-white">
+            <span className="text-xs text-slate-500 block">Total Amount</span>
+            <span className="text-xl font-bold font-mono text-slate-900">
               ₹{(booking.final_price || booking.total_amount || booking.estimated_price || 0).toFixed(2)}
             </span>
           </div>
@@ -104,25 +104,25 @@ export const BookingDetailsModal: React.FC<BookingDetailsModalProps> = ({
         {/* Grid Information */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
           {/* Schedule */}
-          <div className="p-4 rounded-2xl bg-dark-850 border border-dark-750 space-y-2">
-            <span className="text-[11px] font-mono text-sage-400 uppercase tracking-wider block">Schedule & Time</span>
-            <div className="flex items-center gap-2 text-xs text-slate-200">
-              <Calendar className="w-4 h-4 text-slate-400" />
+          <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-2">
+            <span className="text-[11px] font-mono text-sage-700 uppercase tracking-wider block font-semibold">Schedule & Time</span>
+            <div className="flex items-center gap-2 text-xs text-slate-700">
+              <Calendar className="w-4 h-4 text-slate-500" />
               <span>{booking.booking_date ? new Date(booking.booking_date).toLocaleDateString(undefined, { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' }) : 'Scheduled'}</span>
             </div>
             {booking.preferred_time && (
-              <div className="flex items-center gap-2 text-xs text-slate-200">
-                <Clock className="w-4 h-4 text-slate-400" />
+              <div className="flex items-center gap-2 text-xs text-slate-700">
+                <Clock className="w-4 h-4 text-slate-500" />
                 <span>Slot: {booking.preferred_time}</span>
               </div>
             )}
           </div>
 
           {/* Service Location */}
-          <div className="p-4 rounded-2xl bg-dark-850 border border-dark-750 space-y-2">
-            <span className="text-[11px] font-mono text-sage-400 uppercase tracking-wider block">Service Address</span>
-            <div className="flex items-start gap-2 text-xs text-slate-200">
-              <MapPin className="w-4 h-4 text-slate-400 shrink-0 mt-0.5" />
+          <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-2">
+            <span className="text-[11px] font-mono text-sage-700 uppercase tracking-wider block font-semibold">Service Address</span>
+            <div className="flex items-start gap-2 text-xs text-slate-700">
+              <MapPin className="w-4 h-4 text-slate-500 shrink-0 mt-0.5" />
               <span>
                 {booking.address 
                   ? `${booking.address.house_no}, ${booking.address.area}, ${booking.address.city || ''}` 
@@ -132,38 +132,38 @@ export const BookingDetailsModal: React.FC<BookingDetailsModalProps> = ({
           </div>
 
           {/* Assigned Technician */}
-          <div className="p-4 rounded-2xl bg-dark-850 border border-dark-750 space-y-2">
-            <span className="text-[11px] font-mono text-sage-400 uppercase tracking-wider block">Assigned Master Tech</span>
+          <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-2">
+            <span className="text-[11px] font-mono text-sage-700 uppercase tracking-wider block font-semibold">Assigned Master Tech</span>
             {booking.technician ? (
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2.5">
-                  <div className="w-8 h-8 rounded-lg bg-sage-400/15 border border-sage-400/30 flex items-center justify-center text-sage-400 text-xs font-bold">
+                  <div className="w-8 h-8 rounded-lg bg-sage-100 border border-sage-200 flex items-center justify-center text-sage-800 text-xs font-bold">
                     {getTechName(booking.technician).charAt(0)}
                   </div>
                   <div>
-                    <p className="text-xs font-semibold text-white">{getTechName(booking.technician)}</p>
-                    <span className="text-[10px] font-mono text-slate-400">Verified Professional</span>
+                    <p className="text-xs font-semibold text-slate-900">{getTechName(booking.technician)}</p>
+                    <span className="text-[10px] font-mono text-slate-500">Verified Professional</span>
                   </div>
                 </div>
               </div>
             ) : (
-              <p className="text-xs text-slate-400 italic">Dispatching certified specialist for your area...</p>
+              <p className="text-xs text-slate-500 italic">Dispatching certified specialist for your area...</p>
             )}
           </div>
 
           {/* Live Fulfillment State */}
-          <div className="p-4 rounded-2xl bg-dark-850 border border-dark-750 space-y-2">
-            <span className="text-[11px] font-mono text-sage-400 uppercase tracking-wider block">Service State</span>
+          <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-2">
+            <span className="text-[11px] font-mono text-sage-700 uppercase tracking-wider block font-semibold">Service State</span>
             <div className="flex items-center justify-between">
-              <span className="text-xs text-slate-200 capitalize font-medium">
+              <span className="text-xs text-slate-800 capitalize font-semibold">
                 {booking.status === 'arrived' ? 'Technician Arrived' : booking.status === 'in_progress' ? 'Service Ongoing' : booking.status}
               </span>
               <StatusBadge status={booking.status} size="sm" />
             </div>
             
-            <div className="border-t border-dark-750 pt-2 mt-2 flex items-center justify-between">
-              <span className="text-[11px] font-mono text-slate-400 uppercase tracking-wider block">Payment</span>
-              <span className={`text-xs font-semibold uppercase ${booking.payment_status === 'paid' ? 'text-emerald-400' : booking.payment_status === 'refunded' ? 'text-orange-400' : 'text-amber-400'}`}>
+            <div className="border-t border-slate-200 pt-2 mt-2 flex items-center justify-between">
+              <span className="text-[11px] font-mono text-slate-500 uppercase tracking-wider block">Payment</span>
+              <span className={`text-xs font-semibold uppercase ${booking.payment_status === 'paid' ? 'text-emerald-600' : booking.payment_status === 'refunded' ? 'text-orange-600' : 'text-amber-600'}`}>
                 {booking.payment_status || 'PENDING'}
               </span>
             </div>
@@ -172,9 +172,9 @@ export const BookingDetailsModal: React.FC<BookingDetailsModalProps> = ({
 
         {/* Customer Notes if present */}
         {booking.customer_note && (
-          <div className="p-4 rounded-2xl bg-dark-850/50 border border-dark-750 mb-6">
-            <span className="text-[11px] font-mono text-slate-400 uppercase block mb-1">Special Instructions</span>
-            <p className="text-xs text-slate-300">{booking.customer_note}</p>
+          <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 mb-6">
+            <span className="text-[11px] font-mono text-slate-500 uppercase block mb-1 font-semibold">Special Instructions</span>
+            <p className="text-xs text-slate-700">{booking.customer_note}</p>
           </div>
         )}
 
@@ -190,13 +190,13 @@ export const BookingDetailsModal: React.FC<BookingDetailsModalProps> = ({
         />
 
         {/* Action Buttons */}
-        <div className="flex flex-wrap items-center justify-between gap-3 pt-4 border-t border-dark-750">
+        <div className="flex flex-wrap items-center justify-between gap-3 pt-4 border-t border-slate-100">
           {/* Cancel Booking Action for Customer */}
           {['pending', 'assigned', 'accepted', 'arrived', 'on_the_way'].includes(booking.status) ? (
             <button
               onClick={handleCancelBooking}
               disabled={cancelling}
-              className="px-4 py-2.5 rounded-xl text-xs bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/30 font-semibold flex items-center gap-1.5 transition-colors disabled:opacity-50"
+              className="px-4 py-2.5 rounded-xl text-xs bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 font-semibold flex items-center gap-1.5 transition-colors disabled:opacity-50"
             >
               <XCircle className="w-4 h-4" />
               <span>{cancelling ? 'Cancelling...' : 'Cancel Booking'}</span>
@@ -225,7 +225,7 @@ export const BookingDetailsModal: React.FC<BookingDetailsModalProps> = ({
                 }}
                 className="btn-secondary text-xs px-4 py-2.5 flex items-center gap-1.5"
               >
-                <CheckCircle2 className="w-4 h-4 text-sage-400" />
+                <CheckCircle2 className="w-4 h-4 text-sage-600" />
                 <span>Leave Review</span>
               </button>
             )}
