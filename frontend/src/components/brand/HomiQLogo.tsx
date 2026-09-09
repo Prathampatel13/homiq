@@ -25,7 +25,7 @@ export const HomiQLogo: React.FC<HomiQLogoProps> = ({
 
   const markSize = sizeMap.mark;
 
-  // High-Precision Industrial Chevron / Hex Emblem in Ekvator Flame Orange
+  // Refined Minimal Geometric Emblem in Sage & Rose Palette
   const HomiQMark = () => (
     <svg
       width={markSize}
@@ -34,69 +34,69 @@ export const HomiQLogo: React.FC<HomiQLogoProps> = ({
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
       className="shrink-0 select-none transition-transform duration-300 group-hover:scale-105"
-      style={{ filter: 'drop-shadow(0 0 12px rgba(217, 56, 30, 0.4))' }}
+      style={{ filter: 'drop-shadow(0 0 10px rgba(184, 219, 128, 0.25))' }}
     >
       <defs>
-        {/* Primary Industrial Orange Gradient */}
-        <linearGradient id="homiqOrangeGrad" x1="10" y1="10" x2="90" y2="90" gradientUnits="userSpaceOnUse">
-          <stop offset="0%" stopColor="#FF6B4A" />
-          <stop offset="50%" stopColor="#E74320" />
-          <stop offset="100%" stopColor="#C02C15" />
+        {/* Primary Sage Gradient */}
+        <linearGradient id="homiqSageGrad" x1="10" y1="10" x2="90" y2="90" gradientUnits="userSpaceOnUse">
+          <stop offset="0%" stopColor="#C6E294" />
+          <stop offset="50%" stopColor="#B8DB80" />
+          <stop offset="100%" stopColor="#9FC964" />
         </linearGradient>
 
-        {/* Secondary Deep Ember Gradient */}
-        <linearGradient id="homiqEmberGrad" x1="20" y1="0" x2="80" y2="100" gradientUnits="userSpaceOnUse">
-          <stop offset="0%" stopColor="#E74320" />
-          <stop offset="100%" stopColor="#871A0B" />
+        {/* Secondary Rose Accent Gradient */}
+        <linearGradient id="homiqRoseGrad" x1="20" y1="0" x2="80" y2="100" gradientUnits="userSpaceOnUse">
+          <stop offset="0%" stopColor="#F39EB6" />
+          <stop offset="100%" stopColor="#C55B79" />
         </linearGradient>
 
-        {/* Dark Metallic Bevel */}
+        {/* Dark Slate Bevel */}
         <linearGradient id="homiqBevel" x1="0" y1="0" x2="100" y2="100" gradientUnits="userSpaceOnUse">
-          <stop offset="0%" stopColor="#2A2A2A" />
-          <stop offset="100%" stopColor="#141414" />
+          <stop offset="0%" stopColor="#252C38" />
+          <stop offset="100%" stopColor="#12161E" />
         </linearGradient>
       </defs>
 
       {/* Dark Chamfered Base Badge */}
-      <rect x="4" y="4" width="92" height="92" rx="20" fill="url(#homiqBevel)" stroke="rgba(255,255,255,0.08)" strokeWidth="2" />
+      <rect x="4" y="4" width="92" height="92" rx="22" fill="url(#homiqBevel)" stroke="rgba(255,255,255,0.08)" strokeWidth="1.5" />
 
-      {/* First Architectural Angular Chevron (Back Blade) */}
+      {/* First Architectural Angular Chevron (Back Blade in Rose Accent) */}
       <path
         d="M 24 50 L 44 26 L 56 26 L 36 50 L 56 74 L 44 74 Z"
-        fill="url(#homiqEmberGrad)"
-        opacity="0.85"
+        fill="url(#homiqRoseGrad)"
+        opacity="0.8"
       />
 
-      {/* Second Architectural Angular Chevron (Forward Thrust Blade) */}
+      {/* Second Architectural Angular Chevron (Forward Thrust Blade in Sage) */}
       <path
         d="M 44 50 L 64 26 L 76 26 L 56 50 L 76 74 L 64 74 Z"
-        fill="url(#homiqOrangeGrad)"
+        fill="url(#homiqSageGrad)"
       />
 
-      {/* Precision Core Indicator Dot */}
-      <circle cx="76" cy="50" r="3.5" fill="#FFFFFF" opacity="0.9" />
+      {/* Precision Core Indicator Dot (Warm Cream) */}
+      <circle cx="76" cy="50" r="3.5" fill="#F7F6D3" opacity="0.95" />
     </svg>
   );
 
-  // Clean, Bold Editorial Wordmark
+  // Clean, Minimal Editorial Wordmark
   const Wordmark = () => (
     <div className="flex items-baseline">
-      <span className={`font-extrabold tracking-tight select-none ${sizeMap.text} leading-none font-sans text-white`}>
+      <span className={`font-bold tracking-tight select-none ${sizeMap.text} leading-none font-sans text-white`}>
         Homi
       </span>
-      <span className={`font-black tracking-tight select-none ${sizeMap.text} leading-none font-sans text-sage-500 ml-0.5 relative`}>
+      <span className={`font-black tracking-tight select-none ${sizeMap.text} leading-none font-sans text-sage-400 ml-0.5 relative`}>
         Q
-        <span className="inline-block w-1.5 h-1.5 rounded-full bg-sage-500 ml-0.5 shadow-[0_0_8px_rgba(217,56,30,0.8)]" />
+        <span className="inline-block w-1.5 h-1.5 rounded-full bg-sage-400 ml-0.5 shadow-[0_0_8px_rgba(184,219,128,0.7)]" />
       </span>
     </div>
   );
 
-  // Official Tagline
+  // Minimal Tagline
   const Tagline = () => (
     <span
-      className={`font-mono uppercase tracking-[0.25em] font-semibold text-slate-400 select-none ${sizeMap.tag} mt-0.5`}
+      className={`font-mono uppercase tracking-[0.22em] font-medium text-slate-400 select-none ${sizeMap.tag} mt-0.5`}
     >
-      SMART HOME ENGINEERING
+      PREMIUM HOME SERVICES
     </span>
   );
 

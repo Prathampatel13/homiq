@@ -316,9 +316,9 @@ export const Navbar: React.FC = () => {
               </div>
             ) : (
               <div className="flex items-center gap-3">
-                <div className="hidden lg:flex items-center gap-2 text-xs font-mono text-slate-300 px-3 py-1.5 rounded-full bg-dark-900 border border-dark-750">
-                  <MapPin className="w-3.5 h-3.5 text-sage-500" />
-                  <span className="tracking-wide">INDIA • LIVE DISPATCH</span>
+                <div className="hidden lg:flex items-center gap-2 text-xs font-medium text-slate-300 px-3 py-1.5 rounded-full bg-dark-900 border border-dark-750">
+                  <span className="w-2 h-2 rounded-full bg-sage-400 animate-pulse" />
+                  <span className="tracking-wide">Support Available</span>
                 </div>
 
                 <Link
@@ -329,10 +329,10 @@ export const Navbar: React.FC = () => {
                 </Link>
                 <a
                   href="tel:+919800046647"
-                  className="hidden sm:flex items-center gap-2 px-4 py-2 rounded-xl bg-sage-500 hover:bg-sage-400 text-white font-mono text-xs font-bold transition-all shadow-[0_0_20px_-5px_rgba(217,56,30,0.5)] active:scale-95"
+                  className="hidden sm:flex items-center gap-2 px-4 py-2 rounded-xl bg-sage-400 hover:bg-sage-300 text-dark-950 font-semibold text-xs transition-all shadow-subtle hover:shadow-accent active:scale-95"
                 >
                   <PhoneCall className="w-3.5 h-3.5" />
-                  <span>+91 98000 HOMIQ</span>
+                  <span>Call Support</span>
                 </a>
               </div>
             )}

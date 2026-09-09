@@ -318,7 +318,7 @@ export const CustomerDashboard: React.FC = () => {
                       {activeBooking.status === 'in_progress' && getProofStatus(activeBooking.admin_note) === 'submitted' && (
                         <button
                           onClick={() => setReviewProofBooking(activeBooking)}
-                          className="btn-primary text-xs px-4 py-2.5 font-bold flex items-center gap-2 shadow-[0_0_20px_-5px_rgba(217,56,30,0.6)] animate-pulse"
+                          className="btn-primary text-xs px-4 py-2.5 font-bold flex items-center gap-2 shadow-accent animate-pulse"
                         >
                           <Camera className="w-4 h-4" />
                           <span>Review & Approve Work</span>
@@ -334,6 +334,17 @@ export const CustomerDashboard: React.FC = () => {
                         >
                           <Lock className="w-4 h-4" />
                           <span>Payment Locked</span>
+                        </button>
+                      )}
+
+                      {/* Pay Now Button (Top action cluster) */}
+                      {((['completed', 'waiting_payment'].includes(activeBooking.status)) || (activeBooking.status === 'in_progress' && getProofStatus(activeBooking.admin_note) === 'approved')) && activeBooking.payment_status !== 'paid' && (
+                        <button
+                          onClick={() => setPaymentModalBooking(activeBooking)}
+                          className="btn-primary text-xs px-4 py-2.5 font-bold flex items-center gap-2 shadow-accent animate-pulse"
+                        >
+                          <CreditCard className="w-4 h-4" />
+                          <span>Pay Now</span>
                         </button>
                       )}
                     </div>
@@ -378,10 +389,10 @@ export const CustomerDashboard: React.FC = () => {
 
                       {/* ── PROOF OF WORK SUBMITTED: CUSTOMER APPROVAL STEP ── */}
                       {activeBooking.status === 'in_progress' && getProofStatus(activeBooking.admin_note) === 'submitted' && (
-                        <div className="p-5 rounded-2xl bg-sage-500/10 border border-sage-500/40 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 animate-in fade-in duration-300 shadow-[0_0_30px_rgba(217,56,30,0.15)]">
+                        <div className="p-5 rounded-2xl bg-sage-400/10 border border-sage-400/40 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 animate-in fade-in duration-300 shadow-[0_0_30px_rgba(184,219,128,0.15)]">
                           <div className="space-y-1">
                             <div className="flex items-center gap-2">
-                              <span className="w-2.5 h-2.5 rounded-full bg-sage-500 animate-ping" />
+                              <span className="w-2.5 h-2.5 rounded-full bg-sage-400 animate-ping" />
                               <span className="text-xs font-bold text-white uppercase tracking-wider font-mono">
                                 Work Evidence Ready for Inspection
                               </span>
@@ -393,7 +404,7 @@ export const CustomerDashboard: React.FC = () => {
 
                           <button
                             onClick={() => setReviewProofBooking(activeBooking)}
-                            className="btn-primary text-xs px-6 py-2.5 font-bold flex items-center gap-2 shrink-0 shadow-[0_0_20px_-5px_rgba(217,56,30,0.6)] active:scale-95"
+                            className="btn-primary text-xs px-6 py-2.5 font-bold flex items-center gap-2 shrink-0 shadow-accent active:scale-95"
                           >
                             <Camera className="w-4 h-4" />
                             <span>Inspect & Approve Work</span>
@@ -418,7 +429,7 @@ export const CustomerDashboard: React.FC = () => {
 
                       <button
                         onClick={() => setPaymentModalBooking(activeBooking)}
-                        className="btn-primary text-xs px-6 py-2.5 font-bold flex items-center gap-2 shrink-0 shadow-[0_0_20px_-5px_rgba(217,56,30,0.5)]"
+                        className="btn-primary text-xs px-6 py-2.5 font-bold flex items-center gap-2 shrink-0 shadow-accent"
                       >
                         <CreditCard className="w-4 h-4" />
                         <span>Pay ₹{(activeBooking.final_price || activeBooking.total_amount || activeBooking.estimated_price || 0).toFixed(2)}</span>

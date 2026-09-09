@@ -62,10 +62,10 @@ export const FloatingNav: React.FC = () => {
     <div className="fixed bottom-24 md:bottom-6 left-1/2 -translate-x-1/2 z-[100] flex flex-col items-center w-[340px]">
       {/* Menu Popup */}
       {isOpen && (
-        <div className="mb-4 w-full bg-dark-900 rounded-3xl shadow-modal overflow-hidden border border-dark-750 flex flex-col animate-in fade-in slide-in-from-bottom-4 duration-200">
-          <div className="p-6 border-b border-dark-750 pb-4">
-            <p className="text-[11px] font-bold text-slate-500 tracking-widest mb-1 uppercase">NAVIGATE TO</p>
-            <h3 className="text-xl font-extrabold text-white">HomiQ Platform</h3>
+        <div className="mb-4 w-full bg-dark-900/95 backdrop-blur-xl rounded-3xl shadow-modal overflow-hidden border border-dark-750 flex flex-col animate-in fade-in slide-in-from-bottom-4 duration-200">
+          <div className="p-5 border-b border-dark-750 pb-3">
+            <p className="text-[10px] font-semibold text-slate-400 tracking-wider mb-0.5 uppercase">SWITCH VIEW</p>
+            <h3 className="text-lg font-bold text-white">Platform Navigation</h3>
           </div>
           
           <div className="p-4 max-h-[60vh] overflow-y-auto">

@@ -69,13 +69,13 @@ export const ServicesPage: React.FC = () => {
         <div className="max-w-3xl mb-12">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-dark-850 border border-dark-750 mb-3">
             <Layers className="w-3.5 h-3.5 text-sage-400" />
-            <span className="text-xs font-mono tracking-wider text-slate-300 uppercase">OFFICIAL SERVICE CATALOG</span>
+            <span className="text-xs font-semibold tracking-wider text-slate-300 uppercase">SERVICE CATALOG</span>
           </div>
-          <h1 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-tight text-white">
-            Master Architectural Services
+          <h1 className="text-3xl sm:text-4xl font-bold tracking-tight text-white">
+            Explore All Services
           </h1>
           <p className="text-sm text-slate-400 mt-2">
-            Transparent, upfront rates. Background-verified master technicians with SmartVerify™ cryptographic validation.
+            Transparent upfront rates from verified professionals. Instant booking with guaranteed quality.
           </p>
         </div>
 

@@ -21,31 +21,31 @@ export const Footer: React.FC = () => {
           <div className="md:col-span-2 space-y-4">
             <HomiQLogo variant="full" size="md" />
             <p className="text-xs text-slate-400 max-w-sm leading-relaxed mt-3">
-              The digital operating system for architectural home maintenance. Certified master technicians, cryptographic SmartVerify check-in, and guaranteed precision care.
+              Modern, reliable home care delivered by verified professionals. Transparent pricing, instant booking, and guaranteed satisfaction.
             </p>
             
             <div className="flex items-center gap-4 pt-2">
-              <div className="flex items-center gap-1.5 text-xs text-slate-300 font-mono">
+              <div className="flex items-center gap-1.5 text-xs text-slate-300">
                 <ShieldCheck className="w-4 h-4 text-sage-400" />
-                <span>SmartVerify Protected</span>
+                <span>Verified Professionals</span>
               </div>
-              <div className="flex items-center gap-1.5 text-xs text-slate-300 font-mono">
+              <div className="flex items-center gap-1.5 text-xs text-slate-300">
                 <Lock className="w-4 h-4 text-sage-400" />
-                <span>256-Bit Encrypted</span>
+                <span>Secure Payments</span>
               </div>
             </div>
           </div>
 
           {/* Services Column */}
           <div>
-            <h4 className="text-xs font-mono uppercase tracking-widest text-white mb-4">Service Ecosystem</h4>
+            <h4 className="text-xs font-mono uppercase tracking-widest text-white mb-4">Services</h4>
             <ul className="space-y-2.5 text-xs">
-              <li><Link to="/services" className="hover:text-sage-400 transition-colors">AC & Climate Control</Link></li>
-              <li><Link to="/services" className="hover:text-sage-400 transition-colors">Electrical & Smart Power</Link></li>
-              <li><Link to="/services" className="hover:text-sage-400 transition-colors">Plumbing & Hydraulics</Link></li>
-              <li><Link to="/services" className="hover:text-sage-400 transition-colors">Appliance Diagnostics</Link></li>
-              <li><Link to="/services" className="hover:text-sage-400 transition-colors">Deep Sanitization</Link></li>
-              <li><Link to="/services" className="hover:text-sage-400 transition-colors">Carpentry & Millwork</Link></li>
+              <li><Link to="/services" className="hover:text-sage-400 transition-colors">AC & Cooling</Link></li>
+              <li><Link to="/services" className="hover:text-sage-400 transition-colors">Electrical & Wiring</Link></li>
+              <li><Link to="/services" className="hover:text-sage-400 transition-colors">Plumbing & Fixtures</Link></li>
+              <li><Link to="/services" className="hover:text-sage-400 transition-colors">Smart Home & Security</Link></li>
+              <li><Link to="/services" className="hover:text-sage-400 transition-colors">Deep Cleaning</Link></li>
+              <li><Link to="/services" className="hover:text-sage-400 transition-colors">Carpentry & Repairs</Link></li>
             </ul>
           </div>
 
@@ -53,33 +53,33 @@ export const Footer: React.FC = () => {
           <div>
             <h4 className="text-xs font-mono uppercase tracking-widest text-white mb-4">Professionals</h4>
             <ul className="space-y-2.5 text-xs">
-              <li><Link to="/jobs" className="hover:text-sage-400 transition-colors">Careers & Open Roles</Link></li>
+              <li><Link to="/jobs" className="hover:text-sage-400 transition-colors">Careers & Roles</Link></li>
               <li><Link to="/register" className="hover:text-sage-400 transition-colors">Join as Technician</Link></li>
               <li><Link to="/register" className="hover:text-sage-400 transition-colors">Register Company Fleet</Link></li>
               <li><Link to="/provider/dashboard" className="hover:text-sage-400 transition-colors">Technician Portal</Link></li>
-              <li><Link to="/company/dashboard" className="hover:text-sage-400 transition-colors">Enterprise Workspace</Link></li>
+              <li><Link to="/company/dashboard" className="hover:text-sage-400 transition-colors">Partner Dashboard</Link></li>
             </ul>
           </div>
 
           {/* System & Trust */}
           <div>
-            <h4 className="text-xs font-mono uppercase tracking-widest text-white mb-4">Architecture & Trust</h4>
+            <h4 className="text-xs font-mono uppercase tracking-widest text-white mb-4">Quality & Trust</h4>
             <ul className="space-y-2.5 text-xs">
               <li className="flex items-center gap-1.5 text-slate-300">
                 <CheckCircle2 className="w-3.5 h-3.5 text-sage-400" />
-                <span>Zero Fake Data</span>
+                <span>100% Background-Checked</span>
               </li>
               <li className="flex items-center gap-1.5 text-slate-300">
                 <CheckCircle2 className="w-3.5 h-3.5 text-sage-400" />
-                <span>30-Day Work Guarantee</span>
+                <span>30-Day Service Guarantee</span>
               </li>
               <li className="flex items-center gap-1.5 text-slate-300">
                 <CheckCircle2 className="w-3.5 h-3.5 text-sage-400" />
-                <span>Real-Time Dispatch</span>
+                <span>Transparent Quotes</span>
               </li>
               <li className="pt-2">
                 <div className="p-2.5 rounded-xl bg-dark-900 border border-dark-750 text-[11px] font-mono text-slate-400">
-                  System Status: <span className="text-sage-400 font-bold">OPERATIONAL</span>
+                  Platform Status: <span className="text-sage-400 font-bold">ALL SYSTEMS LIVE</span>
                 </div>
               </li>
             </ul>

@@ -260,7 +260,7 @@ export const ProofReviewModal: React.FC<ProofReviewModalProps> = ({
             <button
               onClick={handleApprove}
               disabled={submitting || beforeImages.length === 0 || afterImages.length === 0}
-              className="btn-primary px-6 py-2.5 text-xs font-bold flex items-center gap-2 shadow-[0_0_20px_-5px_rgba(217,56,30,0.5)] active:scale-95 disabled:opacity-40"
+              className="btn-primary px-6 py-2.5 text-xs font-bold flex items-center gap-2 shadow-accent active:scale-95 disabled:opacity-40"
             >
               <CheckCircle2 className="w-4 h-4" />
               <span>{submitting ? 'Approving...' : 'Approve Work Evidence'}</span>

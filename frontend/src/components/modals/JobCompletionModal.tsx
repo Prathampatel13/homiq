@@ -237,7 +237,7 @@ export const JobCompletionModal: React.FC<JobCompletionModalProps> = ({
           <button
             onClick={handleSubmitProof}
             disabled={loading || uploading !== null || beforeImages.length === 0 || afterImages.length === 0}
-            className="btn-primary px-6 py-2.5 text-xs font-bold flex items-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed shadow-[0_0_20px_-5px_rgba(217,56,30,0.5)]"
+            className="btn-primary px-6 py-2.5 text-xs font-bold flex items-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed shadow-accent"
           >
             <ShieldCheck className="w-4 h-4" />
             <span>{loading ? 'Submitting Evidence...' : 'Submit Proof for Customer Approval'}</span>

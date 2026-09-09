@@ -43,7 +43,7 @@ export const ProviderDashboard: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState<number | null>(null);
   const [completingJobId, setCompletingJobId] = useState<number | null>(null);
-  const [activeTab, setActiveTab] = useState<'today' | 'active' | 'pending' | 'all' | 'earnings' | 'documents' | 'notifications' | 'recruitment'>('today');
+  const [activeTab, setActiveTab] = useState<'today' | 'active' | 'pending' | 'completed' | 'all' | 'earnings' | 'documents' | 'notifications' | 'recruitment'>('today');
 
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
@@ -208,6 +208,7 @@ export const ProviderDashboard: React.FC = () => {
             { id: 'today', label: "Today's Queue", count: activeJobs.length + pendingJobs.length },
             { id: 'active', label: 'In Execution', count: activeJobs.length },
             { id: 'pending', label: 'Incoming Dispatches', count: pendingJobs.length },
+            { id: 'completed', label: 'Completed Missions', count: completedJobs.length },
             { id: 'all', label: 'All Services', count: jobs.length },
             { id: 'earnings', label: 'Earnings & Payouts' },
             { id: 'notifications', label: 'Alerts', count: unreadCount },
@@ -238,7 +239,7 @@ export const ProviderDashboard: React.FC = () => {
         {/* ──────────────────────────────────────────────────────────────────────────
             TAB CONTENT
         ────────────────────────────────────────────────────────────────────────── */}
-        {activeTab === 'today' || activeTab === 'active' || activeTab === 'pending' || activeTab === 'all' ? (
+        {activeTab === 'today' || activeTab === 'active' || activeTab === 'pending' || activeTab === 'completed' || activeTab === 'all' ? (
           <div className="space-y-4">
             {jobs.length > 0 ? (
               <div className="space-y-4">
@@ -247,6 +248,7 @@ export const ProviderDashboard: React.FC = () => {
                     if (activeTab === 'active') return ['accepted', 'confirmed', 'in_progress', 'arrived', 'start_trip', 'on_the_way'].includes(j.status);
                     if (activeTab === 'pending') return ['assigned', 'pending'].includes(j.status);
                     if (activeTab === 'today') return ['assigned', 'pending', 'accepted', 'confirmed', 'in_progress', 'arrived', 'start_trip', 'on_the_way'].includes(j.status);
+                    if (activeTab === 'completed') return j.status === 'completed';
                     return true; // 'all' will return true for all jobs including completed
                   })
                   .map((job) => (
